@@ -1,0 +1,39 @@
+#INCLUDE "totvs.ch"
+#include "tlpp-core.th"
+
+/*/{Protheus.doc} RFATA027
+    Rotina para gravar mensagem do financeiro na observação de separação do pedido de venda.
+    @type  Static Function
+    @author Fernando Bombardi
+    @since 24/11/2023
+    @version 1.0
+/*/
+User Function RFATA027()
+Local _cMsgPv := ""
+Local _lRet   := .F.
+
+DEFINE FONT oFont6 NAME "Courier New" SIZE 6,20
+
+	DEFINE MSDIALOG _oFormMsg FROM 0,0 TO 350,420 PIXEL TITLE "Observações Separação - Pedido de Venda"
+	@ 005,005 say "Inclusão - Observação Separação:" SIZE 150,40 FONT oFont6 OF _oFormMsg PIXEL COLOR CLR_HBLUE
+	@ 015,005 GET oMemo VAR _cMsgPv MEMO SIZE 200,135 FONT oFont6 PIXEL OF _oFormMsg
+
+    @160, 120 BUTTON "&Gravar"   SIZE 40,10 OF _oFormMsg PIXEL Action EVAL({|| _lRet := .T., _oFormMsg:End()})
+    @160, 165 BUTTON "&Cancelar" SIZE 40,10 OF _oFormMsg PIXEL Action EVAL({|| _lRet := .F., _oFormMsg:End()})
+
+	ACTIVATE MSDIALOG _oFormMsg CENTER
+
+    if _lRet
+        dbSelectArea("SC5")
+        dbSetOrder(1)
+        if dbSeek(xFilial("SC5")+(_cTbTmp1)->C9_PEDIDO)
+            RecLock("SC5",.F.)
+            SC5->C5_OBSSEP := Alltrim(SC5->C5_OBSSEP) + chr(10) + chr(13) + chr(10) + chr(13) + "Observação Financeiro: " + Alltrim(_cMsgPv)
+            SC5->(MsUnlock())
+            MsgInfo("Mensagem atualizada com sucesso!","[RFATA027_001] - Aviso")
+        else
+            MsgAlert("O pedido de venda não foi loclaizado!","[RAFATA027_002] - Atenção")
+        endif
+    endif
+
+Return

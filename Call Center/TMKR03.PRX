@@ -1,0 +1,24 @@
+#INCLUDE "RWMAKE.CH"
+#INCLUDE "PROTHEUS.CH"
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+ฑฑบPrograma  ณTMKR03    บAutor  ณJ๚lio Soares        บ Data ณ  01/03/13   บฑฑ
+ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
+ฑฑบDesc.     ณRotina compilada em branco para nใo apresentar a op็ใo da   บฑฑ
+ฑฑบ          ณtela que apresenta a impressใo do or็amento de vendas ap๓s  บฑฑ
+ฑฑบ          ณfinaliza็ใo do atendimento.                                 บฑฑ
+ฑฑบ          ณDeve ser compilado toda vez que a RPO for atualizada        บฑฑ
+ฑฑบ          ณCASO EXISTA A NECESSIDADE DE IMPRESSรO DE ORวAMENTO VENDAS  บฑฑ
+ฑฑบ          ณESPECอFICO NO TษRMINO DO ATENDIMENTO (CALL CENTER), INSERIR บฑฑ
+ฑฑบ          ณNESTA ROTINA.                                               บฑฑ
+ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
+ฑฑบUso       ณ Protheus 11 - Especํfico para a empresa Arcolor.           บฑฑ
+ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
+ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+*/
+user function TMKR03()
+	//CASO HAJA A IMPRESSรO DE ORวAMENTO DE VENDAS NO TษRMINO DO CALL CENTER, INSERIR ROTINA AQUI!
+return

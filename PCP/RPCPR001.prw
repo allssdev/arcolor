@@ -1,0 +1,502 @@
+#INCLUDE "RWMAKE.CH"
+#INCLUDE "PROTHEUS.CH"
+/*/
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍ»±±
+±±ºPrograma ³RPCPR001  ºAutor ³Anderson C. P. Coelho   º Data ³  21/03/13 º±±
+±±º         ³Alterado: ºAutor ³Thiago Silva de Almeida º Data ³  02/04/13 º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºDescricao ³ Impressao da Ordem de Producao, separando os demais        º±±
+±±º          ³ produtos dos produtos do tipo 'EM'.                        º±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³   DATA   ³ Programador   ³Manutencao efetuada                         ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³06/09/2021³ Fernando B.   ³ Impressão OP pela Gestão OP Prevista       ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºUso       ³ Protheus 11 - Especifico para a empresa Arcolor.           º±±
+±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+/*/
+user function RPCPR001(cOPIni, cOPFim,_aOpImp)
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Declaracao de Variaveis                                             ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+Local cDesc1	:= "Este programa tem como objetivo imprimir relatorio "
+Local cDesc2	:= "de acordo com os parametros informados pelo usuario."
+Local cDesc3	:= "Ordens de Producao"
+//Local cPict		:= ""
+Local titulo	:= "Ordens de Producao"
+Local Cabec1	:= "PRODUTO          DESCRICAO                      ARM       QUANT.      SALD EST."
+//                     XXXXXXXXXXXXXXX  XXXXXXXXXXXXXXXXXXXXXXXXXXXX   XX  999,999,999.99   999,999,999.99
+//                     0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
+//                     0         10        20        30        40        50        60        70        80        90        100       110       120
+Local Cabec2	:= ""
+Local nLin		:= 80
+//Local imprime	:= .T.
+//Local aOrd		:= {}
+
+Local _cOpIn    := ""
+Local _nOpIn    := 1
+
+//Private CbTxt		:= ""
+Private tamanho		:= "P"
+Private nomeprog	:= "RPCPR001" // Coloque aqui o nome do programa para impressao no cabecalho
+Private cString		:= "SC2"
+Private cbtxt		:= Space(10)
+Private cbcont		:= 00
+Private CONTFL		:= 01
+Private wnrel		:= nomeprog // Coloque aqui o nome do arquivo usado para impressao em disco
+Private cPerg		:= nomeprog
+Private _cRotina	:= nomeprog
+Private _cMsg       := ""
+Private _cValidUsr  := SuperGetMv("MV_ORDPIMP",,"000000")
+Private nTipo		:= 18
+Private nLastKey	:= 0
+Private m_pag		:= 01
+Private _nImp		:= 0
+Private aReturn		:= { "Zebrado", 1, "Administracao", 2, 2, 1, "", 1}
+Private lEnd		:= .F.
+Private lAbortPrint	:= .F.
+Private limite		:= 80
+Private _lEnt       := CHR(13) + CHR(10)
+//**************************************************************************
+// INICIO
+// ARCOLOR - tratativa para impressão quando a impressão for chamada por 
+// meio da Gestão de OPs Previstas
+// FERNANDO BOMBARDI em 06/09/2021
+//**************************************************************************
+if AllTrim(FunName()) == "RPCPA003" .AND. !Empty(cOPIni) .AND. !Empty(cOPFim)
+	MV_PAR01 := cOPIni
+	MV_PAR02 := cOPFim
+elseif AllTrim(FunName()) <> "RPCPA001"
+	ValidPerg()
+	If !Pergunte(cPerg,.T.)
+		Return()
+	EndIf
+else
+	//Tratar impressao quando a rotina de Gestão de OPs Previstas
+	if type("_aOpImp") <> "U"
+		for _nOpIn := 1 to len(_aOpImp)
+			if _nOpIn > 1
+				_cOpIn += ",'" + _aOpImp[_nOpIn,1] + _aOpImp[_nOpIn,2] + _aOpImp[_nOpIn,3] + "'"
+			else
+				_cOpIn += "'" + _aOpImp[_nOpIn,1] + _aOpImp[_nOpIn,2] + _aOpImp[_nOpIn,3] + "'"			
+			endif
+		next _nOpIn
+	endif
+endif
+// FIM
+//**************************************************************************
+//dbSelectArea("SC2")
+//SC2->(dbSetOrder(1))
+//TRATAMENTO INICIADO PARA BLOQUEIO DE IMPRESSÕES
+
+_cQry := "SELECT * "
+_cQry += "	FROM " + RetSqlName("SC2") + " (NOLOCK) "
+_cQry += "	WHERE C2_FILIAL = '" + xFilial("SC2") + "' "
+if !empty(_cOpIn)
+	_cQry += "	AND C2_NUM+C2_ITEM+C2_SEQUEN IN (" + _cOpIn + ") "
+else
+	_cQry += "	AND C2_NUM+C2_ITEM+C2_SEQUEN BETWEEN '" + MV_PAR01 + "' AND '" + MV_PAR02 + "'"
+endif
+_cQry += "	AND D_E_L_E_T_ = '' "
+_cQry += "	ORDER BY  C2_NUM, C2_ITEM, C2_SEQUEN "
+dbUseArea(.T.,"TOPCONN",TcGenQry(,,_cQry),"SC2OP",.T.,.F.)
+
+If !SC2OP->(EOF())
+	While !SC2OP->(EOF()) .AND. SC2OP->C2_FILIAL == xFilial("SC2") .AND. SC2OP->(C2_NUM+C2_ITEM+C2_SEQUEN) <= MV_PAR02
+		If SC2OP->C2_NUMPAGS >= 1
+			_cMsg += Alltrim(SC2OP->(C2_NUM+C2_ITEM+C2_SEQUEN))
+			_cMsg += _lEnt
+			If Len(_cMsg) >= 999999
+				MSGBOX("Falha na quantidade de informações a serem apresentadas! Selecione um range menor de Ordens para impressão.",_cRotina+"_001","STOP")
+				Return()
+			EndIf
+		EndIf
+		dbSelectArea("SC2OP")
+		SC2OP->(dbSkip())
+	EndDo
+	If !Empty(_cMsg)
+		If !MSGBOX("As Ordens de produção abaixo já foram impressas e só poderão ser emitidas novamente por um usuário autorizado."+_lEnt+_cMsg+_lEnt+"Deseja prosseguir?",_cRotina+"_002","YESNO")
+			Return()
+		EndIf
+	EndIf
+Else
+	MsgAlert("Ordem de produção não encontrada",_cRotina+"_003")
+	SC2OP->(dbCloseArea())
+	Return()
+EndIf
+
+SC2OP->(dbCloseArea())
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Monta a interface padrao com o usuario...                           ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+wnrel := SetPrint(cString,NomeProg,cPerg,@titulo,cDesc1,cDesc2,cDesc3,.F.,/*aOrd*/,.F.,Tamanho,,.T.)
+
+If nLastKey == 27
+	Return()
+Endif
+
+SetDefault(aReturn,cString)
+
+If nLastKey == 27
+   Return()
+Endif
+
+nTipo := If(aReturn[4]==1,15,18)
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Processamento. RPTSTATUS monta janela com a regua de processamento. ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+RptStatus({|| RunReport(Cabec1,Cabec2,Titulo,nLin,_cOpIn) },Titulo)
+
+Return()
+
+/*/
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍ»±±
+±±ºPrograma  ³RunReport º Autor ³Anderson C. P. Coelho º Data ³  21/03/13 º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºDescri‡„o ³ Funcao auxiliar chamada pela RPTSTATUS. A funcao RPTSTATUS º±±
+±±º          ³ monta a janela com a regua de processamento.               º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºUso       ³ Programa principal                                         º±±
+±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+/*/
+
+Static Function RunReport(Cabec1,Cabec2,Titulo,nLin,_cOpIn)
+
+//Local nOrdem
+Local _lImpEm := .F.
+Local nTotOps:= 0
+Local _cVld := ""
+local _x   := 0
+local _nX  := 0
+
+ 
+/*
+dbSelectArea("SC2")
+SC2OP->(dbSetOrder(1))
+*/
+
+_cQry := "SELECT * "
+_cQry += "	FROM " + RetSqlName("SC2") + " (NOLOCK) "
+_cQry += "	WHERE C2_FILIAL = '" + xFilial("SC2") + "' "
+if !empty(_cOpIn)
+	_cQry += "	AND C2_NUM+C2_ITEM+C2_SEQUEN IN (" + _cOpIn + ") "
+else
+	_cQry += "	AND C2_NUM+C2_ITEM+C2_SEQUEN BETWEEN '" + MV_PAR01 + "' AND '" + MV_PAR02 + "'"
+endif
+_cQry += "	AND D_E_L_E_T_ = '' "
+_cQry += "	ORDER BY  C2_NUM, C2_ITEM, C2_SEQUEN "
+dbUseArea(.T.,"TOPCONN",TcGenQry(,,_cQry),"SC2OP",.T.,.F.)
+dbSelectArea("SC2OP")
+SetRegua(RecCount())
+SC2OP->(dbGoTop())
+
+If !SC2OP->(EOF())
+	While !SC2OP->(EOF()) .AND. SC2OP->C2_FILIAL == xFilial("SC2") .AND. (SC2OP->C2_NUM+SC2OP->C2_ITEM+SC2OP->C2_SEQUEN) <= MV_PAR02
+		// - INICIADO TRATAMENTO PARA BLOQUEIO DE NUMERAÇÃO DE PÁGINAS
+		If SC2OP->C2_NUMPAGS >= 1 .AND. !__cUserId $ _cValidUsr
+			dbSelectArea("SC2OP")
+			SC2OP->(dbSkip())
+			Loop
+		EndIf
+		// - FIM
+		_cAlias := "SD4TMP"
+		For _x := 1 To 2
+			_cQry := " SELECT * "
+			_cQry += " FROM " + RetSqlName("SD4") + " SD4 (NOLOCK)  " 
+			_cQry += "      INNER JOIN " + RetSqlName("SB1") + " SB1 ON SB1.B1_FILIAL  = '" + xFilial("SB1") + "' "
+			If _x == 1
+				_cQry += "                                          AND SB1.B1_TIPO   <> 'EM' "
+			Else
+				_cQry += "                                          AND SB1.B1_TIPO    = 'EM' "
+			EndIf
+			_cQry += "                                              AND SB1.B1_COD     = SD4.D4_COD "
+			_cQry += "                                              AND SB1.D_E_L_E_T_ = '' "
+			_cQry += " WHERE SD4.D4_FILIAL  = '"+xFilial("SD4")+"' "
+			_cQry += "   AND SD4.D4_OP      = '" + (SC2OP->C2_NUM+SC2OP->C2_ITEM+SC2OP->C2_SEQUEN) + "' "
+			_cQry += "   AND SD4.D_E_L_E_T_ = '' "
+			_cQry += " ORDER BY D4_FILIAL, D4_OP, D4_COD, D4_LOCAL "
+			/*
+			If __cUserId == "000000"
+				MemoWrite("\2.MemoWrite\"+_cRotina+"_QRY_00"+cValToChar(_x)+".TXT",_cQry)
+			EndIf
+			*/
+			dbUseArea(.T.,"TOPCONN",TcGenQry(,,_cQry),_cAlias,.T.,.F.)
+			dbSelectArea(_cAlias)						
+			(_cAlias)->(dbGoTop())
+			
+			nTotOps:= (_cAlias)->(RecCount())
+			
+		//	If nTotOps == 0	.And. !SC2OP->(EOF()) .And. _x == 1			
+		//		MsgStop("OP: " +  AllTrim(SC2OP->C2_NUM+SC2OP->C2_ITEM+SC2OP->C2_SEQUEN)  + " Sem Estrutura! Impressão Cancelada.",_cRotina+"_005")
+		//	EndiF
+
+			If !(_cAlias)->(EOF())
+				dbSelectArea("SB1")
+				SB1->(dbSetOrder(1))
+				SB1->(MsSeek(xFilial("SB1") + SC2OP->C2_PRODUTO,.T.,.F.))
+				Cabec(Titulo,Cabec1,Cabec2,NomeProg,Tamanho,nTipo)
+				nLin := 9
+				@nLin,000 PSAY "OP:" + AllTrim(SC2OP->C2_NUM+SC2OP->C2_ITEM+SC2OP->C2_SEQUEN) + " - Produto:" + AllTrim(SC2OP->C2_PRODUTO) + " - " + AllTrim(SB1->B1_DESC)
+				nLin++
+				@nLin,000 PSAY "Prev. Início: " + DTOC(STOD(SC2OP->C2_DATPRI)) + "  -  Prev. Término: " + DTOC(STOD(SC2OP->C2_DATPRF))
+				nLin++
+				@nLin,000 PSAY Replicate("_",Limite)
+				nLin += 2
+				dbSelectArea(_cAlias)
+				While !(_cAlias)->(EOF())
+					//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+					//³ Verifica o cancelamento pelo usuario...                             ³
+					//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+					If lAbortPrint
+						@nLin,00 PSAY "*** CANCELADO PELO OPERADOR ***"
+						Exit
+					EndIf
+					//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+					//³ Impressao do cabecalho do relatorio. . .                            ³
+					//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+					If nLin > 55 // Salto de Página. Neste caso o formulario tem 55 linhas...
+						Cabec(Titulo,Cabec1,Cabec2,NomeProg,Tamanho,nTipo)
+						nLin := 8
+					EndIf
+					If !_lImpEm 
+					   If AllTrim((_cAlias)->B1_TIPO) == "EM"
+					   	  _lImpEm := .T.
+					   EndIf
+					EndIf
+					@nLin,000 PSAY Alltrim(SubStr((_cAlias)->D4_COD,1,13))
+					@nLin,014 PSAY AllTrim(SubStr((_cAlias)->B1_DESC,1,30))
+					@nLin,046 PSAY AllTrim(SubStr((_cAlias)->D4_LOCAL,1,2))
+					@nLin,048 PSAY (_cAlias)->D4_QUANT    PICTURE "@e 999,999,999.9999"
+					dbSelectArea("SB2")
+					dbSetOrder(1)
+					If MsSeek(xFilial("SB2") + (_cAlias)->D4_COD + (_cAlias)->D4_LOCAL,.T.,.F.)
+						@nLin,062 PSAY SaldoSb2()         PICTURE "@e 999,999,999.9999"
+					Else
+						@nLin,062 PSAY 0                  PICTURE "@e 999,999,999.9999"
+					EndIf
+					nLin++
+					dbSelectArea(_cAlias)
+					(_cAlias)->(dbSkip())
+				EndDo
+			 //INICIO - ALTERADO - Thiago Silva de Almeida - 02/04/2013
+			 nLin+=2
+			 @nLin,000 PSAY "QUANTIDADE TOTAL OP:"		 			 		 
+			 @nLin,016 PSAY SC2OP->C2_QUANT PICTURE "@e 999,999,999.9999"
+			 @nLin,040 PSAY "Data Emissão:"
+			 @nLin,054 PSAY DTOC(STOD(SC2OP->C2_EMISSAO))
+			 nLin+=2
+			If !_lImpEm 
+				@nLin,000 PSAY "OBSERVAÇÕES"		 			 
+			 	nLin++
+			 	_cAux    := Alltrim(SB1->B1_OBSM)
+			 	_nLinhas := Len(_cAux)/80 
+				If _nLinhas <> Int(Len(_cAux)/80)
+					_nLinhas++          
+				EndIf
+				For _nX := 1 To _nLinhas
+		 			@nLin,000 PSAY SubStr(SB1->B1_OBSM,(_nX - 1) * 80,79)
+		 			nLin++
+		 		Next
+			Else
+				@nLin,000 PSAY "Composição"
+				nLin++
+				@nLin,000 PSAY SB1->B1_COMPOS
+			 	nLin+=2
+			 	@nLin,000 PSAY "Aplicação:"
+				nLin++
+				@nLin,000 PSAY SB1->B1_APLIC
+				nLin+=2 	
+				@nLin,000 PSAY "Ministério da Saúde:"
+				nLin++
+				@nLin,000 PSAY SB1->B1_MS
+				nLin+=2
+				@nLin,000 PSAY "Validade:"
+				@nLin,012 PSAY cVAltoChar(SB1->B1_PRVALID/30) 			
+				//_cVld:= dtos(stod(SUBSTR(dtos(SC2OP->C2_DATPRF),1,6)+"28")+ (SB1->B1_PRVALID)) //Mes de producao deve ser desprezado.	
+				_cVld:= dtos(stod(SUBSTR(SC2OP->C2_DATPRF,1,6)+"28")+ (SB1->B1_PRVALID)) //Mes de producao deve ser desprezado.	
+				
+				@nLin,014 PSAY " Meses " + IIF(SB1->B1_PRVALID <> 0,  " - "  + substr( _cVld ,5,2) + "/" + substr( _cVld ,1,4) , "")  
+				@nLin,040 PSAY "Embalagem:"
+				@nLin,051 PSAY SB1->B1_DESEMB
+				nLin+=2		
+				@nLin,000 PSAY "Volume Prim."
+				@nLin,016 PSAY SB1->B1_VOPRIN
+				@nLin,040 PSAY "Cod. Barras 1:"
+				@nLin,056 PSAY SB1->B1_CODBAR
+				nLin++
+				@nLin,000 PSAY "Volume Sec."
+				@nLin,016 PSAY SB1->B1_VOSEC
+				@nLin,040 PSAY "Cod. Barras 2:"
+				@nLin,056 PSAY SB1->B1_CODBAR2
+			EndIf 
+			nLin+=2 	
+			@nLin,000 PSAY "________________________________________________________________________________"
+			nLin++ 	
+			@nLin,000 PSAY "|   Quantidade  |    Data    |       Conferente            |     Lançamento    |"			
+	        @nLin,000 PSAY "________________________________________________________________________________"
+	  		nLin++                                                                                                                
+	  		@nLin,000 PSAY "|               |            |                             |                   |"         
+			@nLin,000 PSAY "________________________________________________________________________________"
+			nLin++
+	  		@nLin,000 PSAY "|               |            |                             |                   |"         
+			@nLin,000 PSAY "________________________________________________________________________________"
+			nLin++
+	  		@nLin,000 PSAY "|               |            |                             |                   |"         
+			@nLin,000 PSAY "________________________________________________________________________________"
+			nLin++
+	  		@nLin,000 PSAY "|               |            |                             |                   |"         
+			@nLin,000 PSAY "________________________________________________________________________________"
+			/*
+			nLin++
+	  		@nLin,000 PSAY "|               |            |                             |                   |"         
+			@nLin,000 PSAY "________________________________________________________________________________"
+			*/
+			/*
+			nLin+=	2
+			@nLin,000 PSAY "CONTROLE DE QUALIDADE"
+	        nLin++
+	        @nLin,000 PSAY "( _ )APROVADO"		 
+	        @nLin,020 PSAY "( _ )REPROVADO"		 
+	        @nLin,037 PSAY "___/___/___"
+	        @nLin,050 PSAY "Visto: _______________________" */ // Ajuste solicitado pelo Sr.Ronie em 01/02/2018  
+
+			nLin+=	2
+			@nLin,000 PSAY "1 - CONTROLE DE EMBALAGEM - ( _ )APROVADO    ( _ )REPROVADO    ___/___/___ "
+	        nLin+=  2 
+	        @nLin,000 PSAY "Entregue Por:__________________________"		 
+	        @nLin,040 PSAY "Recebido Por:__________________________"		 
+			nLin+=	3
+
+			@nLin,000 PSAY "2 - CONTROLE DE QUALIDADE(AMOSTRA) - ( _ )APROVADO ( _ )REPROVADO    ___/___/___ "
+   	        nLin+=  2 
+	        @nLin,000 PSAY "Entregue Por:__________________________"		 
+	        @nLin,040 PSAY "Recebido Por:__________________________"		 
+
+			_lImpEm := .F.
+			If nLin >= 55
+				nLin := 55
+			Else
+				nLin += 2
+			EndIf
+			@nLin,055 PSAY "Impressão controlada N° "+cValToChar(SC2OP->C2_NUMPAGS + 1)+"."
+			//FIM - ALTERADO - Thiago Silva de Almeida - 02/04/2013
+			EndIf
+			dbSelectArea(_cAlias)
+			(_cAlias)->(dbCloseArea())
+		Next
+		
+		dbSelectArea("SC2")
+		SC2->(dbSetOrder(1))
+		Reclock("SC2",.F.)
+		SC2->C2_NUMPAGS += 1
+		SC2->(MsUnLock())
+		SC2OP->(dbSkip()) // Avanca o ponteiro do registro no arquivo
+		
+	EndDo
+Else
+	MsgAlert("Ordem de produção não encontrada",_cRotina+"_003")
+	SC2OP->(dbCloseArea())
+	Return()
+EndIf
+
+SC2OP->(dbCloseArea())
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Finaliza a execucao do relatorio...                                 ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+SET DEVICE TO SCREEN
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Se impressao em disco, chama o gerenciador de impressao...          ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+If aReturn[5]==1
+   dbCommitAll()
+   SET PRINTER TO
+   OurSpool(wnrel)
+Endif
+MS_FLUSH()
+
+// - Trecho inserido por Júlio Soares em 16/11/2015 para controlar o número de cópias de impressão.
+/*
+dbSelectArea("SC2")
+dbSetOrder(1)
+If MsSeek(xFilial("SC2")+MV_PAR01,.T.,.F.)
+	If __cUserId $ SuperGetMv("MV_ORDPIMP",,"000000")
+		MS_FLUSH()
+	Else
+		_nImp := SC2OP->(C2_NUMPAGS)
+		If _nImp <= 1
+			If MSGBOX("A impressão das ordens de produção é limitada a uma cópia, deseja realmente imprimir as Ordem de "+(MV_PAR01)+" até "+(MV_PAR02)+" ? "+CHR(13)+CHR(10)+"Somente usuários autorizados poderão reimprimir uma ordem.",_cRotina + "_002","YESNO")
+				While !(SC2OP->(EOF())) .And. SC2OP->(C2_NUM)+SC2OP->(C2_ITEM)+SC2OP->(C2_SEQUEN) >= MV_PAR01 .And. SC2OP->(C2_NUM)+SC2OP->(C2_ITEM)+SC2OP->(C2_SEQUEN) <= MV_PAR02
+					Reclock("SC2",.F.)
+						SC2OP->C2_NUMPAGS := _nImp += 1
+					SC2OP->(MsUnlock())
+					SC2OP->(DbSkip())
+					_nImp := SC2OP->(C2_NUMPAGS)
+				EndDo
+				MS_FLUSH()
+			EndIf
+		Else	
+			MSGBOX("Essa Ordem de produção já foi impressa, somente pessoas autorizadas podem imprimi-la novamente.",_cRotina+"_003","ALERT")
+			Return()
+		EndIf
+	EndIf
+EndIf
+*/
+// - FIM do trecho incluido.
+
+Return()
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍ»±±
+±±ºPrograma  ³ValidPerg º Autor ³Anderson C. P. Coelho º Data ³  21/03/13 º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºDesc.     ³Tratamento das perguntas na SX1.                            º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºUso       ³Programa Principal                                          º±±
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+*/
+
+Static Function ValidPerg()
+
+Local _aAlias 	:= GetArea()
+Local aRegs   	:= {}
+Local i       	:= 0
+local J			:= 0
+cPerg   := PADR(cPerg,10)
+
+AADD(aRegs,{cPerg,"01","Da OP     ?","","","mv_ch1","C",11,0,0,"G","","mv_par01","","","","","","","","","","","","","","","","","","","","","","","","","SC2","",""})
+AADD(aRegs,{cPerg,"02","Ate a OP  ?","","","mv_ch2","C",11,0,0,"G","","mv_par02","","","","","","","","","","","","","","","","","","","","","","","","","SC2","",""})
+
+dbSelectArea("SX1")
+SX1->(dbSetOrder(1))
+For i := 1 To Len(aRegs)
+    If !SX1->(MsSeek(cPerg+aRegs[i,2],.T.,.F.))
+        RecLock("SX1",.T.)
+        For j := 1 To FCount()
+            If j <= Len(aRegs[i])
+                FieldPut(j,aRegs[i,j])
+            Else
+               Exit
+            EndIf
+        Next
+        SX1->(MsUnLock())
+    EndIf
+Next
+RestArea(_aAlias)
+
+Return()

@@ -1,0 +1,402 @@
+#INCLUDE "totvs.ch"
+#include "tlpp-core.th"
+
+#DEFINE CRLF CHR(13)+CHR(10)
+
+/*/{Protheus.doc} RFATA030
+Rotina específica para importação de meta de vendas.
+@type user function
+@author Fernando Bombardi
+@since 04/04/2024
+@version 1.0
+@param null
+@return null
+/*/
+User Function RFATA030()
+	Local cFileOpen	 := ""
+	Local cExtens    := "Arquivo CSV | *.csv"
+	Private nOpc     := 0
+	Private aSay     := {}
+	Private aButton  := {}
+	Private _lFILAPL := .F.
+	Private _cPerg   := "RFATA030"
+
+	aAdd( aSay, "Esta rotina tem como objetivo importar as Metas de Vendas." )
+	aAdd( aSay, " " )
+	aAdd( aSay, " " )
+	aAdd( aButton, { 01, .T., {|| nOpc := 2, FechaBatch() }} ) //Ok
+	aAdd( aButton, { 02, .T., {|| FechaBatch() }} ) //Cancelar
+	FormBatch("Processar Arquivo", aSay, aButton)
+
+	If nOpc == 2
+
+		RFATA30P(_cPerg)
+
+		cFileOpen := cGetFile(cExtens,"Selecione o arquivo",,"C:\",.T.)
+
+		If !Empty(cFileOpen)
+
+			If !File(cFileOpen)
+
+				MsgAlert("Arquivo: "+cFileOpen+" não localizado.", "Importação de Meta de Vendas")
+
+			Else
+				if Pergunte(_cPerg,.t.)
+					if MV_PAR01 > MV_PAR02
+						MsgAlert("Existe inconsistência entre as datas do período informado, verifique as datas do período.","[RFATA030_003] - Atenção")
+						Return
+					endif
+                    if !RFATA30V(Substr(DtoS(MV_PAR01),1,6))
+						MsgAlert("O periodo da campanha informado já está cadastrado, verifique as datas do período.","[RFATA030_003] - Atenção")
+						Return
+                    endif
+
+					Processa( {|| RFATA30L(cFileOpen) }, "Aguarde" )
+
+				endif
+			EndIf
+
+		EndIf
+
+	EndIf
+
+Return()
+
+/*/{Protheus.doc} RFATA30L
+Função para realizar a leitura do arquivo CSV
+@type user function
+@author Fernando Bombardi 
+@since 04/04/2024
+@version 1.0
+@param null
+@return null
+/*/
+Static Function RFATA30L(cFile)
+	Local cLinha	   := ""
+	Local nHandle  	   := 0
+	Local _aLin		   := {}
+	Private _aBrwCont  := {}
+	Private aRecnos    := {}
+	Private nSomaZTX   := 0
+	Private _nSomArq   := 0
+	Private _nValTotMeta := 0
+
+	nHandle  := FT_FUse(cFile)
+
+	If nHandle == -1
+
+		MsgStop('Erro na leitura do arquivo.', 'PROBLEMA')
+
+	Else
+
+		FT_FGoTop()
+		nLast := FT_FLastRec()
+
+		ProcRegua(nLast)
+
+		// Lê a primeira linha do arquivo
+		cLinha	:= FT_FReadLn() + ";"
+		_aLin	:= Str2Arr(cLinha, ";", .T.)
+
+		If Len(_aLin) <> 8
+			FT_FUse()
+			MsgAlert("Não é possivel continuar. Arquivo não esta no layout informado!", "Arquivo Inválido")
+			Return
+		EndIf
+
+		FT_FSkip()
+
+		While !FT_FEOF()
+
+			IncProc()
+
+			// Lê as demais linhas do arquivo
+			_aLin	:= {}
+			cLinha	:= FT_FReadLn() + ";"
+			_aLin	:= Str2Arr(cLinha, ";", .T.)
+
+			_aLin[5] := StoD(_aLin[5])
+
+			_nValRepMeta := Val(StrTran(_aLin[8],",","."))
+			_nValTotMeta += _nValRepMeta
+			_aLin[8]     := _nValRepMeta
+
+			aADD(_aBrwCont,_aLin)
+
+			FT_FSkip()
+		EndDo
+
+		FT_FUse()
+
+		if len(_aBrwCont) > 0
+			RFATA30T()
+		endif
+
+	EndIf
+
+Return()
+
+
+/*/{Protheus.doc} RFATA30T
+    Funação para exibir as metas que serão importadas.
+    @type  Static Function
+    @author Fernando Bombardi 
+    @since 04/04/2024
+    @version 1.0
+/*/
+Static Function RFATA30T(param_name)
+	Local _aArea      := GetArea()
+	Local   aSizeAut  := MsAdvSize(,.F.,400)
+	Private oDlgImp
+	Private aPosGet
+
+	aObjects := {}
+	AAdd( aObjects, { 0,    41, .T., .F. } )
+	AAdd( aObjects, { 100, 100, .T., .T. } )
+	aInfo := { aSizeAut[ 1 ], aSizeAut[ 2 ], aSizeAut[ 3 ], aSizeAut[ 4 ], 3, 3 }
+	aPosObj := MsObjSize( aInfo, aObjects )
+	aPosGet := MsObjGetPos(aSizeAut[3]-aSizeAut[1],305,;
+		{{10,40,105,140,200,234,275,200,225,260,285,265},;
+		If(cPaisLoc<>"PTG",{10,40,105,140,200,234,63},{10,40,101,120,175,205,63,250,270}),;
+			Iif(cPaisLoc<>"PTG",{5,70,160,205,295},{5,50,120,145,205,245,293}),;
+			{6,34,200,215},;
+			{6,34,80,113,160,185},;
+			{6,34,245,268,260},;
+			{10,50,150,190},;
+			{273,130,190},;
+			{8,45,80,103,139,173,200,235,270},;
+			{133,190,144,190,289,293},;
+			{142,293,140},;
+			{9,47,188,148,9,146} })
+
+		oDlgImp := TDialog():New(aSizeAut[7],0,aSizeAut[6],aSizeAut[5],"Pré Faturamento",,,,,CLR_BLACK,CLR_WHITE,,oMainWnd,.T.)
+
+		_cDescPrc := 'Importação das Metas de Venda'
+
+		otMultiBtn := tMultiBtn():New( 10,10, _cDescPrc ,oDlgImp,,aPosObj[2,4]-30,150, 'NG_ICO_FMRPC',0,'Mensagem',3 )
+		otMultiBtn:SetFonts('Geomanist',14,'Geomanist',10)
+		otMultiBtn:AddButton("&Importar")
+		otMultiBtn:AddButton('&Sair')
+		otMultiBtn:bAction := {|x,y| DefinirMenu(y) }
+
+		oFont1 := TFont():New('Arial',,22,.T.)
+
+		oFont2 := TFont():New('Arial',,18,.T.)
+		oSay2:= TSay():New(055,10,{||'Valor Total das Metas (R$): ' + Transform(_nValTotMeta,"@e 999,999,999.99")},oDlgImp,,oFont2,,,,.T.,CLR_BLUE,CLR_WHITE,150,20)
+
+		IF LEN(_aBrwCont) == 0
+			aADD(_aBrwCont,{"","","","","","","",""})
+		ENDIF
+
+		_oBrwItem := TWBrowse():New(aPosObj[1][3],aPosObj[2,2]-3,aPosObj[2,4]+5,aPosObj[2,3]-75,,;
+			{"Filial","Documento","Sequencia","Descrição","Data","Vendedor","Representante","Meta"},;
+			{30,50,50,80,50,50,200,50}, oDlgImp,,,,,{||  },,,,,,,.F.,,.T.,,.F.,,, )
+
+		// Seta vetor para a browse
+		_oBrwItem:SetArray(_aBrwCont)
+
+		// Monta a linha a ser exibina no Browse
+		_oBrwItem:bLine := {||{ _aBrwCont[_oBrwItem:nAt,01],;
+			_aBrwCont[_oBrwItem:nAt,02],;
+			_aBrwCont[_oBrwItem:nAt,03],;
+			_aBrwCont[_oBrwItem:nAt,04],;
+			_aBrwCont[_oBrwItem:nAt,05],;
+			_aBrwCont[_oBrwItem:nAt,06],;
+			_aBrwCont[_oBrwItem:nAt,07],;
+			_aBrwCont[_oBrwItem:nAt,08] } }
+
+		oDlgImp:Activate(,,,.T.)
+
+		RestArea(_aArea)
+		RETURN
+
+
+/*/{Protheus.doc} DefinirMenu
+    Executa ação conforme seleção no mewnu.
+    @type  Static Function
+    @author Fernando Bombardi 
+    @since 16/08/2022
+    @version 1.0
+/*/
+Static Function DefinirMenu(_nOpc)
+
+	Do CASE
+	Case _nOpc == 1
+		if msgYesNo("Deseja realmente importar as Metas de Vendas?","Confirmação de Processo")
+
+			MsgRun("Gravando os registros referente as Metas de Vebdas...","Processando",{||  RFATA30G() })
+
+			oDlgImp:End()
+
+			MsgInfo("Dados processados com sucesso!","[RFATA030_001] - Aviso")
+
+		endif
+
+	Otherwise
+		oDlgImp:End()
+	End Case
+
+Return
+
+/*/{Protheus.doc} RFATA30G
+    Função para gravar as metas no sistema.
+    @type  Static Function
+    @author Fernando Bombardi
+    @since 04/04/2024
+    @version 1.0
+/*/
+Static Function RFATA30G()
+	Local _nItbrw  := 0
+	Local _cMesAno := Upper(MesExtenso(MV_PAR01)) + "/" + Alltrim(str(Year(MV_PAR01)))
+
+	Begin Transaction
+
+		// Bloqueia campanhas anteriores
+		if !RFATA30B()
+			MsgAlert("Ocorreram problemas) ao tentar bloquear as metas anteriores, entre em contato com o Administrador.","[RFATA030_004] - Aviso")
+			Return
+		endif
+        
+		RecLock("AC6",.T.)
+		AC6->AC6_META   := GetSx8Num("AC6","AC6_META")
+		AC6->AC6_TITULO := _cMesAno
+		AC6->AC6_OBJETI := "DEFINIR A META DE VENDAS PARA O " + _cMesAno
+		AC6->AC6_DTINI  := MV_PAR01
+		AC6->AC6_DTFIM  := MV_PAR02
+		AC6->AC6_TOTFAT := _nValTotMeta
+		AC6->AC6_MSBLQL := "2"
+		AC6->(MsUnlock())
+
+		RecLock("SUO",.T.)
+		SUO->UO_FILIAL  := FwFilial("SUO")
+		SUO->UO_CODCAMP := GetSx8Num("SUO","UO_CODCAMP")
+		SUO->UO_DESC    := _cMesAno
+		SUO->UO_OBJETIV := "DEFINIR A META DE VENDAS PARA OS REPRESENTANTES DENTRO DO MES DE" + _cMesAno
+		SUO->UO_DTINI   := MV_PAR01
+		SUO->UO_DTFIM   := MV_PAR02
+		SUO->UO_ATENDIM := "5"
+		SUO->UO_TOTSUC  := 100
+		SUO->UO_MSBLQL  := "2"
+		SUO->UO_DTINS   := MV_PAR01
+		SUO->UO_HRINS   := "08:00"
+		SUO->UO_TPCAMP  := "000005"
+		SUO->UO_DTPCAMP := "Outros"
+		SUO->UO_DTINIR  := MV_PAR01
+		SUO->UO_DTTERMR := MV_PAR02
+		SUO->UO_STATUS  := "2"
+		SUO->(MsUnlock())
+
+		RecLock("AC7",.T.)
+		AC7->AC7_META    := AC6->AC6_META
+		AC7->AC7_CODCAM  := SUO->UO_CODCAMP
+		AC7->AC7_FATCAM  := AC6->AC6_TOTFAT
+		AC7->AC7_DOC     := Substr(DtoS(MV_PAR01),1,6)
+		AC7->(MsUnlock())
+
+		for _nItbrw := 1 to len(_aBrwCont)
+
+			RecLock("SCT",.T.)
+			SCT->CT_FILIAL := FwFilial("SCT")
+			SCT->CT_DOC    := _aBrwCont[_nItbrw][2]
+			SCT->CT_SEQUEN := _aBrwCont[_nItbrw][3]
+			SCT->CT_DESCRI := _aBrwCont[_nItbrw][4]
+			SCT->CT_DATA   := _aBrwCont[_nItbrw][5]
+			SCT->CT_VEND   := _aBrwCont[_nItbrw][6]
+			SCT->CT_QUANT  := 1
+			SCT->CT_VALOR  := _aBrwCont[_nItbrw][8]
+			SCT->CT_MOEDA  := 1
+			SCT->CT_MSBLQL := "2"
+			SCT->(MsUnlock())
+
+		next
+
+	End Transaction
+
+	AC6->(ConfirmSX8())
+	SUO->(ConfirmSX8())
+
+Return
+
+/*/{Protheus.doc} RFATA30P
+    Função para criar os parametros da rotina.
+    @type  Static Function
+    @author Fernando Bombardi
+    @since 05/04/2024
+    @version 1.0
+/*/
+Static Function RFATA30P(_cPerg)
+	Local i := 0
+	Local j := 0
+	Local _aRegs := {}
+
+	dbSelectArea("SX1")
+	dbSetOrder(1)
+	_cPerg := PADR(_cPerg,10)
+
+	aAdd(_aRegs,{_cPerg,"01","Período da Meta de?","","","mv_ch1","D",8,0,0,"G","","MV_PAR01","","","","","","","","","","","","","","","","","","","","","","","","","",""})
+	aAdd(_aRegs,{_cPerg,"02","Período da Meta até?","","","mv_ch2","D",8,0,0,"G","","MV_PAR02","","","","","","","","","","","","","","","","","","","","","","","","","",""})
+
+	For i:=1 to LEN(_aRegs)
+		If !dbSeek(_cPerg+_aRegs[i,2])
+			RecLock("SX1",.T.)
+			For j:=1 to FCount()
+				If j <= LEN(_aRegs[i])
+					FieldPut(j,_aRegs[i,j])
+				Endif
+			Next
+			MsUnlock()
+		Endif
+	Next
+Return
+
+
+/*/{Protheus.doc} RFATA30B
+    (long_description)
+    @type  Static Function
+    @author user
+    @since 05/04/2024
+    @version version
+    @param param_name, param_type, param_descr
+    @return return_var, return_type, return_description
+    @example
+    (examples)
+    @see (links_or_references)
+/*/
+Static Function RFATA30B()
+	Local _lRet := .T.
+
+	_cQryUpd    := " UPDATE " + RetSqlName("AC6")
+	_cQryUpd    += " SET AC6_MSBLQL = '1' "
+	_cQryUpd    += " WHERE AC6_FILIAL = '" + FWFilial("AC6") + "' "
+	_cQryUpd    += "   AND AC6_MSBLQL = '2' "
+	_cQryUpd    += "   AND D_E_L_E_T_ = '' "
+	If TCSQLExec(_cQryUpd) < 0
+        MsgStop("[TCSQLError] " + TCSQLError(),"[RFATA030_005] - Atenção")
+		DisarmTransaction()
+        _lRet := .F.
+	EndIf
+
+Return(_lRet)
+
+/*/{Protheus.doc} RFATA30V
+    Função para verificar se existe CT_DOC com o mesmo período 
+    @type  Static Function
+    @author user
+    @since 05/04/2024
+    @version version
+    @param param_name, param_type, param_descr
+    @return return_var, return_type, return_description
+    @example
+    (examples)
+    @see (links_or_references)
+/*/
+Static Function RFATA30V(_cDoc)
+Local _lRet := .T.
+
+    dbSelectArea("SCT")
+    dbSetOrder(1) //CT_FILIAL+CT_DOC+CT_SEQUEN
+    if dbSeek(FWFilial("SCT")+_cDoc)
+        _lRet := .F.
+    endif
+
+Return(_lRet)

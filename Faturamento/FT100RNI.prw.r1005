@@ -1,0 +1,423 @@
+#INCLUDE "PROTHEUS.CH"
+#INCLUDE "RWMAKE.CH"
+#INCLUDE "FILEIO.CH"
+
+#DEFINE _lEnt CHR(13) + CHR(10)
+/*/{Protheus.doc} FT100RNI
+//TODO Ponto de Entrada que possibilita a continuaГ§ГЈo da avaliaГ§ГЈo dos itens da regra de negГіcios.
+@description Rotina que realiza a validaГ§ГЈo da regra de desconto dos itens do pedido de vendas ou do Televendas checando os descontos nos itens e no cabeГ§alho (Desconto 1,2,3,4).
+@author Adriano Leonardo
+@since 12/02/2014
+@version 1.0
+@return aRetPE, array, Array contendo a seguinte estrutura: {aProdDesc,lContinua,lRetorno,lContVerba,lExecao}
+@type function
+@see https://allss.com.br
+/*/
+user function FT100RNI()
+	Local _aSavArea		:= GetArea()
+	Local _aSavSC5		:= SC5->(GetArea())
+	Local _aSavSUA		:= SUA->(GetArea())
+	Local _cLock        := ""
+	Local _cSC6RTMP     := GetNextAlias()
+	Local _lUA_STATSC9  := SUA->(FieldPos("UA_STATSC9"))>0
+	Local _lUA_LOGSTAT  := SUA->(FieldPos("UA_LOGSTAT"))>0
+	Local _lUA_OBSBLQ   := SUA->(FieldPos("UA_OBSBLQ" ))>0
+	Local _lC5_LOGSTAT  := SC5->(FieldPos("C5_LOGSTAT"))>0
+	Local _lC5_AVREGRA  := SC5->(FieldPos("C5_AVREGRA"))>0
+	Local _lC5_CONTOBS  := SC5->(FieldPos("C5_CONTOBS"))>0
+	Local _lC5_OBSBLQ   := SC5->(FieldPos("C5_OBSBLQ" ))>0
+	local  _cTR1TMP  := GetNextAlias()
+	local nX := 1
+	local cM1 := ""
+	local cM2 := ""
+	local cM3 := ""
+	local cM4 := ""
+	local cM5 := ""
+	local cM6 := ""
+	local cM7 := ""
+	local _cQry:= ""
+	Private _cRotina	:= "FT100RNI"
+	Private _cAliSC5    := IIF((Type("M->C5_NUM")=="C" .AND. Type("INCLUI")=="L" .AND. INCLUI .AND. M->C5_NUM <> SC5->C5_NUM),"M","SC5")
+	Private _nPosIte    := aScan(aHeader,{|x|Alltrim(x[2])=="C6_ITEM"   })
+	Private _nPosPro    := aScan(aHeader,{|x|Alltrim(x[2])=="C6_PRODUTO"})
+	Private _nPosQtd    := aScan(aHeader,{|x|Alltrim(x[2])=="C6_QTDVEN" })
+	Private _nPosDesc   := aScan(aHeader,{|x|Alltrim(x[2])=="C6_DESCONT"})
+//	Private _nPPrcV     := aScan(aHeader,{|x|Alltrim(x[2])=="C6_PRCVEN" })
+//	Private _nPPLis     := aScan(aHeader,{|x|Alltrim(x[2])=="C6_PRUNIT" })
+	Private cCodReg		:= ParamIXB[01] //CГіdigo da regra.
+	Private cTabPreco	:= ParamIXB[02] //CГіdigo da tabela de preГ§o.
+	Private cCondPg		:= ParamIXB[03] //CГіdigo da condiГ§ГЈo de pagamento.
+	Private cFormPg		:= ParamIXB[04] //CГіdigo da forma de pagamento.
+	Private aProdutos	:= ParamIXB[05] //Array com o cГіdigo de produto.
+	Private aProdDesc	:= ParamIXB[06] //Array com detalhe de descontos.Detalhamento em observaГ§Гµes.
+	Private _lBlRes     := .F.			//Pedido com eliminaГ§ГЈo de resГ­duo?
+	Private lContinua	:= .F.			//ParamIXB[07] //Indica se continua pesquisa, default .F. para ganho de desempenho a pesquisa das regras no padrГЈo nГЈo serГЈo consideras
+	Private lRetorno	:= ParamIXB[08] //Indica se regra ou exceГ§ГЈo.
+	Private lContVerba	:= ParamIXB[09] //Indica se continua verba
+	Private lExecao		:= ParamIXB[10] //Indica validaГ§ГЈo de operaГ§Гµes de exceГ§ГЈo
+	Private aRetPE		:= {aProdDesc,lContinua,lRetorno,lContVerba,lExecao}
+	Private _cMsgCab	:= ""
+
+	Private _nDescAux	:= 0
+	Private _nDescMax	:= 0	//Desconto mГЎximo permitido pela condiГ§ГЈo de pagamento
+	Private _nFatCabe   := 0	//Fator de desconto calculado para o cabeГ§alho do pedido
+	Private _cContObs	:= ""
+//	Private _cBkpObs	:= ""
+	//Private _cCamArq 	:=  GetSrvProfString("ROOTPATH","")+"\temp\" //Retorna o caminho do RootPath de acordo como arquivo .INI do AppServer
+	//Private _cCamArq 	:= "C:\temp\" //Retorna o caminho do RootPath de acordo como arquivo .INI do AppServer
+	Private _cCamArq 	:= ""				//GetTempPath() //Retorna o caminho do temporГЎrio do terminal do usuГЎrio
+	Private _cArquivo	:= "Memo_" + AllTrim(&(_cAliSC5+"->C5_NUM")) + ".txt"
+	Private _cLog  		:= ""
+	Private _cLogx		:= ""
+	Private _cMsgDCab   := ""
+	Private _nDescDiv	:= 0
+	Private _nDesCond   := 0
+	Private _nDesItem	:= 0
+	Private _cBlqFina	:= "O pedido possui TES que nГЈo gera financeiro"
+
+
+
+_cQry :=   "	select 		" + _lEnt 
+_cQry +=  "	 case 		" + _lEnt 
+_cQry +=  "	 WHEN ACN_DESCON < C6_DESCONT    		" + _lEnt 
+_cQry +=  "	 	OR isnull(ACN_CODREG,'nгo hб') = 'nгo hб'		" + _lEnt 
+_cQry +=  "	 	OR F4_DUPLIC = 'N' 		" + _lEnt 
+_cQry +=  "	 	OR  ACN_DATFIM <= GETDATE() " + _lEnt
+_cQry +=  "	 	OR  C6_BLQ = 'R'"   + _lEnt 
+_cQry +=  "	 	OR 100-(100-(100*(C5_DESC1+C5_DESC2+	C5_DESC3+C5_DESC4)/100)) >		  E4_DESCMAX-(E4_DESCMAX*(A1_DESCDIV/100))" +  _lEnt 
+_cQry +=  "	 THEN 'S' ELSE 'N' END  IMPRIME		" + _lEnt 
+_cQry +=  "		, CASE WHEN C6_BLQ = 'R'  THEN 'Pedido com Resнduo Eliminado' else 'N' end M1		" + _lEnt 
+_cQry +=  "		, CASE WHEN F4_DUPLIC = 'N'   THEN 'TES: '+ F4_CODIGO + ' nгo gera Financeiro' else 'N' end M2		" + _lEnt 
+_cQry +=  "		, CASE WHEN C5_TPOPER <> '01' THEN 'Tipo de Pedido Venda: ' + LTRIM(RTRIM(C5_TPOPER)) +  ' - ' + X5_DESCRI  else 'N' end M3		" + _lEnt 
+_cQry +=  "		, CASE WHEN isnull(ACN_CODREG,'nгo hб') = 'nгo hб'  THEN 'Produto(s) Sem Regra:' else 'N' end M4		" + _lEnt 
+_cQry +=  "		, Case When ACN_DATFIM <= GETDATE() then 'Regra:' + +' Vencida em: ' + substring(ACN_DATFIM,2,7) +'/' +substring(ACN_DATFIM,2,5)+ '/' +substring(ACN_DATFIM,1,4) else 'N' end M5		" + _lEnt 
+
+_cQry +=  "		, case when 100-(100-(100*(C5_DESC1+C5_DESC2+	C5_DESC3+C5_DESC4)/100)) >		  E4_DESCMAX-(E4_DESCMAX*(A1_DESCDIV/100))	  then  'Desconto do cabeзalho superior ao permitido pela condiзгo de pagamento:'	  else 'N' end M6A " + _lEnt 
+_cQry +=  "		, case when 100-(100-(100*(C5_DESC1+C5_DESC2+	C5_DESC3+C5_DESC4)/100)) >		  E4_DESCMAX-(E4_DESCMAX*(A1_DESCDIV/100))	  then '% Desconto do cabeзalho do pedido:'+ CAST(100-(100-(100*(C5_DESC1+C5_DESC2+	C5_DESC3+C5_DESC4)/100))as varchar)  + '%'	 else 'N' end M6B " + _lEnt 
+_cQry +=  "		, case when 100-(100-(100*(C5_DESC1+C5_DESC2+	C5_DESC3+C5_DESC4)/100)) >		  E4_DESCMAX-(E4_DESCMAX*(A1_DESCDIV/100))	  then  '% Desconto mбximo permitido pela condiзгo de pagamento: ' + CAST(E4_DESCMAX-(E4_DESCMAX*(A1_DESCDIV/100)) as varchar)	  else 'N' end M6C " + _lEnt 
+	
+
+_cQry +=  "	, CASE WHEN ACN_DESCON < C6_DESCONT  THEN 'Produto(s) com Desconto acima do permitido:' else 'N' end M7		" + _lEnt 
+_cQry +=  "	, ' Cуdigo do produto: ' + LTRIM(RTRIM(C6_PRODUTO)) +' - '+ B1_DESC  D1		" + _lEnt 
+_cQry +=  "	, '  Preзo de Lista:  ' + CAST(C6_PRUNIT AS varchar) D2		" + _lEnt 
+_cQry +=  "	, '  Preзo de Venda:  ' + CAST(C6_PRCVEN AS varchar) D3		" + _lEnt 
+_cQry +=  "	, '  Cуd. da regra: ' + isnull(ACN_CODREG,'nгo hб')  D4		" + _lEnt 
+_cQry +=  "	, '% de desconto do pedido: '+ CAST(C6_DESCONT  AS varchar) D5		" + _lEnt 
+_cQry +=  "	, '% de desconto permitido pela regra: ' + CAST(ACN_DESCON   AS varchar) + '% (' + CAST(ACN_DESCV1  AS varchar)  + '% +' +  CAST(ACN_DESCV2  AS varchar) + '% +' +  CAST(ACN_DESCV3  AS varchar) + '%)' D6		" + _lEnt 
+_cQry +=  "	, ROUND(C6_PRUNIT/100*C6_DESCONT,2) DESCONTO_CALCULADO		" + _lEnt 
+_cQry +=  "	from  " + RetSqlName("SC6") + " (NOLOCK)  	" + _lEnt 
+_cQry +=  "	JOIN  " + RetSqlName("SA1") + " (NOLOCK)  ON A1_COD = C6_CLI  AND A1_LOJA = C6_LOJA		" + _lEnt 
+_cQry +=  "	JOIN  " + RetSqlName("SB1") + " (NOLOCK)  ON B1_COD = C6_PRODUTO		" + _lEnt 
+_cQry +=  "	JOIN  " + RetSqlName("SF4") + " (NOLOCK)  ON C6_FILIAL = F4_FILIAL AND C6_TES = F4_CODIGO		" + _lEnt 
+_cQry +=  " JOIN  " + RetSqlName("SC5") + " (NOLOCK)  ON C5_FILIAL = C6_FILIAL and C5_NUM = C6_NUM " + _lEnt 
+_cQry +=  " JOIN  " + RetSqlName("SE4") + " (NOLOCK)  ON E4_CODIGO = C5_CONDPAG " + _lEnt 
+_cQry +=  " JOIN  " + RetSqlName("SX5") + " (NOLOCK)  ON C6_FILIAL = X5_FILIAL AND X5_TABELA= 'DJ' AND X5_CHAVE = C5_TPOPER AND SX5010.D_E_L_E_T_ = ''		" + _lEnt 
+_cQry +=  "	LEFT JOIN  " + RetSqlName("ACS") + " (NOLOCK)  ON ACS_FILIAL = C6_FILIAL AND (ACS_CODCLI = C6_CLI OR A1_GRPVEN =  ACS_GRPVEN) AND ACS010.D_E_L_E_T_ = ''		" + _lEnt 
+_cQry +=  "	LEFT JOIN  " + RetSqlName("ACN") + " (NOLOCK)  ON ACN_FILIAL = C6_FILIAL AND ACS_CODREG = ACN_CODREG AND ACN_CODPRO = C6_PRODUTO   AND C6_QTDVEN <= ACN_QUANTI AND ACN010.D_E_L_E_T_ = ''		" + _lEnt 
+_cQry +=  "	LEFT JOIN  " + RetSqlName("SZA") + " (NOLOCK)  ON ACN_FATOR = ZA_CODIGO		" + _lEnt 
+_cQry +=  "		JOIN ( SELECT MIN(ACN_QUANTI) MIN_ACN_QUANTI	from  " + RetSqlName("SC6") + "  (NOLOCK) 	 " + _lEnt 
+_cQry +=  "						JOIN  " + RetSqlName("SA1") + "  (NOLOCK)  ON A1_COD = C6_CLI  AND A1_LOJA = C6_LOJA	 " + _lEnt 
+_cQry +=  "						LEFT JOIN  " + RetSqlName("ACS") + "  (NOLOCK)  ON ACS_FILIAL = C6_FILIAL AND (ACS_CODCLI = C6_CLI OR A1_GRPVEN =  ACS_GRPVEN) AND ACS010.D_E_L_E_T_ = ''		" + _lEnt 
+_cQry +=  "						JOIN  " + RetSqlName("ACN") + "  (NOLOCK)  ON ACN_FILIAL = C6_FILIAL AND ACS_CODREG = ACN_CODREG AND ACN_CODPRO = C6_PRODUTO  AND C6_QTDVEN <= ACN_QUANTI 	AND ACN010.D_E_L_E_T_ = '' " + _lEnt 
+_cQry +=  "						WHERE C6_NUM = 	'"+ SC5->C5_NUM +"' " + _lEnt  
+_cQry +=  "						) AS minQTD ON  ACN010.ACN_QUANTI = MIN_ACN_QUANTI " + _lEnt 
+_cQry +=  "	WHERE C6_NUM = 	'"+ SC5->C5_NUM +"' "  + _lEnt 
+_cQry +=  " ORDER BY 	1,2,3,4,5,6,7,10,11 desc"
+/*
+M1 - Pedido com ELiminзгo de Resнduo 
+M2 - Tes sem financeiro
+M3 – TIPO DE PEDIDO DIF DE 01 - Venda
+M4 - Produto Sem Regra
+M5 – Regra vencida
+M6 - Desconto do cabeзalho acima do permitido
+M7 - Desconto acima do permitido
+*/
+
+if Select(_cTR1TMP) > 0
+	(_cTR1TMP)->(dbCloseArea())
+endif
+dbUseArea(.T.,"TOPCONN",TcGenQry(,,_cQry),_cTR1TMP,.T.,.F.)
+
+_cMsgCab:=""
+
+dbSelectArea(_cTR1TMP)
+(_cTR1TMP)->(dbGoTop())
+While !(_cTR1TMP)->(EOF()) 
+
+	if (_cTR1TMP)->IMPRIME = 'S' 
+		if lRetorno
+			_cMsgCab+= "Cуdigo da Tabela de Preзo: " + cTabPreco + _lEnt + _lEnt 
+			lRetorno:= lContinua :=lContVerba := .F.
+		endif
+		IF (_cTR1TMP)->M1 <> 'N' .and. cM1 ==''
+			cM1:= _cMsgCab+=  (_cTR1TMP)->M1  + _lEnt  + _lEnt 
+		endIf
+		if (_cTR1TMP)->M2 <> 'N' .and. cM2 ==''
+			cM2:= _cMsgCab+=  (_cTR1TMP)->M2 + _lEnt + _lEnt 
+		EndIf
+		if (_cTR1TMP)->M3 <> 'N' .and. cM3 ==''
+			cM3:=_cMsgCab+= (_cTR1TMP)->M3  + _lEnt + _lEnt 
+		endIf
+
+		if (_cTR1TMP)->M6A <> 'N' .and. cM6 ==''
+			 cM6:= _cMsgCab+= (_cTR1TMP)->M6A  + _lEnt 
+			 _cMsgCab+= (_cTR1TMP)->M6B + _lEnt  
+			 _cMsgCab+=(_cTR1TMP)->M6C + _lEnt  
+		endIf
+
+	endif
+	(_cTR1TMP)->(dbSkip())
+End	
+
+dbSelectArea(_cTR1TMP)
+(_cTR1TMP)->(dbGoTop())
+While !(_cTR1TMP)->(EOF())
+	if  (_cTR1TMP)->IMPRIME = 'S'  .and. empty(cM1) .and. empty(cM2)
+	 
+		if (_cTR1TMP)->M4 <> 'N'
+			if cM4 ='' 
+				cM4:= _cMsgCab+= + _lEnt + (_cTR1TMP)->M4  + _lEnt 
+			endif
+			_cMsgCab += (_cTR1TMP)->D1 + _lEnt 		
+
+		elseIf (_cTR1TMP)->M5 <> 'N'
+			if cM5 ='' 
+				cM5:= _cMsgCab+=+ _lEnt +(_cTR1TMP)->M5  + _lEnt 	
+				_cMsgCab+=  (_cTR1TMP)->D4  + _lEnt 			
+			endif
+
+			_cMsgCab += (_cTR1TMP)->D1 + _lEnt 
+		elseif  (_cTR1TMP)->M7 <> 'N'
+			if cM7 ='' 
+				cM7:= _cMsgCab+= (_cTR1TMP)->M7  + _lEnt 
+			endif
+			_cMsgCab+= (_cTR1TMP)->D1  + _lEnt 
+			_cMsgCab+= (_cTR1TMP)->D2  + _lEnt 
+			_cMsgCab+= (_cTR1TMP)->D3  + _lEnt 
+			_cMsgCab+= (_cTR1TMP)->D4  + _lEnt 
+			_cMsgCab+= (_cTR1TMP)->D5  + _lEnt 
+			_cMsgCab+= (_cTR1TMP)->D6  + _lEnt + _lEnt 
+		Endif
+	endIf	
+	(_cTR1TMP)->(dbSkip())
+end
+
+if Select(_cTR1TMP) > 0
+	(_cTR1TMP)->(dbCloseArea())
+endif
+
+	
+	_cCamArq 	:= GetTempPath() //Retorna o caminho do temporГЎrio do terminal do usuГЎrio
+	_cLock      := _cCamArq+_cRotina+"_"+AllTrim(&(_cAliSC5+"->C5_NUM"))+cNumEmp+__cUserId+"_"+DTOS(Date())+".log"
+
+	RestArea(_aSavSUA)
+	RestArea(_aSavSC5)
+	RestArea(_aSavArea)
+
+	aRetPE := {aProdDesc,lContinua,lRetorno,lContVerba,lExecao}
+
+	//Verifico se o registro foi bloqueado para gravaГ§ГЈo
+	If _cAliSC5 == "SC5"
+		If (SC5->(DBRLock())) .AND. !SC5->(EOF())
+			dbSelectArea("SC5")
+			/*ГљГ„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„?
+			//ВіPor conta de problema tГ©cnico com a gravaГ§ГЈo cumulativa      ?
+			//Віdo campo memo, foi necessГЎrio ir concatenando as mensagens   ?
+			//Віem arquivo txt e o conteГєdo deste ?copiado para o campo memo?
+			//Віno final do processo.                                        ?
+			//ГЂГ„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„?*/
+			//Caso exista algum arquivo de observaГ§Гµes antigo para o pedido em questГЈo o mesmo ?deletado antes de iniciar a nova gravaГ§ГЈo
+			If (Len(aProdDesc)>1 .And. Len(aCols)>1) .Or. (Len(aProdDesc)>1 .And. Len(aCols)==1) .Or. (Len(aProdDesc)==1 .And. Len(aCols)==1)
+				If File(_cCamArq+_cArquivo)
+					fErase(_cCamArq+_cArquivo)
+				EndIf
+			EndIf
+			If (Len(aProdDesc)>1 .And. Len(aCols)>1) .Or. (Len(aProdDesc)>1 .And. Len(aCols)==1) .Or. (Len(aProdDesc)==1 .And. Empty(_cMsgCab))
+				If _lC5_CONTOBS .AND. _lC5_OBSBLQ .AND. SC5->C5_OBSBLQ <> fLerTxt()
+					M->C5_CONTOBS := SC5->C5_CONTOBS := ""
+				EndIf
+				//Caso nГЈo haja bloqueio, limpo o campo de observaГ§Гµes
+				If _lC5_CONTOBS .AND. Empty(_cContObs) .And. Empty(fLerTxt()) //Verifico se esta ?a primeira observaГ§ГЈo do pedido
+					M->C5_CONTOBS := SC5->C5_CONTOBS := ""
+				elseif _lC5_CONTOBS .AND. _lC5_OBSBLQ
+					M->C5_CONTOBS := SC5->C5_CONTOBS := "S"
+					M->C5_OBSBLQ  := SC5->C5_OBSBLQ	 := fLerTxt()
+				EndIf
+			ElseIf !Empty(_cMsgCab) //.AND. !Empty(aProdDesc[1][7])
+				//ГљГ„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Вї
+				//ВіTrecho inserido por JГєlio Soares para atualizaГ§ГЈo da Tabela SUA ?
+				//?1 - Bloqueio de Regra    *                                     ?
+				//?2 - Bloqueio de CrГ©dito                                        ?
+				//?3 - Bloqueio de Estoque                                        ?
+				//?4 - Pedido em SeparaГ§ГЈo                                        ?
+				//?5 - Pedido expedido                                            ?
+				//ГЂГ„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г™
+				_cLogx := "Pedido de Vendas Bloqueado por Regras de Negуcios."
+				dbSelectArea("SUA")
+				SUA->(dbOrderNickName("UA_NUMSC5"))
+				If SUA->(MsSeek(xFilial("SUA") + SC5->C5_NUM,.T.,.F.))
+					if _lUA_LOGSTAT
+						_cLog   := Alltrim(SUA->UA_LOGSTAT)
+					else
+						_cLog   := ""
+					endif
+					_cNumAten   := SUA->UA_NUM
+					while !RecLock("SUA",.F.) ; enddo
+						if _lUA_STATSC9
+							SUA->UA_STATSC9 := "01"
+						endif
+						If _lUA_LOGSTAT
+							SUA->UA_LOGSTAT := (_cLog) + _lEnt + Replicate("-",50) + _lEnt + DTOC(Date()) + " - " + Time() + " - " + ;
+							AllTrim(UsrRetName(__cUserId)) + _lEnt + _cLogx
+						EndIf
+					SUA->(MsUnLock())
+				Else
+					_cNumAten := ""
+				EndIf
+				dbSelectArea("SC5")
+				SC5->(dbSetOrder(1))
+				If _lC5_LOGSTAT
+					_cLog := Alltrim(SC5->C5_LOGSTAT)
+					while !RecLock("SC5",.F.) ; enddo
+						SC5->C5_LOGSTAT := _cLog + _lEnt + Replicate("-",60) + _lEnt + DTOC(Date()) + " - " + Time() + " - " +;
+											UsrRetName(__cUserId) + _lEnt + _cLogx
+					SC5->(MsUnLock())
+				EndIf
+				//16/11/2016 - Anderson Coelho - Novo Log para os Pedidos Inserido
+	           	If ExistBlock("RFATL001")
+					If !File(_cLock)
+						U_RFATL001(	SC5->C5_NUM,;
+									_cNumAten  ,;
+									_cLogx     ,;
+									_cRotina    )
+						MemoWrite(_cLock,"")
+					EndIf
+				EndIf
+				//ГЂГ„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г™
+				// Fim do trecho adicionado.   ?
+				//ГЂГ„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г„Г™
+				//Verifico se o pedido foi gerado a partir do Call Center ou diretamente pelo Faturamento
+				If .T.	//Empty(_cNumAten)
+					If Empty(_cContObs) .And. Empty(fLerTxt()) //Verifico se esta ?a primeira observaГ§ГЈo do pedido
+						fGravaTxt(_cMsgCab)
+						if _lC5_CONTOBS .AND. _lC5_OBSBLQ
+							while !RecLock("SC5",.F.) ; enddo
+								M->C5_CONTOBS := SC5->C5_CONTOBS := "S"
+								M->C5_OBSBLQ  := SC5->C5_OBSBLQ	 := fLerTxt()
+							SC5->(MsUnLock())
+						endif
+					EndIf			
+				Elseif _lUA_OBSBLQ
+					while !RecLock("SUA",.F.) ; enddo
+						If Empty(_cContObs) //Verifico se esta ?a primeira observaГ§ГЈo do pedido
+							M->UA_OBSBLQ  := SUA->UA_OBSBLQ	 := _cMsgCab + _cMsgCab
+						ElseIf !(_cMsgDCab $ SUA->UA_OBSBLQ) .And. !(_cBlqFina $ _cAux)
+							_cConteudo	  := AllTrim(SUA->UA_OBSBLQ) + _lEnt + _cMsgCab
+							M->UA_OBSBLQ  := SUA->UA_OBSBLQ	 := AllTrim(_cConteudo)
+						EndIf
+					SUA->(MsUnLock())
+					if _lC5_CONTOBS .AND. _lC5_OBSBLQ
+						while !RecLock("SC5",.F.) ; enddo
+							M->C5_CONTOBS := SC5->C5_CONTOBS  := "S"
+							M->C5_OBSBLQ  := SC5->C5_OBSBLQ   := SUA->UA_OBSBLQ
+						SC5->(MsUnLock())
+					endif
+				EndIf
+				dbSelectArea("SUA")
+				SUA->(dbOrderNickName("UA_NUMSC5"))
+				If SUA->(MsSeek(xFilial("SUA")+SC5->C5_NUM,.T.,.F.)) .AND. _lUA_OBSBLQ
+					while !RecLock("SUA",.F.) ; enddo
+						SUA->UA_OBSBLQ := fLerTxt()
+					SUA->(MsUnLock())
+				EndIf
+			Else
+				_cLogx := "PEDIDO DE VENDA SEM BLOQUEIO DE REGRAS DE NEGOCIO."
+				If _lC5_LOGSTAT
+					_cLog           := AllTrim(SC5->C5_LOGSTAT)
+					while !RecLock("SC5",.F.) ; enddo
+						SC5->C5_LOGSTAT := _cLog + _lEnt + Replicate("-",60) + _lEnt + DTOC(Date()) + " - " + Time() + " - " +;
+											UsrRetName(__cUserId) + _lEnt + _cLogx
+					SC5->(MsUnLock())
+				EndIf
+				//16/11/2016 - Anderson Coelho - Novo Log para os Pedidos Inserido
+				If ExistBlock("RFATL001")
+					U_RFATL001(	SC5->C5_NUM,;
+								_cNumAten  ,;
+								_cLogx     ,;
+								_cRotina    )
+				EndIf
+			EndIf
+		EndIf
+
+	EndIf
+	SC5->(MsUnLock())
+return aRetPE
+
+/*ГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњ
+В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±
+В±В±Г‰Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г‘Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г‹Г?Г?Г?Г?Г?Г?Г?Г‘Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г‹Г?Г?Г?Г?Г?Г?Г‘Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?В»В±В±
+В±В±ВєPrograma  ВіfGravaTxt ВєAutor  ?Adriano Leonardo   ?Data ? 17/02/14    ВєВ±?
+В±В±ГЊГ?Г?Г?Г?Г?Г?Г?Г?Г?Г?ГГ?Г?Г?Г?Г?Г?Г?Г?Г?Г?ГЉГ?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?ГЉГ?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?В±В±
+В±В±ВєDesc.     ?FunГ§ГЈo para gravaГ§ГЈo cumulativa de arquivo texto, para arma_ВєВ±?
+В±В±?         ?zenar temporГЎriamente as observaГ§Гµes de bloqueio do pedido. ВєВ±?
+В±В±ГЊГ?Г?Г?Г?Г?Г?Г?Г?Г?Г?ГГ?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?В№В±В±
+В±В±ВєUso       ?Programa Principal                                          ВєВ±?
+В±В±Г€Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?В±В±
+В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±
+ГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџ*/
+static function fGravaTxt(cInfo)
+	Local _nArq 	:= 0
+	Local _lRetGrv	:= .F.
+	//FaГ§o a conferГЄncia para saber se a pasta para gravaГ§ГЈo dos arquivos temporГЎrios existe, caso contrГЎrio crio a mesma
+	If !ExistDir(_cCamArq)
+		_nCriaDir := MakeDir(_cCamArq)
+		If _nCriaDir <> 0
+			MsgAlert("NГЈo foi possГ­vel criar a pasta " + AllTrim(_cCamArq) + " para gravaГ§ГЈo das observaГ§Гµes, informe ao Administrador do sistema!",_cRotina+"_001")
+	  	EndIf
+	EndIf
+	If File(_cCamArq+_cArquivo)
+		//Verifica a existГЄncia do arquivo
+		_nArq := fOpen(_cCamArq+_cArquivo, FO_READWRITE)
+		If _nArq > 0
+	 		//Posiciona no final do arquivo
+			fSeek(_nArq, 0, FS_END)
+		EndIf
+	Else
+		//Cria o arquivo
+		_nArq := fCreate(_cCamArq+_cArquivo)
+	EndIf
+	If _nArq <= 0
+		MsgAlert("Falha na gravaГ§ГЈo das observaГ§Гµes de bloqueio do pedido, informe ao Administrador.",_cRotina + "_002")
+		return(_lRetGrv)
+	EndIf
+	//Grava conteГєdo no arquivo txt
+	fWrite( _nArq, cInfo, Len(cInfo))
+	//Fecha o arquivo
+	fClose(_nArq)
+	_lRetGrv := .T.
+return(_lRetGrv)
+/*ГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњГњ
+В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±
+В±В±Г‰Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г‘Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г‹Г?Г?Г?Г?Г?Г?Г?Г‘Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г‹Г?Г?Г?Г?Г?Г?Г‘Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?В»В±В±
+В±В±ВєPrograma  ?fLerTxt   ВєAutor  ?Adriano Leonardo   ?Data ? 17/02/14   ВєВ±?
+В±В±ГЊГ?Г?Г?Г?Г?Г?Г?Г?Г?Г?ГГ?Г?Г?Г?Г?Г?Г?Г?Г?Г?ГЉГ?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?ГЉГ?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?В±В±
+В±В±ВєDesc.     ?FunГ§ГЈo para retornar o contГ©udo de arquivo txt.             ВєВ±?
+В±В±ГЊГ?Г?Г?Г?Г?Г?Г?Г?Г?Г?ГГ?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?В№В±В±
+В±В±ВєUso       ?Programa Principal                                           ВєВ±?
+В±В±Г€Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?Г?В±В±
+В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±В±
+ГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџГџ*/
+static function fLerTxt()
+	Local _nArq 	:= 0
+	Local _lRetGrv	:= .F.
+	Local _cConteud	:= ""
+	//Verifica a existГЄncia do arquivo
+	If File(_cCamArq+_cArquivo)
+		nHdl    := FOpen(_cCamArq + _cArquivo,FO_READWRITE)
+		nTamTot := FSeek(nHdl, 0, 2)      // Tamanho total do arquivo em bytes (posicionamento no Гєltimo registro do arquivo)
+		FSeek(nHdl, 0, 0)                 // Posiciona no inГ­cio do arquivo
+		FRead(nHdl, @_cConteud, nTamTot)  // L?o conteГєdo do arquivo e armazena em variГЎvel
+		FClose(nHdl)                      // Fecha o arquivo
+	EndIf
+//Retorna o conteГєdo do arquivo txt
+return(_cConteud)

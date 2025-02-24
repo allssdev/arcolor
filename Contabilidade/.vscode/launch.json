@@ -1,0 +1,39 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "totvs_language_debug",
+			"request": "launch",
+			"name": "TOTVS Language Debug",
+			"program": "${command:AskForProgramName}",
+			"cwb": "${workspaceFolder}",
+			"smartclientBin": "G:\\totvs\\p12_homologacao\\protheus\\bin\\appserver_Master\\appserver_P12_Master.exe",
+			"isMultiSession": true,
+			"enableTableSync": true,
+			"programArguments": "undefined",
+			"enableMultiThread": false,
+			"enableProfile": false,
+			"isAccessibilityMode": false,
+			"doNotShowSplash": false,
+			"language": "",
+			"ignoreFiles": true
+		}
+	],
+	"lastPrograms": [
+		{
+			"args": [
+				"()"
+			],
+			"label": "RCTBR003",
+			"description": "()"
+		},
+		{
+			"args": [
+				" ()"
+			],
+			"label": "RCTBR003",
+			"description": " ()"
+		}
+	],
+	"lastProgramExecuted": "RCTBR003"
+}

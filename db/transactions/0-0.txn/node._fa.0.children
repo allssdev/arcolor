@@ -1,0 +1,877 @@
+END
+K 11
+A010TOK.prw
+V 15
+file _fb.0.t0-0
+K 12
+A100CABE.prw
+V 15
+file _fe.0.t0-0
+K 12
+A410CONS.PRW
+V 15
+file _fg.0.t0-0
+K 11
+A440BUT.prw
+V 15
+file _fi.0.t0-0
+K 13
+ACD100ALT.PRW
+V 15
+file _fk.0.t0-0
+K 11
+ACD100M.prw
+V 15
+file _fm.0.t0-0
+K 12
+ACDA100I.prw
+V 15
+file _fo.0.t0-0
+K 12
+FT100MNU.PRW
+V 15
+file _fq.0.t0-0
+K 12
+FT100MRN.prw
+V 15
+file _fs.0.t0-0
+K 12
+FT100RNI.prw
+V 15
+file _fu.0.t0-0
+K 17
+FT100RNI.prw.mine
+V 15
+file _fw.0.t0-0
+K 18
+FT100RNI.prw.r1005
+V 15
+file _fy.0.t0-0
+K 18
+FT100RNI.prw.r1021
+V 15
+file _g0.0.t0-0
+K 12
+FT210COR.prw
+V 15
+file _g2.0.t0-0
+K 12
+FT210LEG.prw
+V 15
+file _g4.0.t0-0
+K 12
+FT210LIB.prw
+V 15
+file _g6.0.t0-0
+K 12
+FT210MNU.PRW
+V 15
+file _g8.0.t0-0
+K 11
+M030INC.prw
+V 15
+file _ga.0.t0-0
+K 11
+M410ABN.prw
+V 15
+file _gc.0.t0-0
+K 12
+M410PLNF.prw
+V 15
+file _ge.0.t0-0
+K 12
+M410STTS.prw
+V 15
+file _gg.0.t0-0
+K 12
+M410VRES.PRW
+V 15
+file _gi.0.t0-0
+K 12
+M440STTS.PRW
+V 15
+file _gk.0.t0-0
+K 11
+M455FIL.prw
+V 15
+file _gm.0.t0-0
+K 11
+M460FIM.PRW
+V 15
+file _go.0.t0-0
+K 11
+M461SB3.prw
+V 15
+file _gq.0.t0-0
+K 11
+M461TRV.prw
+V 15
+file _gs.0.t0-0
+K 12
+M512AGRV.prw
+V 15
+file _gu.0.t0-0
+K 12
+M520BROW.prw
+V 15
+file _gw.0.t0-0
+K 11
+M520QRY.prw
+V 15
+file _gy.0.t0-0
+K 12
+M521DNFS.prw
+V 15
+file _h0.0.t0-0
+K 12
+MA030ROT.prw
+V 15
+file _h2.0.t0-0
+K 12
+MA050ROT.prw
+V 15
+file _h4.0.t0-0
+K 12
+MA410COR.prw
+V 15
+file _h6.0.t0-0
+K 12
+MA410LEG.prw
+V 15
+file _h8.0.t0-0
+K 12
+MA410MNU.prw
+V 15
+file _ha.0.t0-0
+K 12
+MA440COR.prw
+V 15
+file _hc.0.t0-0
+K 12
+MA440MNU.prw
+V 15
+file _he.0.t0-0
+K 12
+MA440VLD.PRW
+V 15
+file _hg.0.t0-0
+K 12
+MA450COR.prw
+V 15
+file _hi.0.t0-0
+K 12
+MA455MNU.prw
+V 15
+file _hk.0.t0-0
+K 12
+MA512MNU.PRW
+V 15
+file _hm.0.t0-0
+K 13
+MA960GREC.prw
+V 15
+file _ho.0.t0-0
+K 12
+MS520DEL.PRW
+V 15
+file _hq.0.t0-0
+K 12
+MS520VLD.PRW
+V 15
+file _hs.0.t0-0
+K 11
+MSD2520.PRW
+V 15
+file _hu.0.t0-0
+K 12
+MT010BRW.prw
+V 15
+file _hw.0.t0-0
+K 12
+MT410ACE.prw
+V 15
+file _hy.0.t0-0
+K 12
+MT410INC.PRW
+V 15
+file _i0.0.t0-0
+K 12
+MT410TOK.PRW
+V 15
+file _i2.0.t0-0
+K 11
+MT440AT.prw
+V 15
+file _i4.0.t0-0
+K 11
+MT440GR.prw
+V 15
+file _i6.0.t0-0
+K 12
+MTA440AC.prw
+V 15
+file _i8.0.t0-0
+K 12
+MTA440C5.prw
+V 15
+file _ia.0.t0-0
+K 12
+MTA440C9.PRW
+V 15
+file _ic.0.t0-0
+K 12
+MTA455NL.prw
+V 15
+file _ie.0.t0-0
+K 18
+NF-e_4.00_20190102
+V 14
+dir _ig.0.t0-0
+K 11
+RFAT030.prw
+V 15
+file _j6.0.t0-0
+K 12
+RFATA002.prw
+V 15
+file _j8.0.t0-0
+K 12
+RFATA003.prw
+V 15
+file _ja.0.t0-0
+K 12
+RFATA004.PRW
+V 15
+file _jc.0.t0-0
+K 12
+RFATA005.prw
+V 15
+file _je.0.t0-0
+K 12
+RFATA007.prw
+V 15
+file _jg.0.t0-0
+K 12
+RFATA011.prw
+V 15
+file _ji.0.t0-0
+K 12
+RFATA012.prw
+V 15
+file _jk.0.t0-0
+K 12
+RFATA013.prw
+V 15
+file _jm.0.t0-0
+K 12
+RFATA014.PRW
+V 15
+file _jo.0.t0-0
+K 12
+RFATA015.prw
+V 15
+file _jq.0.t0-0
+K 12
+RFATA016.PRW
+V 15
+file _js.0.t0-0
+K 12
+RFATA017.PRW
+V 15
+file _ju.0.t0-0
+K 12
+RFATA018.PRW
+V 15
+file _jw.0.t0-0
+K 12
+RFATA020.PRW
+V 15
+file _jy.0.t0-0
+K 12
+RFATA021.PRW
+V 15
+file _k0.0.t0-0
+K 12
+RFATA026.prw
+V 15
+file _k2.0.t0-0
+K 13
+RFATA027.TLPP
+V 15
+file _k4.0.t0-0
+K 13
+RFATA030.TLPP
+V 15
+file _k6.0.t0-0
+K 12
+RFATA500.prw
+V 15
+file _k8.0.t0-0
+K 12
+RFATA501.prw
+V 15
+file _ka.0.t0-0
+K 12
+RFATC001.PRW
+V 15
+file _kc.0.t0-0
+K 12
+RFATC002.PRW
+V 15
+file _ke.0.t0-0
+K 12
+RFATC003.prw
+V 15
+file _kg.0.t0-0
+K 12
+RFATC004.prw
+V 15
+file _ki.0.t0-0
+K 12
+RFATC005.PRW
+V 15
+file _kk.0.t0-0
+K 12
+RFATC006.prw
+V 15
+file _km.0.t0-0
+K 12
+RFATC007.prw
+V 15
+file _ko.0.t0-0
+K 12
+RFATC008.prw
+V 15
+file _kq.0.t0-0
+K 12
+RFATC009.prw
+V 15
+file _ks.0.t0-0
+K 12
+RFATC010.prw
+V 15
+file _ku.0.t0-0
+K 12
+RFATC011.PRW
+V 15
+file _kw.0.t0-0
+K 12
+RFATC012.prw
+V 15
+file _ky.0.t0-0
+K 12
+RFATC013.PRW
+V 15
+file _l0.0.t0-0
+K 12
+RFATC014.prw
+V 15
+file _l2.0.t0-0
+K 12
+RFATC015.PRW
+V 15
+file _l4.0.t0-0
+K 12
+RFATE001.prw
+V 15
+file _l6.0.t0-0
+K 12
+RFATE002.prw
+V 15
+file _l8.0.t0-0
+K 12
+RFATE003.prw
+V 15
+file _la.0.t0-0
+K 12
+RFATE004.prw
+V 15
+file _lc.0.t0-0
+K 12
+RFATE005.prw
+V 15
+file _le.0.t0-0
+K 12
+RFATE007.PRW
+V 15
+file _lg.0.t0-0
+K 12
+RFATE008.prw
+V 15
+file _li.0.t0-0
+K 12
+RFATE009.PRW
+V 15
+file _lk.0.t0-0
+K 12
+RFATE010.prw
+V 15
+file _lm.0.t0-0
+K 12
+RFATE011.prw
+V 15
+file _lo.0.t0-0
+K 12
+RFATE012.prw
+V 15
+file _lq.0.t0-0
+K 12
+RFATE013.PRW
+V 15
+file _ls.0.t0-0
+K 12
+RFATE014.prw
+V 15
+file _lu.0.t0-0
+K 12
+RFATE016.prw
+V 15
+file _lw.0.t0-0
+K 12
+RFATE017.prw
+V 15
+file _ly.0.t0-0
+K 12
+RFATE019.PRW
+V 15
+file _m0.0.t0-0
+K 12
+RFATE020.PRW
+V 15
+file _m2.0.t0-0
+K 12
+RFATE022.PRW
+V 15
+file _m4.0.t0-0
+K 12
+RFATE023.prw
+V 15
+file _m6.0.t0-0
+K 12
+RFATE024.prw
+V 15
+file _m8.0.t0-0
+K 12
+RFATE025.prw
+V 15
+file _ma.0.t0-0
+K 12
+RFATE026.PRW
+V 15
+file _mc.0.t0-0
+K 12
+RFATE027.prw
+V 15
+file _me.0.t0-0
+K 12
+RFATE028.prw
+V 15
+file _mg.0.t0-0
+K 12
+RFATE029.prw
+V 15
+file _mi.0.t0-0
+K 12
+RFATE031.prw
+V 15
+file _mk.0.t0-0
+K 12
+RFATE032.prw
+V 15
+file _mm.0.t0-0
+K 12
+RFATE033.PRW
+V 15
+file _mo.0.t0-0
+K 12
+RFATE034.prw
+V 15
+file _mq.0.t0-0
+K 12
+RFATE035.PRW
+V 15
+file _ms.0.t0-0
+K 12
+RFATE037.prw
+V 15
+file _mu.0.t0-0
+K 12
+RFATE038.prw
+V 15
+file _mw.0.t0-0
+K 12
+RFATE039.prw
+V 15
+file _my.0.t0-0
+K 12
+RFATE040.prw
+V 15
+file _n0.0.t0-0
+K 12
+RFATE043.prw
+V 15
+file _n2.0.t0-0
+K 12
+RFATE044.prw
+V 15
+file _n4.0.t0-0
+K 12
+RFATE045.prw
+V 15
+file _n6.0.t0-0
+K 12
+RFATE046.PRW
+V 15
+file _n8.0.t0-0
+K 12
+RFATE047.PRW
+V 15
+file _na.0.t0-0
+K 12
+RFATE049.prw
+V 15
+file _nc.0.t0-0
+K 12
+RFATE050.PRW
+V 15
+file _ne.0.t0-0
+K 12
+RFATE051.PRW
+V 15
+file _ng.0.t0-0
+K 12
+RFATE052.PRW
+V 15
+file _ni.0.t0-0
+K 12
+RFATE053.PRW
+V 15
+file _nk.0.t0-0
+K 12
+RFATE054.prw
+V 15
+file _nm.0.t0-0
+K 12
+RFATE055.PRW
+V 15
+file _no.0.t0-0
+K 12
+RFATE057.PRW
+V 15
+file _nq.0.t0-0
+K 12
+RFATE058.prw
+V 15
+file _ns.0.t0-0
+K 12
+RFATE059.prw
+V 15
+file _nu.0.t0-0
+K 12
+RFATE060.prw
+V 15
+file _nw.0.t0-0
+K 12
+RFATE061.prw
+V 15
+file _ny.0.t0-0
+K 12
+RFATE062.prw
+V 15
+file _o0.0.t0-0
+K 12
+RFATE063.prw
+V 15
+file _o2.0.t0-0
+K 12
+RFATE064.prw
+V 15
+file _o4.0.t0-0
+K 12
+RFATE065.prw
+V 15
+file _o6.0.t0-0
+K 12
+RFATE066.prw
+V 15
+file _o8.0.t0-0
+K 12
+RFATE067.prw
+V 15
+file _oa.0.t0-0
+K 12
+RFATE069.prw
+V 15
+file _oc.0.t0-0
+K 12
+RFATE070.prw
+V 15
+file _oe.0.t0-0
+K 12
+RFATE071.PRW
+V 15
+file _og.0.t0-0
+K 12
+RFATE072.PRW
+V 15
+file _oi.0.t0-0
+K 12
+RFATE073.PRW
+V 15
+file _ok.0.t0-0
+K 12
+RFATG001.PRW
+V 15
+file _om.0.t0-0
+K 12
+RFATL001.prw
+V 15
+file _oo.0.t0-0
+K 12
+RFATR002.prw
+V 15
+file _oq.0.t0-0
+K 12
+RFATR004.prw
+V 15
+file _os.0.t0-0
+K 12
+RFATR006.prw
+V 15
+file _ou.0.t0-0
+K 12
+RFATR009.prw
+V 15
+file _ow.0.t0-0
+K 12
+RFATR010.PRW
+V 15
+file _oy.0.t0-0
+K 12
+RFATR011.PRW
+V 15
+file _p0.0.t0-0
+K 12
+RFATR012.PRW
+V 15
+file _p2.0.t0-0
+K 12
+RFATR013.prw
+V 15
+file _p4.0.t0-0
+K 12
+RFATR014.prw
+V 15
+file _p6.0.t0-0
+K 12
+RFATR015.PRW
+V 15
+file _p8.0.t0-0
+K 12
+RFATR016.prw
+V 15
+file _pa.0.t0-0
+K 12
+RFATR017.PRW
+V 15
+file _pc.0.t0-0
+K 12
+RFATR018.PRW
+V 15
+file _pe.0.t0-0
+K 12
+RFATR019.PRW
+V 15
+file _pg.0.t0-0
+K 12
+RFATR022.PRW
+V 15
+file _pi.0.t0-0
+K 12
+RFATR025.PRW
+V 15
+file _pk.0.t0-0
+K 12
+RFATR027.PRW
+V 15
+file _pm.0.t0-0
+K 12
+RFATR028.PRW
+V 15
+file _po.0.t0-0
+K 12
+RFATR029.PRW
+V 15
+file _pq.0.t0-0
+K 12
+RFATR030.PRW
+V 15
+file _ps.0.t0-0
+K 12
+RFATR031.PRW
+V 15
+file _pu.0.t0-0
+K 12
+RFATR032.prw
+V 15
+file _pw.0.t0-0
+K 12
+RFATR033.PRW
+V 15
+file _py.0.t0-0
+K 12
+RFATR034.prw
+V 15
+file _q0.0.t0-0
+K 12
+RFATR035.prw
+V 15
+file _q2.0.t0-0
+K 12
+RFATR036.prw
+V 15
+file _q4.0.t0-0
+K 12
+RFATR037.prw
+V 15
+file _q6.0.t0-0
+K 12
+RFATR040.PRW
+V 15
+file _q8.0.t0-0
+K 12
+RFATR041.PRW
+V 15
+file _qa.0.t0-0
+K 12
+RFATR042.PRW
+V 15
+file _qc.0.t0-0
+K 12
+RFATR043.prw
+V 15
+file _qe.0.t0-0
+K 12
+RFATR044.prw
+V 15
+file _qg.0.t0-0
+K 12
+RFATR045.prw
+V 15
+file _qi.0.t0-0
+K 12
+RFATR046.prw
+V 15
+file _qk.0.t0-0
+K 12
+RFATR047.PRW
+V 15
+file _qm.0.t0-0
+K 12
+RFATR048.prw
+V 15
+file _qo.0.t0-0
+K 12
+RFATR049.PRW
+V 15
+file _qq.0.t0-0
+K 12
+RFATR050.prw
+V 15
+file _qs.0.t0-0
+K 12
+RFATR051.PRW
+V 15
+file _qu.0.t0-0
+K 17
+RFATR051.PRW.mine
+V 15
+file _qw.0.t0-0
+K 18
+RFATR051.PRW.r1194
+V 15
+file _qy.0.t0-0
+K 18
+RFATR051.PRW.r1265
+V 15
+file _r0.0.t0-0
+K 12
+RFATR052.prw
+V 15
+file _r2.0.t0-0
+K 17
+RFATR052.prw.mine
+V 15
+file _r4.0.t0-0
+K 18
+RFATR052.prw.r1194
+V 15
+file _r6.0.t0-0
+K 18
+RFATR052.prw.r1265
+V 15
+file _r8.0.t0-0
+K 12
+RFATR053.prw
+V 15
+file _ra.0.t0-0
+K 12
+RFATR060.PRW
+V 15
+file _rc.0.t0-0
+K 12
+RFATR061.PRW
+V 15
+file _re.0.t0-0
+K 12
+RFATR062.PRW
+V 15
+file _rg.0.t0-0
+K 12
+RFATR063.PRW
+V 15
+file _ri.0.t0-0
+K 12
+RFATR790.prx
+V 15
+file _rk.0.t0-0
+K 12
+RMATR650.prx
+V 15
+file _rm.0.t0-0
+K 12
+RMATR660.PRX
+V 15
+file _ro.0.t0-0
+K 12
+RMATR730.prx
+V 15
+file _rq.0.t0-0
+K 12
+RMATR790.prx
+V 15
+file _rs.0.t0-0
+K 13
+RNFSTATUS.prx
+V 15
+file _ru.0.t0-0
+K 11
+SELMARQ.prw
+V 15
+file _rw.0.t0-0
+K 11
+SF2460I.PRW
+V 15
+file _ry.0.t0-0
+K 11
+SF2520E.prw
+V 15
+file _s0.0.t0-0
+K 11
+SIGAFAT.prw
+V 15
+file _s2.0.t0-0
+K 12
+rmatr550.prx
+V 15
+file _s4.0.t0-0

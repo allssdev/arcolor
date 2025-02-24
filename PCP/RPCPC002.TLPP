@@ -1,0 +1,552 @@
+#include "Totvs.ch"
+#include "tlpp-core.th"
+
+/*/{Protheus.doc} RPCPC002
+    Classe responsável da rotina de Recall de produtos.
+    @type  Function
+    @author Fernando Bombardi
+    @since 23/10/2023
+    @version 1.0
+    /*/
+Class RPCPC002
+
+	Public Method New() CONSTRUCTOR
+	Public Method ConsultaLote()
+	Private Method lotesOrdensProducaoProdutoIntermediario()
+	Private Method lotesOrdensProducaoProdutoProducao()
+	Private Method emailCliente()
+
+EndClass
+
+/*/{Protheus.doc} New
+    Metodo construtor da classe
+    @type  Method
+    @author Fernando Bombardi
+    @since 23/10/2023
+    @version 1.0
+    /*/
+Method New() class RPCPC002
+
+Return Self
+
+/*/{Protheus.doc} ConsultaLote
+    Metodo para realizar a consulta do lote conforme definido nos parametros da rotina.
+    @type  Method
+    @author Fernando Bombardi
+    @since 23/10/2023
+    @version 1.0
+    /*/
+Method ConsultaLote(_cLote, _cProd, _cCboTip, _cTexto1, _cTexto2, _cTexto3, _cTexto4) class RPCPC002
+Local _aStru             := {} as array
+Local _cAliasOp          := "" as character
+Local _nItemProdutoLote  := 0  as integer
+Private _aProdutoAcabado := {} as array
+
+	oTempTable := FWTemporaryTable():New("TMPLOT")
+	
+	_aTam  := TamSX3("A3_SUPER")
+	AADD(_aStru,{ "SUPER"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	_aTam  := TamSX3("F2_DOC")
+	AADD(_aStru,{ "DOC"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	_aTam  := TamSX3("F2_EMISSAO")
+	AADD(_aStru,{ "EMISSAO"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	_aTam  := TamSX3("F2_VEND1")
+	AADD(_aStru,{ "VEND1"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	_aTam  := TamSX3("F2_EST")
+	AADD(_aStru,{ "ESTADO"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	_aTam  := TamSX3("D2_COD")
+	AADD(_aStru,{ "COD"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	_aTam  := TamSX3("D2_CLIENTE")
+	AADD(_aStru,{ "CLIENTE"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	_aTam  := TamSX3("D2_LOJA")
+	AADD(_aStru,{ "LOJA"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	_aTam  := TamSX3("D2_LOTECTL")
+	AADD(_aStru,{ "LOTECTL"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	_aTam  := TamSX3("D2_DTVALID")
+	AADD(_aStru,{ "DTVALID"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	_aTam  := TamSX3("D2_QUANT")
+	AADD(_aStru,{ "QUANT"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	_aTam  := TamSX3("D2_DFABRIC")
+	AADD(_aStru,{ "DFABRIC"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	_aTam  := TamSX3("B1_DESEMB")
+	AADD(_aStru,{ "DESEMB"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	_aTam  := TamSX3("A1_NOME")
+	AADD(_aStru,{ "NOME"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	_aTam  := TamSX3("A1_CGC")
+	AADD(_aStru,{ "CGC"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	_aTam  := TamSX3("A3_NOME")
+	AADD(_aStru,{ "NOMVEN"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	AADD(_aStru,{ "NOMREP"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	_aTam  := TamSX3("A3_EMAIL")
+	AADD(_aStru,{ "MAILVEN"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	AADD(_aStru,{ "MAILREP"     ,_aTam[3],_aTam[1],_aTam[2] } )
+	_aTam  := TamSX3("A1_EMAIL")
+	AADD(_aStru,{ "MAILCLI"     ,_aTam[3],_aTam[1],_aTam[2] } )
+
+
+	oTempTable:SetFields( _aStru )
+	oTempTable:AddIndex("1", { "ESTADO", "CLIENTE", "LOJA" } )
+	oTempTable:AddIndex("2", { "SUPER", "VEND1", "ESTADO", "CLIENTE", "LOJA" } )
+	oTempTable:AddIndex("3", { "VEND1", "ESTADO", "CLIENTE", "LOJA" } )
+	oTempTable:Create()
+
+	Do Case
+
+	Case Alltrim(_cCboTip) == "PA" // PA
+
+		BeginSql alias 'FATURADOONDE'
+                SELECT
+                    D2_DOC,
+                    D2_SERIE,
+                    D2_COD,
+                    D2_TP,
+                    D2_QUANT,
+                    D2_LOTECTL,
+                    D2_DTVALID,
+                    D2_CLIENTE,
+                    D2_LOJA,
+                    F2_VEND1,
+                    D2_DFABRIC,
+                    B1_DESEMB,
+                    A3_SUPER,
+                    F2_EST,
+                    A1_NOME,
+                    A1_CGC,
+                    F2_DOC,
+                    F2_EMISSAO,
+					A3_NOME AS NOMVEN,
+					A3_EMAIL AS MAILVEN,
+					ISNULL((SELECT A3_NOME FROM %table:SA3% SA3REP (NOLOCK) WHERE A3_FILIAL = %xFilial:SA3% AND  SA3REP.A3_COD = SA3.A3_SUPER AND SA3REP.%NotDel% ),' ') AS NOMREP,
+					ISNULL((SELECT A3_EMAIL FROM %table:SA3% SA3REP (NOLOCK) WHERE A3_FILIAL = %xFilial:SA3% AND  SA3REP.A3_COD = SA3.A3_SUPER AND SA3REP.%NotDel% ),' ') AS MAILREP,
+					A1_EMAIL
+                FROM
+                    %table:SD2% SD2 (NOLOCK) INNER JOIN %table:SF2% SF2 (NOLOCK)
+                    ON SD2.D2_FILIAL = SF2.F2_FILIAL AND SD2.D2_DOC = SF2.F2_DOC
+                    AND SD2.D2_SERIE = SF2.F2_SERIE AND SD2.D2_CLIENTE = SF2.F2_CLIENTE
+                    AND SD2.D2_LOJA = SF2.F2_LOJA AND SF2.%NotDel%
+                    INNER JOIN %table:SB1% SB1 (NOLOCK) ON
+                    SD2.D2_FILIAL = SB1.B1_FILIAL AND SD2.D2_COD = SB1.B1_COD AND SB1.%NotDel%
+                    INNER JOIN %table:SA3% SA3 (NOLOCK) ON
+                    SF2.F2_VEND1 = SA3.A3_COD AND SA3.%NotDel%
+                    INNER JOIN %table:SA1% SA1 (NOLOCK) ON
+                    SD2.D2_CLIENTE = SA1.A1_COD AND SD2.D2_LOJA = SA1.A1_LOJA AND SA1.%NotDel%                    
+                WHERE
+                    D2_FILIAL = %xFilial:SD2%
+                    AND D2_COD = %Exp:_cProd%
+                    AND D2_LOTECTL = %Exp:_cLote%
+                    AND SD2.%NotDel%
+                ORDER BY SA3.A3_SUPER,SF2.F2_VEND1, SD2.D2_CLIENTE, SD2.D2_LOJA
+		EndSql
+
+		_cQry := GetLastQuery()[2]
+
+		If FATURADOONDE->(!EOF())
+
+			While FATURADOONDE->(!EOF())
+
+				TMPLOT->(DBAppend())
+				TMPLOT->SUPER   := FATURADOONDE->A3_SUPER
+				TMPLOT->DOC     := FATURADOONDE->F2_DOC
+				TMPLOT->EMISSAO := StoD(FATURADOONDE->F2_EMISSAO)
+				TMPLOT->VEND1   := FATURADOONDE->F2_VEND1
+				TMPLOT->ESTADO  := FATURADOONDE->F2_EST
+				TMPLOT->COD     := FATURADOONDE->D2_COD
+				TMPLOT->CLIENTE := FATURADOONDE->D2_CLIENTE
+				TMPLOT->LOJA    := FATURADOONDE->D2_LOJA
+				TMPLOT->LOTECTL := FATURADOONDE->D2_LOTECTL
+				TMPLOT->DTVALID := StoD(FATURADOONDE->D2_DTVALID)
+				TMPLOT->QUANT   := FATURADOONDE->D2_QUANT
+				TMPLOT->DFABRIC := StoD(FATURADOONDE->D2_DFABRIC)
+				TMPLOT->DESEMB  := FATURADOONDE->B1_DESEMB
+				TMPLOT->NOME    := FATURADOONDE->A1_NOME
+				TMPLOT->CGC     := FATURADOONDE->A1_CGC
+				TMPLOT->NOMVEN  := FATURADOONDE->NOMVEN
+				TMPLOT->NOMREP  := FATURADOONDE->NOMREP
+				TMPLOT->MAILVEN := FATURADOONDE->MAILVEN
+				TMPLOT->MAILREP := FATURADOONDE->MAILREP
+				TMPLOT->MAILCLI := FATURADOONDE->A1_EMAIL
+				TMPLOT->(DBCommit())
+
+				dbSelectArea("FATURADOONDE")
+				FATURADOONDE->(dbSkip())
+
+			EndDo
+
+			dbSelectArea("TMPLOT")
+			TMPLOT->(dbSetOrder(1))
+			TMPLOT->(dbGoTop())
+			
+			if !TMPLOT->(EOF())
+
+				While !TMPLOT->(EOF())
+
+					::emailCliente(_cProd, TMPLOT->LOTECTL, TMPLOT->DFABRIC, TMPLOT->DTVALID, TMPLOT->QUANT, TMPLOT->DESEMB)
+
+					TMPLOT->(dbSkip())
+				enddo
+
+				oRPCPC003 := RPCPC003():NEW()
+				oRPCPC003:imprimirRelatorioTodos(_cProd,_cLote)
+				oRPCPC003:imprimirRelatorioSupervisor(_cProd,_cLote)
+				oRPCPC003:imprimirRelatorioVendedor(_cProd,_cLote)
+
+			endif
+
+        else
+
+            ShowHelpDlg("[RPCPA002_E030]", {"Não existem dados para esses parâmetros informado na rotina!",""},5,;
+                                    {"Verifique os dados e tente novamente o processamento da rotina.",""},5)
+
+		EndIf
+		FATURADOONDE->(dbCloseArea())
+
+	Case Alltrim(_cCboTip) $ "MP\EM\PI" // MP/EM/PI
+
+		_cAliasOp  := GetNextAlias()
+
+		BeginSql alias _cAliasOp 
+            SELECT 
+                D3_OP, D3_COD, D3_LOTECTL, D3_TM
+            FROM  
+                %table:SD3% SD3 (NOLOCK)
+            WHERE 
+                D3_FILIAL =  %xFilial:SD3%  
+                AND D3_COD = %Exp:_cProd% 
+                AND D3_LOTECTL = %Exp:_cLote%
+				AND D3_TM = '999'
+				AND D3_OP <> ''
+                AND SD3.%NotDel%
+			GROUP BY D3_OP,D3_COD,D3_LOTECTL,D3_TM
+		EndSql
+
+		_cQry := GetLastQuery()[2]
+
+		If (_cAliasOp)->(!EOF())
+
+			While (_cAliasOp)->(!EOF())		
+
+				::lotesOrdensProducaoProdutoIntermediario( (_cAliasOp)->D3_OP )
+
+				dbSelectArea(_cAliasOp)
+				(_cAliasOp)->(dbSkip())
+
+			enddo
+
+		endif
+		(_cAliasOp)->(dbCloseArea())
+
+		for _nItemProdutoLote := 1 to len(_aProdutoAcabado)
+
+			BeginSql alias 'FATURADOONDE'
+				SELECT
+					D2_DOC,
+					D2_SERIE,
+					D2_COD,
+					D2_TP,
+					D2_QUANT,
+					D2_LOTECTL,
+					D2_DTVALID,
+					D2_CLIENTE,
+					D2_LOJA,
+					F2_VEND1,
+					D2_DFABRIC,
+					B1_DESEMB,
+					A3_SUPER,
+					F2_EST,
+					A1_NOME,
+					A1_CGC,
+					F2_DOC,
+					F2_EMISSAO,
+					A3_NOME AS NOMVEN,
+					A3_EMAIL AS MAILVEN,
+					ISNULL((SELECT A3_NOME FROM %table:SA3% SA3REP (NOLOCK) WHERE A3_FILIAL = %xFilial:SA3% AND  SA3REP.A3_COD = SA3.A3_SUPER AND SA3REP.%NotDel% ),' ') AS NOMREP,
+					ISNULL((SELECT A3_EMAIL FROM %table:SA3% SA3REP (NOLOCK) WHERE A3_FILIAL = %xFilial:SA3% AND  SA3REP.A3_COD = SA3.A3_SUPER AND SA3REP.%NotDel% ),' ') AS MAILREP,
+					A1_EMAIL
+				FROM
+					%table:SD2% SD2 (NOLOCK) INNER JOIN %table:SF2% SF2 (NOLOCK)
+					ON SD2.D2_FILIAL = SF2.F2_FILIAL AND SD2.D2_DOC = SF2.F2_DOC
+					AND SD2.D2_SERIE = SF2.F2_SERIE AND SD2.D2_CLIENTE = SF2.F2_CLIENTE
+					AND SD2.D2_LOJA = SF2.F2_LOJA AND SF2.%NotDel%
+					INNER JOIN %table:SB1% SB1 (NOLOCK) ON
+					SD2.D2_FILIAL = SB1.B1_FILIAL AND SD2.D2_COD = SB1.B1_COD AND SB1.%NotDel%
+					INNER JOIN %table:SA3% SA3 (NOLOCK) ON
+					SF2.F2_VEND1 = SA3.A3_COD AND SA3.%NotDel%
+					INNER JOIN %table:SA1% SA1 (NOLOCK) ON
+					SD2.D2_CLIENTE = SA1.A1_COD AND SD2.D2_LOJA = SA1.A1_LOJA AND SA1.%NotDel%                    
+				WHERE
+					D2_FILIAL = %xFilial:SD2%
+					AND D2_COD = %Exp:_aProdutoAcabado[_nItemProdutoLote][1]%
+					AND D2_LOTECTL = %Exp:_aProdutoAcabado[_nItemProdutoLote][2]%
+					AND SD2.%NotDel%
+				ORDER BY SA3.A3_SUPER,SF2.F2_VEND1, SD2.D2_CLIENTE, SD2.D2_LOJA
+			EndSql
+
+			_cQry := GetLastQuery()[2]
+
+			If FATURADOONDE->(!EOF())
+
+				While FATURADOONDE->(!EOF())
+
+					TMPLOT->(DBAppend())
+					TMPLOT->SUPER   := FATURADOONDE->A3_SUPER
+					TMPLOT->DOC     := FATURADOONDE->F2_DOC
+					TMPLOT->EMISSAO := StoD(FATURADOONDE->F2_EMISSAO)
+					TMPLOT->VEND1   := FATURADOONDE->F2_VEND1
+					TMPLOT->ESTADO  := FATURADOONDE->F2_EST
+					TMPLOT->COD     := FATURADOONDE->D2_COD
+					TMPLOT->CLIENTE := FATURADOONDE->D2_CLIENTE
+					TMPLOT->LOJA    := FATURADOONDE->D2_LOJA
+					TMPLOT->LOTECTL := FATURADOONDE->D2_LOTECTL
+					TMPLOT->DTVALID := StoD(FATURADOONDE->D2_DTVALID)
+					TMPLOT->QUANT   := FATURADOONDE->D2_QUANT
+					TMPLOT->DFABRIC := StoD(FATURADOONDE->D2_DFABRIC)
+					TMPLOT->DESEMB  := FATURADOONDE->B1_DESEMB
+					TMPLOT->NOME    := FATURADOONDE->A1_NOME
+					TMPLOT->CGC     := FATURADOONDE->A1_CGC
+					TMPLOT->NOMVEN  := FATURADOONDE->NOMVEN
+					TMPLOT->NOMREP  := FATURADOONDE->NOMREP
+					TMPLOT->MAILVEN := FATURADOONDE->MAILVEN
+					TMPLOT->MAILREP := FATURADOONDE->MAILREP
+					TMPLOT->MAILCLI := FATURADOONDE->A1_EMAIL
+					TMPLOT->(DBCommit())
+
+					dbSelectArea("FATURADOONDE")
+					FATURADOONDE->(dbSkip())
+
+				EndDo
+
+				dbSelectArea("TMPLOT")
+				TMPLOT->(dbSetOrder(1))
+				TMPLOT->(dbGoTop())
+
+				While !TMPLOT->(EOF())
+
+					::emailCliente(TMPLOT->COD, TMPLOT->LOTECTL, TMPLOT->DFABRIC, TMPLOT->DTVALID, TMPLOT->QUANT, TMPLOT->DESEMB, TMPLOT->MAILCLI)
+
+					TMPLOT->(dbSkip())
+
+				enddo
+
+				oRPCPC003 := RPCPC003():NEW()
+				oRPCPC003:imprimirRelatorioTodos(_aProdutoAcabado[_nItemProdutoLote][1],_aProdutoAcabado[_nItemProdutoLote][2])
+				oRPCPC003:imprimirRelatorioSupervisor(_aProdutoAcabado[_nItemProdutoLote][1],_aProdutoAcabado[_nItemProdutoLote][2])
+				oRPCPC003:imprimirRelatorioVendedor(_aProdutoAcabado[_nItemProdutoLote][1],_aProdutoAcabado[_nItemProdutoLote][2])
+
+			else
+
+				ShowHelpDlg("[RPCPA002_E030]", {"Não existem dados para esses parâmetros informado na rotina!",""},5,;
+										{"Verifique os dados e tente novamente o processamento da rotina.",""},5)
+
+			EndIf
+			FATURADOONDE->(dbCloseArea())
+
+		next
+
+	End Case
+
+	oTempTable:Delete()
+
+Return
+
+/*/{Protheus.doc} emailCliente
+    Envia e-mail Recall para cliente.
+    @author Fernando Bombardi   
+    @since 30/10/2023
+    /*/
+Method emailCliente(_cProd, _cLOTECTL, _dDFABRIC, _dDTVALID, _nQUANT, _cDESEMB, _cMAILCLI) class RPCPC002
+	Local _cAnexo      := ""
+	Local _cAssunto    := "ARCOLOR - MENSAGEM DE ALERTA AO CONSUMIDOR"
+	Local _cBCC        := ""
+	Local _cBodyMail   := ""
+	Local _cCC         := ""
+	Local _cFromOri    := "naoresponda@arcolor.com.br"
+	Local _cImgAlert   := "\system\mensagem_alerta_recall.jpg"
+	Local _lAlert      := .T.
+	Local _lExcAnex    := .F.
+	Local _lHtmlOk     := .F.
+	Local _lRetMail    := .F.
+
+	_cBodyMail := "<div>"
+	_cBodyMail += "<img src='cid:ID_" + _cImgAlert + "' style='width: 100%'>"
+	_cBodyMail += "</div>"
+	_cBodyMail += "<br>"
+	_cBodyMail += "<div style='text-align: center; width: 100%; padding: 10px'>"
+	_cBodyMail += "<p style='font-size: 1.3em; font-weight: bold;'>" + _cTexto1 + "</p>"
+	_cBodyMail += "</div>"
+	_cBodyMail += "<br>"
+
+	_cBodyMail += "<div style='display:flex; width: 100%;padding: 10px ;border: 1px solid black; border-radius: 10px;'>"
+	_cBodyMail += "<br>"
+
+	_cBodyMail += '<table style="border-collapse: collapse; margin-left: auto;margin-right: auto; ">'
+	_cBodyMail += '<caption style=" font-size: 1.3em; font-weight: bold; padding: 10px;">'
+	_cBodyMail += Alltrim(_cProd) + " - " + Alltrim(Posicione("SB1",1,FWFilial("SB1")+_cProd,"B1_DESC"))
+	_cBodyMail += '</caption>'
+	_cBodyMail += '<thead>'
+	_cBodyMail += '<tr>'
+	_cBodyMail += '<th style="border: 1px solid gray; padding: 10px;">LOTE(S) Nº</th>'
+	_cBodyMail += '<th style="border: 1px solid gray; padding: 10px;">DATA DE FABRICAÇÃO</th>'
+	_cBodyMail += '<th style="border: 1px solid gray; padding: 10px;">DATA DE VALIDADE</th>'
+	_cBodyMail += '<th style="border: 1px solid gray; padding: 10px;">PESO BRUTO </th>'
+	_cBodyMail += '<th style="border: 1px solid gray; padding: 10px;">EMBALAGEM</th>'
+	_cBodyMail += '</tr>'
+	_cBodyMail += '</thead>'
+	_cBodyMail += '<tbody>'
+	_cBodyMail += '<tr>'
+	_cBodyMail += '<td style="border: 1px solid gray; padding: 10px;">' + _cLOTECTL + '</td>'
+	_cBodyMail += '<td style="border: 1px solid gray; padding: 10px;">' + DtoC(_dDFABRIC) + '</td>'
+	_cBodyMail += '<td style="border: 1px solid gray; padding: 10px;">' + DtoC(_dDTVALID) + '</td>'
+	_cBodyMail += '<td style="border: 1px solid gray; padding: 10px;">' + Transform(_nQUANT,"@E 999,999,999.999999") +'</td>'
+	_cBodyMail += '<td style="border: 1px solid gray; padding: 10px;">' + _cDESEMB + '</td>'
+	_cBodyMail += '</tr>'
+	_cBodyMail += '</tbody>'
+	_cBodyMail += '</table>'
+
+    _cBodyMail += "<img src='cid:ID_" + _ctargetDir + "' style='margin-left: auto;margin-right: auto;'>'
+
+	_cBodyMail += "</div>"
+
+	_cBodyMail += '    <div>'
+	_cBodyMail += '        <h3>MOTIVO DO RECOLHIMENTO:</h3>'
+	_cBodyMail += '        <p>' + _cTexto2 + '</p>'
+	_cBodyMail += '        <hr>'
+	_cBodyMail += '    </div>'
+	_cBodyMail += '    <div>'
+	_cBodyMail += '        <h3>RISCO E AGRAVO À SAUDE DOS CONSUMIDORES:</h3>'
+	_cBodyMail += '        <p>' + _cTexto3 + '</p>'
+	_cBodyMail += '        <hr>'
+	_cBodyMail += '    </div>'
+	_cBodyMail += '    <div>'
+	_cBodyMail += '        <h3>ORIENTAÇÕES AOS CONSUMIDORES:</h3>'
+	_cBodyMail += '        <p>' + _cTexto4 + '</p>'
+	_cBodyMail += '        <hr>'
+	_cBodyMail += '    </div>'
+
+	_cBodyMail += '    <p style="font-size: 1.3em; font-weight: bold;">Para mais esclarecimentos sobre a devolução, entre em contato com o SERVIÇO DE ATENDIMENTO AO CONSUMIDOR - SAC</p>'
+
+	_cBodyMail += '    <table style="width: 100%;">'
+	_cBodyMail += '        <tbody>'
+	_cBodyMail += '        <tr>'
+	_cBodyMail += '            <td style="font-size: 1.3em; font-weight: bold;">WhatsApp (11) 98965-9309</td>'
+	_cBodyMail += '            <td style="font-size: 1.3em; font-weight: bold;"></td>'
+	_cBodyMail += '        </tr>'
+	_cBodyMail += '        <tr>'
+	_cBodyMail += '            <td style="font-size: 1.3em; font-weight: bold;">Telefone (11) 2191-2444 (São Paulo - Capital</td>'
+	_cBodyMail += '            <td style="font-size: 1.3em; font-weight: bold;">Agradecemos por sua compreensão e nos comprometemos a cada dia evoluirmos em nossos</td>'
+	_cBodyMail += '        </tr>'
+	_cBodyMail += '        <tr>'
+	_cBodyMail += '            <td style="font-size: 1.3em; font-weight: bold;">0800 709 0788 (Outral localidades)</td>'
+	_cBodyMail += '            <td style="font-size: 1.3em; font-weight: bold;">processos para atende-los com os melhores produtos e serviços.</td>'
+	_cBodyMail += '        </tr>'
+	_cBodyMail += '        </tbody>'
+	_cBodyMail += '    </table>'
+
+	_cMail := "diego.rodrigues@allss.com.br; fernando.bombardi@allss.com.br" //_cMAILCLI
+
+	if !Empty(_ctargetDir)
+		_cAnexo := _cImgAlert + ";" + _ctargetDir
+	else
+		_cAnexo := _cImgAlert
+	endif
+
+	_lRetMail := U_RCFGM001(/*cTitulo*/"",_cBodyMail,_cMail,_cAnexo,_cFromOri,_cBCC,_cAssunto,_lExcAnex,_lAlert,_lHtmlOk,_cCC)
+	if !_lRetMail
+        ShowHelpDlg("[RPCPC002_E199]", {"Ocorreram erros no envio do e-mail do Recall de Produto."},5,;
+                                    {"Entre em contato com o administrador do sistema.",""},5)
+	endif
+
+Return
+
+/*/{Protheus.doc} methodName
+	(long_description)
+	@author user
+	@since 17/11/2023
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	/*/
+Method lotesOrdensProducaoProdutoIntermediario(_cOp) class RPCPC002
+Local _cAliasOpInt  := GetNextAlias()
+
+	BeginSql alias _cAliasOpInt 
+        SELECT
+            D3_OP, D3_COD, D3_LOTECTL, D3_TM, B1_TIPO
+        FROM
+            %table:SD3% SD3 (NOLOCK) INNER JOIN  %table:SB1% SB1 (NOLOCK)
+            ON B1_COD = D3_COD AND SB1.%NotDel%
+        WHERE 
+            D3_FILIAL =  %xFilial:SD3%
+            AND D3_OP = %Exp:_cOp%
+            AND D3_TM = '010'
+            AND SD3.%NotDel%
+		EndSql
+
+		_cQry := GetLastQuery()[2]
+
+		If (_cAliasOpInt)->(!EOF())
+
+			While (_cAliasOpInt)->(!EOF())		
+
+				if Alltrim((_cAliasOpInt)->B1_TIPO) == 'PA'
+
+					if Ascan(_aProdutoAcabado,{|x| x[1]+x[2]== (_cAliasOpInt)->D3_COD + (_cAliasOpInt)->D3_LOTECTL}) == 0
+
+						aADD(_aProdutoAcabado, {(_cAliasOpInt)->D3_COD, (_cAliasOpInt)->D3_LOTECTL} )
+
+					endif
+
+				else
+
+					::lotesOrdensProducaoProdutoProducao( (_cAliasOpInt)->D3_COD, (_cAliasOpInt)->D3_LOTECTL )
+
+				endif
+				(_cAliasOpInt)->(dbSkip())
+
+			enddo
+
+		endif
+		(_cAliasOpInt)->(dbCloseArea())
+
+Return
+
+/*/{Protheus.doc} methodName
+	(long_description)
+	@author user
+	@since 17/11/2023
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	/*/
+Method lotesOrdensProducaoProdutoProducao(_cProduto, _cLote) class RPCPC002
+Local _cAliasOpPrd := GetNextAlias()
+
+	BeginSql alias _cAliasOpPrd 
+        SELECT
+            D3_OP, D3_COD, D3_LOTECTL, D3_TM
+        FROM
+            %table:SD3% SD3 (NOLOCK)
+        WHERE 
+            D3_FILIAL =  %xFilial:SD3%
+            AND D3_COD = %Exp:_cProduto%
+            AND D3_LOTECTL = %Exp:_cLote%
+            AND D3_TM = '999'
+			AND D3_OP <> ''
+            AND SD3.%NotDel%
+		EndSql
+
+	_cQry := GetLastQuery()[2]
+
+	If (_cAliasOpPrd)->(!EOF())
+
+		While (_cAliasOpPrd)->(!EOF())		
+
+			::lotesOrdensProducaoProdutoIntermediario( (_cAliasOpPrd)->D3_OP )
+
+			(_cAliasOpPrd)->(dbSkip())
+
+		enddo
+
+	endif
+	(_cAliasOpPrd)->(dbCloseArea())
+
+Return 

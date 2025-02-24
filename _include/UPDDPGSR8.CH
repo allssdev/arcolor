@@ -1,0 +1,36 @@
+#ifdef SPANISH
+	#define STR0001 "Realize o backup da base antes de executar esse processo."
+	#define STR0002 "Ferramenta para ajuste dos dias pagos na SR8."
+	#define STR0003 "UPDDPGSR8 - Atualizada dias pagos empresa na ausência do funcionário"
+	#define STR0004 "Ao final do processamento os dias pagos da SR8 estarão corrigidos."
+	#define STR0005 "Realizando atualização da base..."
+	#define STR0006 "Aguarde enquanto o processamento é executado."
+	#define STR0007 "Executando atualização dos dias pagos ..."
+	#define STR0008 "O backup da base já foi realizado?"
+	#define STR0009 "Realize o backup e execute a rotina novamente."
+	#define STR0010 "Fim do processamento!"
+#else
+	#ifdef ENGLISH
+		#define STR0001 "Realize o backup da base antes de executar esse processo."
+		#define STR0002 "Ferramenta para ajuste dos dias pagos na SR8."
+		#define STR0003 "UPDDPGSR8 - Atualizada dias pagos empresa na ausência do funcionário"
+		#define STR0004 "Ao final do processamento os dias pagos da SR8 estarão corrigidos."
+		#define STR0005 "Realizando atualização da base..."
+		#define STR0006 "Aguarde enquanto o processamento é executado."
+		#define STR0007 "Executando atualização dos dias pagos ..."
+		#define STR0008 "O backup da base já foi realizado?"
+		#define STR0009 "Realize o backup e execute a rotina novamente."
+		#define STR0010 "Fim do processamento!"
+	#else
+		#define STR0001 "Realize o backup da base antes de executar esse processo."
+		#define STR0002 "Ferramenta para ajuste dos dias pagos na SR8."
+		#define STR0003 "UPDDPGSR8 - Atualizada dias pagos empresa na ausência do funcionário"
+		#define STR0004 "Ao final do processamento os dias pagos da SR8 estarão corrigidos."
+		#define STR0005 "Realizando atualização da base..."
+		#define STR0006 "Aguarde enquanto o processamento é executado."
+		#define STR0007 "Executando atualização dos dias pagos ..."
+		#define STR0008 "O backup da base já foi realizado?"
+		#define STR0009 "Realize o backup e execute a rotina novamente."
+		#define STR0010 "Fim do processamento!"
+	#endif
+#endif

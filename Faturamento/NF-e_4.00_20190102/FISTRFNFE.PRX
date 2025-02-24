@@ -1,0 +1,110 @@
+#INCLUDE "protheus.ch"
+#INCLUDE "rwmake.ch"
+#INCLUDE "font.ch"
+#INCLUDE "colors.ch"
+#INCLUDE "totvs.ch"
+#INCLUDE "topconn.ch"
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+ฑฑบPrograma  ณ FISTRFNFEบ Autor ณAnderson C. P. Coelho บ Data ณ  30/07/12 บฑฑ
+ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
+ฑฑบDesc.     ณ Ponto de Entrada para adi็ใo de bot๕es na tela da NFE.     บฑฑ
+ฑฑบ          ณ                                                            บฑฑ
+ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
+ฑฑบUso       ณ Protheus11 especํfico empresa Arcolor                      บฑฑ
+ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
+ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+*/
+ 
+User Function FISTRFNFE(cRotina)
+Local _aSavArea  := GetArea() 
+// Trecho inserido por Anderson Coelho para impressใo da carta de corre็ใo
+If ExistBlock("CPRTCCE")
+	aadd(aRotina,{'Imprime CC-e'      ,'U_CPRTCCE()' , 0 , 3,0,NIL})
+EndIf
+// - Fim
+ 
+// Trecho adicionado por Adriano Leonardo em 04/02/2014
+If ExistBlock("RFATE036")
+	aadd(aRotina,{'Transm.Posicionado','U_RFATE036()' , 0 , 2,0,NIL})
+EndIf
+// Fim 
+If ExistBlock("RFATE066") 
+	aadd(aRotina,{ "Conhecimento",     "MsDocument",      0, 4})   
+EndIf
+
+// Inclusใo por Fernando Bombardi - 13/07/2023
+If ExistBlock("RFATE071") 
+	aadd(aRotina,{"Observa็๕es","U_RFATE071()"     ,0,2,0 ,NIL})
+Endif
+// Fim Inclusใo por Fernando Bombardi - 13/07/2023
+
+RestArea(_aSavArea)
+Return
+
+/*
+Local lInutili := SuperGetMv("MV_INUTILI",.F.,.F.)
+Local aRotina2 := {	{"Faixa"		,"SpedNFe1Mnt"	,0,2},; //"Faixa"
+					{"Tempo"		,"SpedNFe2Mnt"	,0,2},; //"Tempo"
+                    {"Estatํsticas"	,"SpedNFe3Mnt"	,0,2},; //"Estatํsticas"
+                    {"Consulta NFe"	,"SpedNfe4Mnt"	,0,2},; //"Consulta NFe"
+                    {""				,"SpedNfe5Mnt"	,0,2}}
+Local aRotina3 := {	{"Nfe"			,"SpedNFePar"	,0,2},; //"Parametros - Nfe"
+                    {"Eventos"		,"SpedCCePar()"	,0,2}}	//"Parametros - Eventos"
+Default cRotina:="1" 
+Private aRotina:={}
+If cRotina == "1" //NFe
+	aRotina := {{"Pesquisar"				 						,"PesqBrw"			,0,1,0,.F.},; //"Pesquisar"
+				{"Wiz.Config."										,"SpedNFeCfg"		,0,2,0,NIL},; //"Wiz.Config."
+				{SubStr("Parโmetros",1,1)+"&"+SubStr("Parโmetros",2),aRotina3			,0,2,0,NIL},; //"Parโmetros"
+				{"Status SEFAZ"										,"SpedNFeStatus"	,0,2,0,NIL},; //"Status SEFAZ"
+				{"Transmissใo"										,"SpedNFeRemessa"	,0,2,0,NIL},; //"Transmissใo"
+				{"Contribuinte"										,"SpedConsCad"		,0,2,0,NIL},; //" Contribuinte"		
+				{"DANFE"											,"SpedDanfe"		,0,2,0,NIL},; 
+				{"Monitor"											,aRotina2			,0,2,0,NIL},; //"Monitor"
+				{"Visualiza Doc."									,"SpedVisualDoc"	,0,2,0,NIL},; //"Visualiza Doc."
+				{"Filtro"											,"SpedFiltro"		,0,3,0,NIL},; //"Filtro"
+				{"Exportar"											,"SpedExport(1)"	,0,2,0,NIL},; //"Exportar"
+				{"Legenda"											,"SpedNfeLeg"		,0,2,0,NIL} } //"Legenda"
+
+	
+ElseIf cRotina == "2" //CLe
+	aRotina := {{"Pesquisar"		,"PesqBrw"       	,0,1,0,.F.},; //"Pesquisar"
+				{"Wiz.Config."		,"SpedNFeCfg"    	,0,2,0,NIL},; //"Wiz.Config."
+				{"Parโmetros"		,"SpedCLePar"    	,0,2,0,NIL},; //"Parโmetros"
+				{"Gerar CLe"		,"SpedCLeRemessa"	,0,2,0,NIL},; //"Gerar CLe"
+				{"Monitor"			,"SpedCLeMnt"		,0,2,0,NIL},; //"Monitor"
+				{"Visualiza Doc."	,"SpedVisualDoc"	,0,2,0,NIL},; //"Visualiza Doc."
+				{"Legenda"			,"SpedCLeLeg"   	,0,2,0,NIL} } //"Legenda"	
+
+ElseIf cRotina == "3" //CCe
+	aRotina := {{"Pesquisar"		,"PesqBrw"			,0,1,0,.F.},; //"Pesquisar"
+				{"Wiz.Config."		,"SpedNFeCfg"		,0,2,0,NIL},; //"Wiz.Config."
+				{"Parโmetros"		,"SpedCCePar()"		,0,2,0,NIL},; //"Parโmetros"
+				{"Transmissao"		,"SpedCCeRemessa"	,0,2,0,NIL},; //"Transmissao"
+				{"Monitor"			,"SpedCCeMnt"		,0,2,0,NIL},; //"Monitor"
+				{"Exportar"			,"SpedExport(2)"	,0,2,0,NIL},; //"Exportar."
+				{"Visualiza Doc."	,"SpedVisualDoc"	,0,2,0,NIL},; //"Visualiza Doc."
+				{"Filtro"			,"SpedFiltro"		,0,3,0,NIL},; //"Filtro"
+				{"Legenda"			,"SpedCCeLeg"		,0,2,0,NIL}} //"Legenda"	
+
+
+ElseIf cRotina == "4"
+	aRotina :={ {"Pesquisar"		,"PesqBrw"			,0,1,0,.F.},; //"Pesquisar"
+				{"Wiz.Config."		,"SpedNFeCfg"		,0,2,0,NIL},; //"Wiz.Config."
+				{"Transmissao"		,"SpedRGSRemessa"	,0,2,0,NIL},; //"Transmissao"
+				{"Monitor"			,"SpedRGSMnt"		,0,2,0,NIL},; //"Monitor"
+				{"Visualiza Doc."	,"SpedVisualDoc"	,0,2,0,NIL},; //"Visualiza Doc."
+				{"Legenda"			,"SpedRGSLeg"		,0,2,0,NIL},; //"Legenda"	
+				{"Cancelamento"		,"SpedCancRGS"		,0,2,0,NIL} } //"Cancelamento	
+
+	If cVersaoTSS < "2.07"
+	   aadd(aRotina,{"Parโmetros"		,"SpedCCePar()"    ,0,2,0 ,NIL}) //"Parโmetros"
+	EndIf
+
+EndIf
+*/

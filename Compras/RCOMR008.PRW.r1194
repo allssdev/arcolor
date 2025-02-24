@@ -1,0 +1,455 @@
+#include 'totvs.ch'
+#include 'protheus.ch'
+#include 'fwprintsetup.ch'
+#include 'rptdef.ch'
+#define DMPAPER_A4 9
+
+/*/{Protheus.doc} RCOMR008
+Rotina para impressão das etiquetas de identificação das entradas
+@author Livia Della Corte
+@since 06/06/2023
+@version 1.0
+@type function
+@see https://allss.com.br
+/*/
+
+user function RCOMR008(nOpc)
+
+	Local _nY
+	Local cCadastro	:= OemtoAnsi("Etiqueta de Identificação Entradas")
+	Local aMensagem	:={}
+	Local aBotoes   :={}
+	//Local nPos		:= 0
+	//Local cCRLF     := (chr(13) + chr(10) )
+	Private _cRotina  := "RCOMR008"
+	Private aCombo:= {}
+	Private cPerg   :=Padr("RCOMR008",10)
+	Private nTipo := 9999
+	PRIVATE _cDirRel    	:=  AllTrim(SuperGetMv("MV_DIREST8",,"C:\Etiqueta_Entrada\"))  
+	PRIVATE cNota	:= ""
+	PRIVATE cSerie	:= ""
+	PRIVATE cFornece:= ""
+	PRIVATE cLoja 	:= ""
+	Private cProd 	:=""
+	PRIVATE cLote	:="(Sem Lote definido)"
+	Private cCodBar := ""
+	Private cAlerge := ""
+
+	default nOpc := 2
+
+	If nOpc ==1 .and. (SF1->F1_DOC != Nil .AND. !EMPTY(SF1->F1_DOC)) .AND. (SF1->F1_SERIE != Nil  )  .AND. (SF1->F1_FORNECE != Nil .and. !EMPTY(SF1->F1_FORNECE) ) .AND. (SF1->F1_LOJA != Nil .and. !EMPTY(SF1->F1_LOJA) )
+		cNota	 :=  MV_PAR01 := alltrim(SF1->F1_DOC)
+		cSerie	 :=  MV_PAR02 := alltrim(SF1->F1_SERIE)
+		cFornece :=  MV_PAR03 := alltrim(SF1->F1_FORNECE)
+		cLoja	 :=  MV_PAR04 := alltrim(SF1->F1_LOJA)				
+	endIf
+
+	If nOpc==1 
+		AADD(aMensagem,OemToAnsi("Etiqueta de Identificação Entradas, para nota selecionada no Browse") ) 
+		AADD(aMensagem,OemToAnsi("Nota: "+ alltrim(SF1->F1_DOC) + " Série: " + alltrim(SF1->F1_SERIE)+"." ))
+		AADD(aMensagem,OemToAnsi(" "))
+		AADD(aMensagem,OemToAnsi(" "))
+		AADD(aMensagem,OemToAnsi(" "))
+		AADD(aMensagem,OemToAnsi("Acesse o botao de parametros, caso queira alterar."))
+		AADD(aBotoes, { 5,.T.,{||  Pergunte(cPerg,.T. ) }})
+		//AADD(aBotoes, { 6,.T.,{|o|  cProd:= u_PesqPrd(),FechaBatch()}})
+		AADD(aBotoes, { 6,.T.,{|o|FechaBatch() }})
+		AADD(aBotoes, { 2,.T.,{|o|FechaBatch() }} )
+		FormBatch( cCadastro, aMensagem, aBotoes )
+	Else
+		Pergunte(cPerg,.T. )
+		AADD(aMensagem,OemToAnsi("Defina a NF/Serie/Fornecedor para Geração da Etiqueta!") ) 
+		AADD(aMensagem,OemToAnsi(" "))
+		AADD(aMensagem,OemToAnsi(" "))
+		AADD(aMensagem,OemToAnsi(" "))
+		//AADD(aBotoes, { 5,.T.,{||  Pergunte(cPerg,.T. ), cProd:= U_PesqPrd()}})
+		AADD(aBotoes, { 5,.T.,{||  Pergunte(cPerg,.T. )}})
+		AADD(aBotoes, { 6,.T.,{|o| nOpc := 1,FechaBatch()}})
+		AADD(aBotoes, { 2,.T.,{|o| FechaBatch() }} )
+		FormBatch( cCadastro, aMensagem, aBotoes )
+	endIf
+
+	If !ExistDir(_cDirRel)
+		If MakeDir(_cDirRel) == 0
+			MakeDir(_cDirRel)
+		ENDIF
+	EndIf
+
+	If !EMPTY(MV_PAR01) 
+		cNota:= alltrim(MV_PAR01)
+		cSerie:= alltrim(MV_PAR02)
+		cFornece:= alltrim(MV_PAR03)	
+		cLoja:= alltrim(MV_PAR04)	
+	EndIf
+
+	If !EMPTY(cNota)
+		aCombo:=U_GerComBo()
+			For _nY:=1 to Len(aCombo)	
+				cProd:= u_PesqPrd()
+				If Empty(cProd)
+					RETURN
+				Else
+					U_fQuery()
+					MsgAlert( "Arquivos Salvos em: " +_cDirRel )
+				EndIf
+			next
+	else	
+		MsgAlert( "Defina a nota nos parametro!" )	
+		Return
+	endIf
+
+Return
+
+User Function fQuery()
+	local _cQry   := " "
+	local _tAlias :=  "RCOMR008"
+	local aArea   := GetArea()
+	local nItem   := 1
+	locAL nTot   := 1
+
+	//Local cQryRet  := ""
+	Local oDlg1	   := Nil
+	Local oInfFat  := Nil
+	//Local cInfEnt  := Space(254)
+	//Local nRet	   := 0
+	//Local nSel	   := 0
+	local cInfFat:= Space(254)
+	If Select (_tAlias) > 0
+		(_tAlias)->(dbCloseArea())
+	EndIf  
+
+    _cQry :=  " select D1_COD D1_COD"
+    _cQry +=  " , B1_DESC B1_DESC"
+    _cQry +=  " , B1_UM B1_UM"
+	_cQry +=  " , B1_CODBAR B1_CODBAR"
+	_cQry +=  " , B5_XALERGE B5_XALERGE"
+    _cQry +=  " , SUM(D1_QUANT) D1_QUANT"
+    _cQry +=  " , D1_LOTECTL D1_LOTECTL"
+	_cQry +=  " , D1_LOTEFOR D1_LOTEFOR"
+    _cQry +=  " , D1_DTDIGIT D1_DTDIGIT"
+    _cQry +=  " , D1_FORNECE + ' - ' + D1_LOJA D1_FORNECE"
+	_cQry +=  " , A2_NOME A2_NOME"
+    _cQry +=  " , D1_DTVALID D1_DTVALID"
+	_cQry +=  " ,  (select count(distinct D1_COD) from SD1010    "
+	_cQry +=  "			 where D1_DOC = '" 		+ AllTrim(cNota) + "' "
+	_cQry +=  " 				AND D1_SERIE = '"	+ AllTrim(cSerie) + "' "
+	_cQry +=  "  				AND D1_FORNECE = '"	+ AllTrim(cFornece) + "' "
+	If !empty(cProd)
+		_cQry +=  "  	AND D1_COD = '"	+ AllTrim(cProd) + "' "
+		_cQry +=  "  	AND D1_LOTECTL = '"	+ AllTrim(cLote) + "' "
+	EndIf
+    _cQry +=  "  				AND D1_LOJA = '"	+ AllTrim(cLoja) + "' ) CONTADOR "
+    _cQry +=  " from " + RetSqlName("SD1") + " SD1 (NOLOCK) "
+    _cQry +=  " INNER JOIN " + RetSqlName("SB1") + " SB1 (NOLOCK)  ON B1_COD = D1_COD AND SB1.D_E_L_E_T_ = '' "
+    _cQry +=  " INNER JOIN " + RetSqlName("SA2") + " SA2 (NOLOCK)  ON  A2_COD = D1_FORNECE AND A2_LOJA = D1_LOJA AND SA2.D_E_L_E_T_ = '' " 
+	_cQry +=  " INNER JOIN " + RetSqlName("SB5") + " SB5 (NOLOCK)  ON B5_COD = D1_COD AND SB5.D_E_L_E_T_ = '' "
+    _cQry +=  " where D1_DOC = '" 		+ AllTrim(cNota) + "' "
+	_cQry +=  " 	AND D1_SERIE = '"	+ AllTrim(cSerie) + "' "
+	_cQry +=  "  	AND D1_FORNECE = '"	+ AllTrim(cFornece) + "' "
+    _cQry +=  "  	AND D1_LOJA = '"	+ AllTrim(cLoja) + "' "
+	_cQry +=  "  	AND D1_LOJA = '"	+ AllTrim(cLoja) + "' "
+	_cQry +=  "  	AND D1_LOJA = '"	+ AllTrim(cLoja) + "' "
+	_cQry +=  "     AND SD1.D_E_L_E_T_ = '' " 
+	If !empty(cProd)
+	    _cQry +=  "  	AND D1_COD = '"	+ AllTrim(cProd) + "' "
+		_cQry +=  "  	AND D1_LOTECTL = '"	+ AllTrim(cLote) + "' "
+	EndIf
+    _cQry +=  "GROUP BY D1_COD , B1_DESC, B1_UM, B1_CODBAR,B5_XALERGE, D1_LOTECTL, D1_LOTEFOR, D1_DTDIGIT, D1_DTVALID, D1_FORNECE + ' - ' + D1_LOJA, A2_NOME"
+	dbUseArea(.T., "TOPCONN ",TcGenQry(,,_cQry),_tAlias,.T.,.F.)
+
+	dbSelectArea(_tAlias)
+	ProcRegua(RecCount())
+	(_tAlias)->(dbGoTOP())
+	 nTot :=(_tAlias)->CONTADOR
+
+	If nTot >0
+		While !(_tAlias)->(EOF()) .and. nItem <= nTot
+			cTot        := (_tAlias)->CONTADOR
+			cProduto	:= alltrim((_tAlias)->D1_COD)
+			cDescricao	:= alltrim((_tAlias)->B1_DESC)
+			cQuant		:= ROUND((_tAlias)->D1_QUANT,2)
+			cCodCli		:= alltrim((_tAlias)->D1_FORNECE)
+			cNomeCli	:= alltrim((_tAlias)->A2_NOME)
+			cEntrada	:=  iif((_tAlias)->D1_DTDIGIT<> " ",Substr((_tAlias)->D1_DTDIGIT,7,2)+"/"+Substr((_tAlias)->D1_DTDIGIT,5,2)+"/"+Substr((_tAlias)->D1_DTDIGIT,1,4),"")
+			cValidade	:= iif((_tAlias)->D1_DTVALID<> " ", Substr((_tAlias)->D1_DTVALID,7,2)+"/"+Substr((_tAlias)->D1_DTVALID,5,2)+"/"+Substr((_tAlias)->D1_DTVALID,1,4),"")
+			cLote	    := alltrim((_tAlias)->D1_LOTECTL)
+			cLoteFor	:= alltrim((_tAlias)->D1_LOTEFOR)
+			cUnid       := (_tAlias)->B1_UM		
+			cCodBar		:= (_tAlias)->B1_CODBAR
+			cAlerge		:= (_tAlias)->B5_XALERGE
+	
+			DEFINE MSDIALOG oDlg1 TITLE "Informe a Quantidade da Etiqueta" FROM 000,000 TO 150,550 PIXEL
+			@012,015 SAY "    Produto:   " + cProduto+" - " +cDescricao  PIXEL
+			@020,015 SAY "       LOTE:   "+ cLote PIXEL
+			@030,015 SAY "Qtd da NOTA:   "+ cvaltochar(cQuant) PIXEL
+			@040,015 SAY "Informe OU mantenha a Quantidade:  " PIXEL
+			cInfFat:= cQuant
+			@040,120 MSGET oInfFat VAR cInfFat SIZE 050,08 OF oDlg1 PICTURE "@E 999,999,999.99" PIXEL 
+			@058,120 BUTTON "Ok" SIZE 40,10 PIXEL ACTION (oDlg1:End())
+			ACTIVATE DIALOG oDlg1 CENTERED
+
+			Processa({|| u_ImpEtqEnt(cProduto,cDescricao,IIf(cQuant<cInfFat,cQuant,cInfFat),cCodCli,cNomeCli,cEntrada,cValidade,cLote,cUnid) },"Imprimindo Item: "+cvaltochar(nItem)+" de " +cvaltochar(cTot))
+			nItem++
+
+			DbSelectArea(_tAlias)
+			(_tAlias)->(DbSkip())
+		EndDo
+	else		
+		MsgAlert( "Nenhuma Nota encontrada. Verifique os parametros!" )		
+	Endif
+
+	RestArea(aArea)
+	
+Return 
+ 
+ 
+User Function ImpEtqEnt(cProduto,cDescricao,cQuant,cCodCli,cNomeCli,cEntrada,cValidade,cLote,cUnid)
+	local aArea   := GetArea()
+	//Local nInc
+	Local lAdjustToLegacy := .F.
+	Local lDisableSetup   := .T.
+	//Local nRegs           := 0
+	//Local cBTM         := "\qualidade\emanalise.bmp"
+	local nFlags   	   := PD_ISTOTVSPRINTER + PD_DISABLEORIENTATION
+	local cSession	   := GetPrinterSession()
+	local cDevice      := fwGetProfString(cSession,"PRINTTYPE"	,"SPOOL"	,.T.)
+	local cDestino	   := fwGetProfString(cSession,"DEFAULT"	,"C:\Etiqueta_Entrada\"	,.T.)
+
+	//Local cName           := _cRotina
+	//Local cLgoAr            := FisxLogo("1")
+	Private _DtHr 	   := DTOS(Date())+"_" +StrTran(Time(),":","") 
+	Private cSpool     := _cDirRel
+	Private cPdf       := ""
+	Private oFont52    := TFont():New("Arial" ,,52,,.T.,,,,,.F.)
+	Private oFont140   := TFont():New("Arial" ,,140,,.T.,,,,,.F.)
+	Private oFont170   := TFont():New("Arial" ,,170,,.T.,,,,,.F.)
+	Private oFont180   := TFont():New("Arial" ,,180,,.T.,,,,,.F.)
+	Private oFont110   := TFont():New("Arial" ,,110,,.T.,,,,,.F.)
+	Private oFont80    := TFont():New("Arial" ,,80,,.t.,,,,,.F.)
+	Private oFont30    := TFont():New("Arial" ,,30,,.t.,,,,,.F.)
+	Private oFont20    := TFont():New("Arial" ,,20,,.F.,,,,,.F.)
+	Private oFont14    := TFont():New("Arial" ,,14,,.F.,,,,,.F.)
+	Private oFont16    := TFont():New("Arial" ,,16,,.F.,,,,,.F.)
+	Private oFont14T   := TFont():New("Arial" ,,14,,.t.,,,,,.F.)
+	Private oFont12    := TFont():New("Arial" ,,12,,.T.,,,,,.F.)   
+	private oPrintSetup as Object
+	private oPrinter 	as Object
+	private aDevice
+	Default cLOTE:= "Produto sem lote" 
+
+	cPDF := "etiqueta_produto_" + alltrim(cProduto) +"_"+ alltrim(cnota)+"_"+ alltrim(cLote) +"_"+_DtHr+".pdf"
+
+	aDevice := {}
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³Define os Tipos de Impressao validos ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	AADD(aDevice,"DISCO")
+	AADD(aDevice,"SPOOL")
+	AADD(aDevice,"EMAIL")
+	AADD(aDevice,"EXCEL")
+	AADD(aDevice,"HTML" )
+	AADD(aDevice,"PDF"  )
+	nPrintType 							:= aScan(aDevice,{|x| x == cDevice})
+	nLocal     							:= iif(fWGetProfString(cSession,"LOCAL","SERVER",.T.) == "SERVER",1,2)		
+	oSetup 								:= FWPrintSetup():New(nFlags,'Impressão da Ficha Pallet')
+	oSetup:SetPropert(PD_PRINTTYPE   , nPrintType)
+	oSetup:SetPropert(PD_ORIENTATION , 1) 
+	oSetup:SetPropert(PD_DESTINATION , nLocal)
+	oSetup:SetPropert(PD_MARGIN      , {10,10,10,10})
+	oSetup:SetPropert(PD_PAPERSIZE   , 2)
+	oSetup:SetPropert(PD_PREVIEW	 , .F.)
+	if cDevice == "PDF"
+		oSetup:aOptions[PD_VALUETYPE] 	:= cDestino
+	endif
+	oPrinter 							:= FWMSPrinter():New(cPdf,nPrintType,lAdjustToLegacy,,lDisableSetup,.T.,@oSetup,,,,.F.,)
+	if !(oSetup:Activate() == PD_OK)
+		oPrinter:Deactivate() 
+		Aviso('TOTVS','Relatório cancelado pelo usuário',{'&OK'},3)
+		return .F.
+	endif
+	oPrinter:lServer 					:= oSetup:GetProperty(PD_DESTINATION) == AMB_SERVER                      
+	oPrinter:SetResolution(75)
+	if oSetup:GetProperty(PD_ORIENTATION) == 2
+		oPrinter:SetLandsCape()
+	else
+		oPrinter:SetPortRait()
+	endif
+	oPrinter:SetPaperSize(oSetup:GetProperty(PD_PAPERSIZE))
+	fwWriteProfString(cSession,"LOCAL"		,iif(oSetup:GetProperty(PD_DESTINATION) == 1,"SERVER","LOCAL"),.T.)
+	fwWriteProfString(cSession,"PRINTTYPE"	,aDevice[oSetup:GetProperty(PD_PRINTTYPE)],.T.)
+	if oSetup:GetProperty(PD_PRINTTYPE) == IMP_SPOOL
+		oPrinter:nDevice 				:= IMP_SPOOL
+		fwWriteProfString(cSession,"DEFAULT",oSetup:aOptions[PD_VALUETYPE],.T.)
+		oPrinter:cPrinter 				:= oSetup:aOptions[PD_VALUETYPE]
+	elseif oSetup:GetProperty(PD_PRINTTYPE) == IMP_PDF
+		oPrinter:nDevice 				:= IMP_PDF
+		fwWriteProfString(cSession,"DEFAULT",oSetup:aOptions[PD_VALUETYPE],.T.)	
+		oPrinter:cPathPDF 				:= oSetup:aOptions[PD_VALUETYPE]
+	endif
+
+
+
+	oPrinter:StartPage()
+
+	oPrinter:Say(015,210, "CODIGO DO PRODUTO", oFont20)
+	oPrinter:Line(037,010,037,600) 
+	oPrinter:Say(0131,170, ALLTRIM(cProduto), oFont180) 
+	oPrinter:Line(160,010,160,600) 
+
+	oPrinter:Code128(060/*nRow*/ ,010 /*nCol*/,Alltrim(cCodBar)/*cCode*/,1/*nWidth*/,35/*nHeigth*/,.F./*lSay*/,,)
+		
+	oPrinter:Say(160,035, ALLTRIM(cDescricao), oFont20) 
+	oPrinter:Line(188,0010,188,600) 
+
+	oPrinter:Say(183,300, "QTDE", oFont20) 
+	oPrinter:Line(205,010,205,600) 
+	oPrinter:Say(290,010, Alltrim(Transform( cQuant,"@E 999,999,999.99")), oFont140)
+	//oPrinter:Say(290,015, cvaltochar(cQuant), oFont140)
+	oPrinter:Line(0320,010,320,600) 
+
+	if empty(cVALIDADE)
+		cVALIDADE:= '(Não informado na entrada)'
+		oPrinter:Say(369,35, cVALIDADE, oFont52) 
+	Else
+		oPrinter:Say(369,60, cVALIDADE, oFont110) 
+	endIf	
+	oPrinter:Line(400,010,400,600) 
+	oPrinter:Say(340,010, "DATA DE ", oFont12)
+	oPrinter:Say(355,010, "VALIDADE", oFont12) 
+	
+	oPrinter:Say(435,35, cEntrada, oFont52) 
+	oPrinter:Say(465,35, "DATA DE ENTRADA", oFont20)
+	oPrinter:Line(495,10,495,350) 
+
+	//oPrinter:Say(350,035, cCodCli, oFont52) 
+	oPrinter:Say(515,35, cNota+" /"+cSerie, oFont52) 
+	oPrinter:Say(542,35, "NOTA FISCAL", oFont20)
+	oPrinter:Line(575,10,575,350) 
+	//oPrinter:Say(365,420, cUnid, oFont80) 
+	oPrinter:Line(585,010,585,350) 
+	oPrinter:Say(585,035, cCodCli+" - "+cNomeCli, oFont20) 
+	oPrinter:Line(610,010,610,350) 
+
+	oPrinter:Say(617,035, cLoteFor, oFont30) 
+	oPrinter:Say(645,35, "LOTE FORNECEDOR", oFont20)
+	oPrinter:Line(670,010,670,350) 
+	
+
+	oPrinter:Say(755,30, ALLTRIM(cLOTE), oFont170) 
+	oPrinter:Line(780,010,780,600) 
+	oPrinter:Say(775,55, "LOTE INTERNO", oFont20) 
+	//oPrinter:Line(790,010,790,600) 
+
+	oPrinter:Code128(700/*nRow*/ ,520/*nCol*/,ALLTRIM(cLOTE)/*cCode*/,1/*nWidth*/,35/*nHeigth*/,.F./*lSay*/,,)
+	
+	If cAlerge == "1"
+	oPrinter:Say(775,300, "|| ATENÇÃO! PRODUTO ALERGENICO", oFont20) 
+	EndIf
+	
+	oPrinter:Box(0400,0340,0670,0600)
+
+	oPrinter:Say(455,450, "EM", oFont52) 
+	oPrinter:Say(490,390, "ANALISE", oFont52) 
+	
+	//oPrinter:SayBitmap( 490, 310, cBTM ) 
+	//oPrinter:Line(0336,0010,0336,0230)  
+	//oPrinter:Line(0394,0010,0394,0230) 
+	oPrinter:EndPage()
+	//oPrinter:Print()
+	oPrinter:Preview()
+
+RestArea(aArea)
+Return
+ 
+User function PesqPrd()
+	//Local oMdl   :=FWModelActive()
+	Local aRet      := {}       //Array do retorno da opcao selecionada
+	Local oDlg                  //Objeto Janela
+	Local oLbx                  //Objeto List box
+	Local cTitulo   := "Produto(s) da Nota Fiscal" 
+	//Local lRet 		:= .F.
+	LOCAL cCod := " "    
+	Local aCombo:=  {}
+
+
+//If MsgYesNo("Deseja selecionar um produto especifico?")
+
+	aCombo:=U_GerComBo()
+	If Len( aCombo ) > 0
+
+		DEFINE MSDIALOG oDlg TITLE cTitulo FROM 0,0 TO 240,500 PIXEL
+		
+		@ 10,10 LISTBOX oLbx FIELDS HEADER "Código", "Descrição","Lote Interno","Lote Fornecedor"  SIZE 230,95 OF oDlg PIXEL	 //"Campo"###"Titulo"
+		
+		oLbx:SetArray( aCombo )
+		oLbx:bLine     := {|| {aCombo[oLbx:nAt,1], aCombo[oLbx:nAt,2],oLbx:aArray[oLbx:nAt,3],,oLbx:aArray[oLbx:nAt,4]}}
+		oLbx:bLDblClick := {|| {oDlg:End(), aRet := {oLbx:aArray[oLbx:nAt,1],oLbx:aArray[oLbx:nAt,2],oLbx:aArray[oLbx:nAt,3],oLbx:aArray[oLbx:nAt,4]}}} 	                   
+
+		DEFINE SBUTTON FROM 107,180 TYPE 1 ACTION (oDlg:End(), aRet := {oLbx:aArray[oLbx:nAt,1],oLbx:aArray[oLbx:nAt,2],oLbx:aArray[oLbx:nAt,3],oLbx:aArray[oLbx:nAt,4]})  ENABLE OF oDlg
+		DEFINE SBUTTON FROM 107,200 TYPE 2 ACTION ( oDlg:End(), aRet := {'','',''}) ENABLE OF oDlg  
+		ACTIVATE MSDIALOG oDlg CENTER
+		
+		cCod  := aRet[1]
+		cLote := aRet[3]
+		
+	EndIf	
+//else
+//	cCod:=""
+//endIf
+
+Return cCod    
+
+User Function GerComBo()
+	local acombo :={}
+	local _cQry := " "
+	Private _aArea := GetArea()
+	PRIVATE _tAlias2	:=  "COMBO"
+
+
+	If Select (_tAlias2) > 0
+		(_tAlias2)->(dbCloseArea())
+	EndIf  
+
+	_cQry :=  " select DISTINCT rtrim(ltrim(B1_DESC)) DESCRICAO"
+	_cQry +=  " ,	 rtrim(ltrim(D1_COD)) D1_COD"
+	_cQry +=  " ,	 rtrim(ltrim(D1_LOTECTL)) D1_LOTECTL"
+	_cQry +=  " ,	 rtrim(ltrim(D1_LOTEFOR)) D1_LOTEFOR"
+	_cQry +=  " from " + RetSqlName("SD1") + " (NOLOCK) "
+	_cQry +=  " INNER JOIN " + RetSqlName("SB1") + " (NOLOCK)  ON B1_COD = D1_COD "
+	_cQry +=  " INNER JOIN " + RetSqlName("SA2") + " (NOLOCK)  ON  A2_COD = D1_FORNECE AND A2_LOJA = D1_LOJA " 
+	_cQry +=  " where D1_DOC = '" 		+ AllTrim(cNota) + "' "
+	_cQry +=  " 	AND D1_SERIE = '"	+ AllTrim(cSerie) + "' "
+	_cQry +=  "  	AND D1_FORNECE = '"	+ AllTrim(cFornece) + "' "
+	_cQry +=  "  	AND D1_LOJA = '"	+ AllTrim(cLoja) + "' and SD1010.D_E_L_E_T_ = ''  "
+
+	dbUseArea(.T., "TOPCONN ",TcGenQry(,,_cQry),_tAlias2,.T.,.F.)
+	dbSelectArea(_tAlias2)
+	ProcRegua(RecCount())
+	(_tAlias2)->(dbGoTOP())
+	While !(_tAlias2)->(EOF())	.and. !empty((_tAlias2)->DESCRICAO)	
+
+		aAdd(aCombo, {(_tAlias2)->D1_COD, (_tAlias2)->DESCRICAO , (_tAlias2)->D1_LOTECTL, (_tAlias2)->D1_LOTEFOR })	
+
+		DbSelectArea(_tAlias2)
+		(_tAlias2)->(DbSkip())
+	EndDo
+	RestArea(_aArea)
+
+Return aCombo
+
+User Function AjustaSx1()
+	Local aArea := GetArea()
+
+	PutSx1(cPerg,"01","Nota","","","mv_ch1","C",15,0,0,"G","","","","","mv_par01")
+	PutSx1(cPerg,"02","Serie","","","mv_ch2","C",03,0,0,"G","","","","","mv_par02")
+	PutSX1(cPerg,"03","Fornecedor","","","mv_ch3","C",06,0,0,"C","","","","","mv_par03","", "", "", "","")
+	PutSX1(cPerg,"04","Loja","","","mv_ch4","C",02,0,0,"C","","","","","mv_par04","", "", "", "","")
+	RestArea(aArea)
+Return
+
+/*
+//User Function MTA103MNU()
+User Function MTA140MNU()
+AAdd(aRotina,{"Imp. Etiqueta de Entrada" , "U_RCOMR008(1)", 0 , 9, 0, Nil})
+Return
+*/

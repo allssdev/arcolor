@@ -1,0 +1,746 @@
+#include "Totvs.ch"
+#include "tlpp-core.th"
+#INCLUDE "FWPrintSetup.ch"
+#Include "RPTDef.ch"
+
+#DEFINE _CLRF CHR(13) + CHR(10)
+
+/*/{Protheus.doc} RPCPC003
+    Classe responsável pela impressão do relatório aos supervisores e vendedores 
+    @author Fernando Bombardi
+    @since 09/11/2023
+    /*/
+Class RPCPC003
+
+	Public Method New() CONSTRUCTOR
+	Public Method imprimirRelatorioTodos()
+	Private Method imprimirCabecalho()
+	Private Method dataPorExtenso()
+	Private Method imprimirProduto()
+	Private Method imprimirCliente()
+	Private Method imprimirRodape()
+	Private Method imprimirResumoTotalDoEstadoClientes()
+	Private Method imprimirResumoTotalGeral()
+	Public Method imprimirRelatorioSupervisor()
+	Public Method imprimirRelatorioVendedor()
+	Private Method saltarPagina()
+	Private Method imprimirSupervisorERepresentante()
+	Private Method enviarEmail()
+
+EndClass
+
+/*/{Protheus.doc} New
+	Metodo construtor da classe.
+	@author Fernando Bombardi
+	@since 09/11/2023
+	/*/
+Method New() class RPCPC003
+Return Self
+
+/*/{Protheus.doc} imprimirRelatorioTodos
+	Metodo para impressão do relatório de todos os clientes.
+	@author Fernando Bombardi
+	@since 09/11/2023
+	/*/
+Method imprimirRelatorioTodos(_cProd, _cLote) class RPCPC003
+	Local _cArq            := "RELATORIO_ACOMPANHAMENTO_DE_RECALL_GERAL_" + Alltrim(_cProd) + "_" + DtoS(dDataBase) + StrTran(Time(),":","") + ".PDF"
+	Local nUsaPDF          := IMP_PDF	//IMP_SPOOL
+	Local lFormaTMSPrinter := .T.
+	Private _cProduto      := _cProd as character
+	Private _cLoteProduto  := _cLote as character
+	Private oCinLight      := TBrush():New(,RGB(220,220,220)) //Cinza lIGHT
+	Private oCinBold       := TBrush():New(,rgb(128, 128, 128)) //Cinza BOLD
+	Private _nPagina       := 1
+	Private _nContaQuantosCliente          := 0 as integer
+	Private _nSomaTotalDeProdutosPorEstado := 0 as numeric
+	Private _nSomaTotalDeProdutosGeral     := 0 as numeric
+	Private _nContaQuantidadeRegistros     := 0 as integer
+	Private _nTipoRelatorio                := 1
+	Private oPrn           := FWMSPrinter():New(_cArq,nUsaPDF,lFormaTMSPrinter,,.T.,.F.,,"",.F.,.T.,.F.,.T.)
+	Private oFont06        := TFont():New( "Arial",,06,,.F.,,,,.F.,.F. )
+	Private oFont07        := TFont():New( "Arial",,07,,.F.,,,,.F.,.F. )
+	Private oFont08        := TFont():New( "Arial",,08,,.F.,,,,.F.,.F. )
+	Private oFont09        := TFont():New( "Arial",,09,,.F.,,,,.F.,.F. )
+	Private oFont10        := TFont():New( "Arial",,10,,.F.,,,,.F.,.F. )
+	Private oFont11        := TFont():New( "Arial",,11,,.F.,,,,.F.,.F. )
+	Private oFont12        := TFont():New( "Arial",,12,,.F.,,,,.F.,.F. )
+	Private oFont13        := TFont():New( "Arial",,13,,.F.,,,,.F.,.F. )
+	Private oFont14        := TFont():New( "Arial",,14,,.F.,,,,.F.,.F. )
+	Private oFont15        := TFont():New( "Arial",,15,,.F.,,,,.F.,.F. )
+	Private oFont16        := TFont():New( "Arial",,16,,.F.,,,,.F.,.F. )
+	Private oFont17        := TFont():New( "Arial",,17,,.F.,,,,.F.,.F. )
+	Private oFont18        := TFont():New( "Arial",,18,,.F.,,,,.F.,.F. )
+	Private oFont19        := TFont():New( "Arial",,19,,.F.,,,,.F.,.F. )
+	Private oFont20        := TFont():New( "Arial",,20,,.F.,,,,.F.,.F. )
+	Private oFont06N       := TFont():New( "Arial",,06,,.T.,,,,.F.,.F. )
+	Private oFont07N       := TFont():New( "Arial",,07,,.T.,,,,.F.,.F. )
+	Private oFont08N       := TFont():New( "Arial",,08,,.T.,,,,.F.,.F. )
+	Private oFont09N       := TFont():New( "Arial",,09,,.T.,,,,.F.,.F. )
+	Private oFont10N       := TFont():New( "Arial",,10,,.T.,,,,.F.,.F. )
+	Private oFont11N       := TFont():New( "Arial",,11,,.T.,,,,.F.,.F. )
+	Private oFont12N       := TFont():New( "Arial",,12,,.T.,,,,.F.,.F. )
+	Private oFont13N       := TFont():New( "Arial",,13,,.T.,,,,.F.,.F. )
+	Private oFont14N       := TFont():New( "Arial",,14,,.T.,,,,.F.,.F. )
+	Private oFont15N       := TFont():New( "Arial",,15,,.T.,,,,.F.,.F. )
+	Private oFont16N       := TFont():New( "Arial",,16,,.T.,,,,.F.,.F. )
+	Private oFont17N       := TFont():New( "Arial",,17,,.T.,,,,.F.,.F. )
+	Private oFont18N       := TFont():New( "Arial",,18,,.T.,,,,.F.,.F. )
+	Private oFont19N       := TFont():New( "Arial",,19,,.T.,,,,.F.,.F. )
+	Private oFont20N       := TFont():New( "Arial",,20,,.T.,,,,.F.,.F. )
+
+	oPrn := FWMSPrinter():New(_cArq,nUsaPDF,lFormaTMSPrinter,,.T.,.F.,,"",.F.,.T.,.F.,.T.)
+	oPrn:SetLandScape()	 // Orientação do Papel (Paisagem)
+    oPrn:SetPaperSize(DMPAPER_A4)
+	oPrn:cPathPDF := GetTempPath() //"c:\temp\"
+    oPrn:SetViewPDF(.F.)  
+
+	_cLocalArquivo := GetTempPath() + _cArq
+
+	_nlinMax	:= 2200
+	_nLin       := 0
+	_nSaltoL    := 35
+
+	dbSelectArea("TMPLOT")
+	TMPLOT->(dbSetOrder(1))
+	TMPLOT->(dbGoTop())
+
+	oPrn:StartPage()
+	::ImprimirCabecalho()
+	::imprimirProduto(_cProd,_cLote)
+
+	_cEstadoCliente := TMPLOT->ESTADO
+
+	While !TMPLOT->(EOF())
+
+		::saltarPagina(_cProduto, _cLoteProduto, _nTipoRelatorio)
+
+		_cEstadoCliente := TMPLOT->ESTADO
+		::imprimirCliente(TMPLOT->ESTADO)
+		
+		While !TMPLOT->(EOF()) .and. _cEstadoCliente == TMPLOT->ESTADO
+
+			::saltarPagina(_cProduto, _cLoteProduto, _nTipoRelatorio)
+
+			_nContaQuantosCliente++
+			oPrn:Say(_nLin, 0040,TMPLOT->NOME                                     , oFont14, 100,,,1)
+			oPrn:Say(_nLin, 1200,TMPLOT->CGC                                      , oFont14, 100,,,1)
+			oPrn:Say(_nLin, 1500,TMPLOT->DOC                                      , oFont14, 100,,,1)
+			oPrn:Say(_nLin, 1800,DtoC(TMPLOT->EMISSAO)                            , oFont14, 100,,,1)
+			oPrn:Say(_nLin, 2100,Transform(TMPLOT->QUANT, "@E 999,999,999.999999"), oFont14, 100,,,1)
+			oPrn:Say(_nLin, 2400,Transform( 0, "@E 999,999,999.999999")           , oFont14, 100,,,1)
+			_nLin += 50
+
+			_nContaQuantidadeRegistros++
+			_nSomaTotalDeProdutosPorEstado += TMPLOT->QUANT 
+			_nSomaTotalDeProdutosGeral     += TMPLOT->QUANT 
+
+			TMPLOT->(dbSkip())
+
+			if _cEstadoCliente <> TMPLOT->ESTADO
+
+				::imprimirResumoTotalDoEstadoClientes()
+
+				_nContaQuantosCliente          := 0
+				_nSomaTotalDeProdutosPorEstado := 0
+
+			endif
+
+		enddo
+
+	enddo
+
+	::imprimirResumoTotalGeral(_cProd,_cLote)
+	::imprimirRodape()
+
+	oPrn:EndPage()
+	oPrn:Preview()
+
+	FreeObj(oPrn)
+
+	_cEmailAnvisa := SUPERGETMV( "MV_MAILANV", .F., "diego.rodrigues@allss.com.br" )
+
+	::enviarEmail("Anvisa",_cEmailAnvisa)
+
+return
+
+/*/{Protheus.doc} imprimirCabecalho
+	Metodo para imprimir o cabecalho do relatório.
+	@author Fernando Bombardi
+	@since 10/11/2023
+	/*/
+Method imprimirCabecalho() class RPCPC003
+
+	oPrn:Box(000,000,010,501)
+	oPrn:SayBitmap (90,040,"\system\lgrl0101.bmp",330 ,280 )
+	oPrn:Say(205, 450,"RELATÓRIO DE ACOMPANHAMENTO DE RECALL DE PRODUTO" , oFont20N , 100,,,1)
+	oPrn:Say(200, 2440, ::dataPorExtenso(dDataBase), oFont14, 100,,,1)
+	oPrn:Say(240, 2850, Time(), oFont14, 100,,,1)
+
+return
+
+/*/{Protheus.doc} dataPorExtenso
+	Metodo para retornar a data por extendo.
+	@author Fernando Bombardi
+	@since 10/11/2023
+	/*/
+Method dataPorExtenso(_dParDat) class RPCPC003
+	Local _cRetDat := ""
+	Local _cDiaSem := CDow(_dParDat)
+
+	If(_cDiaSem == "Monday")
+		_cSemPor := "Segunda-Feira"
+	ElseIf(_cDiaSem == "Tuesday")
+		_cSemPor := "Terça-Feira"
+	ElseIf(_cDiaSem == "Wednesday")
+		_cSemPor := "Quarta-feira"
+	ElseIf(_cDiaSem == "Thursday")
+		_cSemPor := "Quinta-Feira"
+	ElseIf(_cDiaSem == "Friday")
+		_cSemPor := "Sexta-Feira"
+	ElseIf(_cDiaSem == "Saturday")
+		_cSemPor := "Sábado"
+	Else
+		_cSemPor := "Domingo"
+	EndIf
+
+	_cRetDat += cValToChar(day(_dParDat))
+	_cRetDat += " de "
+	_cRetDat += mesextenso(_dParDat)
+	_cRetDat += " de "
+	_cRetDat += cValToChar(year(_dParDat))
+
+	_cRetDat := _cSemPor + ", " + _cRetDat
+
+return _cRetDat
+
+
+/*/{Protheus.doc} imprimirProduto
+	Metodo para imprimir os dados do produto.
+	@author Fernando Bombardi
+	@since 10/11/2023
+	/*/
+Method imprimirProduto(_cProd, _cLote) class RPCPC003
+
+	oPrn:FillRect({0350,0030,0550,3000},oCinLight)
+
+	oPrn:Say(420, 040,"PRODUTO:", oFont14, 100,,,1)
+	oPrn:Say(412, 500, _cProd, oFont20N, 100,,,1)
+	oPrn:Say(412, 900, Alltrim(Posicione("SB1",1,FWFilial("SB1")+_cProd,"B1_DESC")), oFont20N, 100,,,1)
+
+	oPrn:Say(500, 040,"LOTE Nº:", oFont14, 100,,,1)
+	oPrn:Say(497, 500, _cLote, oFont20N, 100,,,1)
+
+	oPrn:Say(500, 900,"DATA FABRICAÇÃO:", oFont14, 100,,,1)
+	oPrn:Say(497, 1250,DtoC(TMPLOT->DFABRIC), oFont20N, 100,,,1)
+
+	oPrn:Say(500, 1600,"DATA VALIDADE: ", oFont14, 100,,,1)
+	oPrn:Say(497, 1900,DtoC(TMPLOT->DTVALID), oFont20N, 100,,,1)
+	_nLin := 600
+
+Return
+
+/*/{Protheus.doc} methodName
+	(long_description)
+	@author user
+	@since 22/11/2023
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	/*/
+Method imprimirSupervisorERepresentante(_cCodigoSupervisor, _cNomeSupervisor, _cCodigoRepresentante, _cNomeRepresentante, _nTipoRelatorio) class RPCPC003
+
+	if _nTipoRelatorio == 2
+		oPrn:Say(_nLin + 50, 040,"Supervisor:", oFont12N, 100,,,1)
+		oPrn:Say(_nLin + 50, 500, _cCodigoSupervisor + " - " + _cNomeSupervisor, oFont12, 100,,,1)
+	endif
+
+	oPrn:Say(_nLin + 100, 040,"Representante:", oFont12N, 100,,,1)
+	oPrn:Say(_nLin + 100, 500, _cCodigoRepresentante + " - " + _cNomeRepresentante, oFont12, 100,,,1)
+
+	_nLin += 150
+
+Return
+
+/*/{Protheus.doc} imprimirCliente
+	Metodo para imprimir cabecalho dos dados dos clientes.
+	@author Fernando Bombardi
+	@since 13/11/2023
+	/*/
+Method imprimirCliente(_cEst) class RPCPC003
+
+	::saltarPagina(_cProduto, _cLoteProduto, _nTipoRelatorio)
+
+	oPrn:FillRect({_nLin,0030,_nLin + 200,3000},oCinBold)
+	oPrn:Say(_nLin + 70, 0040,_cEst, oFont16N, 100,CLR_WHITE,,1)
+
+	oPrn:Say(_nLin + 140, 0040,"NOME_CLIENTE", oFont14N, 100,CLR_WHITE,,1)
+	oPrn:Say(_nLin + 140, 1200,"CNPJ", oFont14N, 100,CLR_WHITE,,1)
+	oPrn:Say(_nLin + 140, 1500,"DOCUMENTO Nº", oFont14N, 100,CLR_WHITE,,1)
+	oPrn:Say(_nLin + 140, 1800," DT_EMISSAO", oFont14N, 100,CLR_WHITE,,1)
+	oPrn:Say(_nLin + 140, 2100,"QTD ENTREGUE", oFont14N, 100,CLR_WHITE,,1)
+	oPrn:Say(_nLin + 140, 2400,"QTD RECOLHIDA", oFont14N, 100,CLR_WHITE,,1)
+	_nLin := _nLin + 250
+
+	::saltarPagina(_cProduto, _cLoteProduto, _nTipoRelatorio)
+
+Return
+
+/*/{Protheus.doc} imprimirRodape
+	Metodo para realizar a impressão do roda pé da pagina.
+	@author Fernando Bombardi
+	@since 13/11/2023
+	/*/
+Method imprimirRodape() class RPCPC003
+
+	oPrn:Say(_nlinMax + 100, 40, ::dataPorExtenso(dDataBase), oFont14, 100,,,1)
+	oPrn:Say(_nlinMax + 100, 2850, "Página: " + Alltrim(Str(_nPagina)) , oFont14, 100,,,1)
+
+Return
+
+/*/{Protheus.doc} imprimirResumoTotalDoEstadoClientes
+	Metodo para imprimir o total do estado.
+	@author Fernando Bombardi
+	@since 15/11/2023
+	/*/
+Method imprimirResumoTotalDoEstadoClientes() class RPCPC003
+
+	oPrn:Line(_nLin,040,_nLin,3000)
+	_nLin += 50
+
+	::saltarPagina(_cProduto, _cLoteProduto, _nTipoRelatorio)
+
+	oPrn:Say(_nLin, 0300, "Resumo para 'ESTADO' = " + _cEstadoCliente + " (" + Alltrim(Str(_nContaQuantosCliente)) + " registros de detalhe)" , oFont14, 100,,,1)
+	oPrn:Say(_nLin, 2100, Transform(_nSomaTotalDeProdutosPorEstado, "@E 999,999,999.999999")                                                 , oFont14, 100,,,1)
+	oPrn:Say(_nLin, 2400, Transform( 0, "@E 999,999,999.999999")                                                                             , oFont14, 100,,,1)
+	_nLin += 50
+
+	::saltarPagina(_cProduto, _cLoteProduto, _nTipoRelatorio)
+
+Return
+
+/*/{Protheus.doc} imprimirResumoTotalGeral
+	Metodo para realizar a impressao do Total geral dos Produtos
+	@author Fernando Bombardi
+	@since 15/11/2023
+	/*/
+Method imprimirResumoTotalGeral(_cProd,_cLote) class RPCPC003
+
+	oPrn:Line(_nLin,040,_nLin,3000)
+	_nLin += 50
+
+	::saltarPagina(_cProduto, _cLoteProduto, _nTipoRelatorio)
+
+	oPrn:Say(_nLin, 0300, "Resumo para LOTE = " + _cLote + " programado para ser recolhido (" + Alltrim(Str(_nContaQuantidadeRegistros)) + " registros de detalhe)" , oFont14, 100,,,1)
+	oPrn:Say(_nLin, 2100, Transform(_nSomaTotalDeProdutosGeral, "@E 999,999,999.999999")                                                 , oFont14, 100,,,1)
+	oPrn:Say(_nLin, 2400, Transform( 0, "@E 999,999,999.999999")                                                                         , oFont14, 100,,,1)
+	_nLin += 50
+
+	::saltarPagina(_cProduto, _cLoteProduto, _nTipoRelatorio)
+
+	oPrn:Line(_nLin,040,_nLin,3000)
+	_nLin += 50
+
+	::saltarPagina(_cProduto, _cLoteProduto, _nTipoRelatorio)
+
+	oPrn:Say(_nLin, 0300, "Total de " + _cProd + " - " + Alltrim(Posicione("SB1",1,FWFilial("SB1")+_cProd,"B1_DESC"))  + " produzida (" + Alltrim(Str(_nContaQuantidadeRegistros)) + " registros de detalhe)" , oFont14, 100,,,1)
+	oPrn:Say(_nLin, 2100, Transform(_nSomaTotalDeProdutosGeral, "@E 999,999,999.999999")  , oFont14, 100,,,1)
+	oPrn:Say(_nLin, 2400, Transform( 0, "@E 999,999,999.999999")                          , oFont14, 100,,,1)
+	_nLin += 50
+
+	::saltarPagina(_cProduto, _cLoteProduto, _nTipoRelatorio)
+
+	_nSomaTotalDeProdutosGeral := 0	
+	_nSomaTotalDeProdutosGeral := 0
+
+Return
+
+/*/{Protheus.doc} imprimirRelatorioSupervisor
+	Metodo para impressão do relatório por supervisores
+	@author Fernando Bombardi
+	@since 21/11/2023
+	/*/
+Method imprimirRelatorioSupervisor(_cProd, _cLote) class RPCPC003
+	Local _cArq            := ""
+	Local nUsaPDF          := IMP_PDF	//IMP_SPOOL
+	Local lFormaTMSPrinter := .T.
+	Private _cProduto      := _cProd as character
+	Private _cLoteProduto  := _cLote as character	
+	Private oCinLight      := TBrush():New(,RGB(220,220,220)) //Cinza lIGHT
+	Private oCinBold       := TBrush():New(,rgb(128, 128, 128)) //Cinza BOLD
+	Private _nPagina       := 2
+	Private _nContaQuantosCliente          := 0 as integer
+	Private _nSomaTotalDeProdutosPorEstado := 0 as numeric
+	Private _nSomaTotalDeProdutosGeral     := 0 as numeric
+	Private _nContaQuantidadeRegistros     := 0 as integer
+	Private _nTipoRelatorio                := 2
+	Private oPrn           
+	Private oFont06        := TFont():New( "Arial",,06,,.F.,,,,.F.,.F. )
+	Private oFont07        := TFont():New( "Arial",,07,,.F.,,,,.F.,.F. )
+	Private oFont08        := TFont():New( "Arial",,08,,.F.,,,,.F.,.F. )
+	Private oFont09        := TFont():New( "Arial",,09,,.F.,,,,.F.,.F. )
+	Private oFont10        := TFont():New( "Arial",,10,,.F.,,,,.F.,.F. )
+	Private oFont11        := TFont():New( "Arial",,11,,.F.,,,,.F.,.F. )
+	Private oFont12        := TFont():New( "Arial",,12,,.F.,,,,.F.,.F. )
+	Private oFont13        := TFont():New( "Arial",,13,,.F.,,,,.F.,.F. )
+	Private oFont14        := TFont():New( "Arial",,14,,.F.,,,,.F.,.F. )
+	Private oFont15        := TFont():New( "Arial",,15,,.F.,,,,.F.,.F. )
+	Private oFont16        := TFont():New( "Arial",,16,,.F.,,,,.F.,.F. )
+	Private oFont17        := TFont():New( "Arial",,17,,.F.,,,,.F.,.F. )
+	Private oFont18        := TFont():New( "Arial",,18,,.F.,,,,.F.,.F. )
+	Private oFont19        := TFont():New( "Arial",,19,,.F.,,,,.F.,.F. )
+	Private oFont20        := TFont():New( "Arial",,20,,.F.,,,,.F.,.F. )
+	Private oFont06N       := TFont():New( "Arial",,06,,.T.,,,,.F.,.F. )
+	Private oFont07N       := TFont():New( "Arial",,07,,.T.,,,,.F.,.F. )
+	Private oFont08N       := TFont():New( "Arial",,08,,.T.,,,,.F.,.F. )
+	Private oFont09N       := TFont():New( "Arial",,09,,.T.,,,,.F.,.F. )
+	Private oFont10N       := TFont():New( "Arial",,10,,.T.,,,,.F.,.F. )
+	Private oFont11N       := TFont():New( "Arial",,11,,.T.,,,,.F.,.F. )
+	Private oFont12N       := TFont():New( "Arial",,12,,.T.,,,,.F.,.F. )
+	Private oFont13N       := TFont():New( "Arial",,13,,.T.,,,,.F.,.F. )
+	Private oFont14N       := TFont():New( "Arial",,14,,.T.,,,,.F.,.F. )
+	Private oFont15N       := TFont():New( "Arial",,15,,.T.,,,,.F.,.F. )
+	Private oFont16N       := TFont():New( "Arial",,16,,.T.,,,,.F.,.F. )
+	Private oFont17N       := TFont():New( "Arial",,17,,.T.,,,,.F.,.F. )
+	Private oFont18N       := TFont():New( "Arial",,18,,.T.,,,,.F.,.F. )
+	Private oFont19N       := TFont():New( "Arial",,19,,.T.,,,,.F.,.F. )
+	Private oFont20N       := TFont():New( "Arial",,20,,.T.,,,,.F.,.F. )
+
+	_nlinMax	:= 2200
+	_nLin       := 0
+	_nSaltoL    := 35
+
+	dbSelectArea("TMPLOT")
+	TMPLOT->(dbSetOrder(2))
+	TMPLOT->(dbGoTop())
+
+	While !TMPLOT->(EOF())
+
+		if Empty(TMPLOT->SUPER)
+			TMPLOT->(dbSkip())
+			Loop
+		endif
+
+		_cArq := "SUP_" + Alltrim(TMPLOT->SUPER) + "_RELATORIO_ACOMPANHAMENTO_DE_RECALL_" + Alltrim(_cProd) + "_" + DtoS(dDataBase) + StrTran(Time(),":","") + ".PDF"
+
+		oPrn := FWMSPrinter():New(_cArq,nUsaPDF,lFormaTMSPrinter,,.T.,.F.,,"",.F.,.T.,.F.,.T.)
+		oPrn:SetLandScape()	 // Orientação do Papel (Paisagem)
+        oPrn:SetPaperSize(DMPAPER_A4)
+	    oPrn:cPathPDF := GetTempPath() //"c:\temp\"
+        oPrn:SetViewPDF(.F.)  
+
+		_cLocalArquivo := GetTempPath() + _cArq
+
+		oPrn:StartPage()
+		::ImprimirCabecalho()
+		::imprimirProduto(_cProd,_cLote)
+
+		_cSupervisor    := TMPLOT->SUPER
+		_cEstadoCliente := TMPLOT->ESTADO
+
+		::imprimirSupervisorERepresentante(TMPLOT->SUPER, TMPLOT->NOMREP, TMPLOT->VEND1, TMPLOT->NOMVEN,_nTipoRelatorio)
+
+		While !TMPLOT->(EOF()) .and. _cSupervisor == TMPLOT->SUPER
+
+			_cEmailSupervisor := TMPLOT->MAILREP 
+			_cCodigoVendedor := TMPLOT->VEND1
+
+			While !TMPLOT->(EOF()) .and. _cCodigoVendedor == TMPLOT->VEND1
+
+				::saltarPagina(_cProduto, _cLoteProduto, _nTipoRelatorio)
+
+				_cEstadoCliente := TMPLOT->ESTADO
+				::imprimirCliente(TMPLOT->ESTADO)
+				
+				While !TMPLOT->(EOF()) .and. _cEstadoCliente == TMPLOT->ESTADO .and. _cCodigoVendedor == TMPLOT->VEND1
+
+					::saltarPagina(_cProduto, _cLoteProduto, _nTipoRelatorio)
+
+					_nContaQuantosCliente++
+					oPrn:Say(_nLin, 0040,TMPLOT->NOME                                   , oFont14, 100,,,1)
+					oPrn:Say(_nLin, 1200,TMPLOT->CGC                                    , oFont14, 100,,,1)
+					oPrn:Say(_nLin, 1500,TMPLOT->DOC                                    , oFont14, 100,,,1)
+					oPrn:Say(_nLin, 1800,DtoC(TMPLOT->EMISSAO)                          , oFont14, 100,,,1)
+					oPrn:Say(_nLin, 2100,Transform(TMPLOT->QUANT, "@E 999,999,999.999999"), oFont14, 100,,,1)
+					oPrn:Say(_nLin, 2400,Transform( 0, "@E 999,999,999.999999")           , oFont14, 100,,,1)
+					_nLin += 50
+
+					_nContaQuantidadeRegistros++
+					_nSomaTotalDeProdutosPorEstado += TMPLOT->QUANT 
+					_nSomaTotalDeProdutosGeral     += TMPLOT->QUANT 
+
+					TMPLOT->(dbSkip())
+
+					if _cEstadoCliente <> TMPLOT->ESTADO
+
+						::imprimirResumoTotalDoEstadoClientes()
+
+						_nContaQuantosCliente          := 0
+						_nSomaTotalDeProdutosPorEstado := 0
+
+					endif
+
+				enddo
+
+				if _cCodigoVendedor <> TMPLOT->VEND1 .and. _cSupervisor == TMPLOT->SUPER				
+
+					::imprimirResumoTotalDoEstadoClientes()
+
+					_nContaQuantosCliente          := 0
+					_nSomaTotalDeProdutosPorEstado := 0
+
+					::imprimirSupervisorERepresentante(TMPLOT->SUPER, TMPLOT->NOMREP, TMPLOT->VEND1, TMPLOT->NOMVEN,_nTipoRelatorio)
+
+				endif
+
+			enddo
+
+			if _cSupervisor <> TMPLOT->SUPER
+
+				::imprimirResumoTotalGeral(_cProduto,_cLoteProduto)
+				::imprimirRodape()
+
+				oPrn:EndPage()
+				oPrn:Preview()
+
+				FreeObj(oPrn)
+
+				::enviarEmail("Supervisor",_cEmailSupervisor)
+
+
+			endif
+
+		enddo
+
+	enddo
+
+return
+
+/*/{Protheus.doc} saltarPagina
+	Metodo para verificar se deve saltar pagina no relatório.
+	@author Fernando Bombardi
+	@since 21/11/2023
+	/*/
+Method saltarPagina(_cProduto, _cLoteProduto, _nTipoRelatorio) class RPCPC003
+
+	If _nLin >= _nlinMax
+		::imprimirRodape()
+		oPrn:EndPage()
+		oPrn:StartPage()
+		_nPagina++
+		::ImprimirCabecalho()
+		::imprimirProduto(_cProduto, _cLoteProduto)
+
+		if _nTipoRelatorio == 2 .or. _nTipoRelatorio == 3 
+
+			::imprimirSupervisorERepresentante(TMPLOT->SUPER, TMPLOT->NOMREP, TMPLOT->VEND1, TMPLOT->NOMVEN,_nTipoRelatorio)
+
+		endif
+
+	EndIf
+
+Return
+
+
+/*/{Protheus.doc} imprimirRelatorioVendedor
+	Metodo para impressão do relatório por vendedores
+	@author Fernando Bombardi
+	@since 21/11/2023
+	/*/
+Method imprimirRelatorioVendedor(_cProd, _cLote) class RPCPC003
+	Local _cArq            := ""
+	Local nUsaPDF          := IMP_PDF	//IMP_SPOOL
+	Local lFormaTMSPrinter := .T.
+	Private _cProduto      := _cProd as character
+	Private _cLoteProduto  := _cLote as character	
+	Private oCinLight      := TBrush():New(,RGB(220,220,220)) //Cinza lIGHT
+	Private oCinBold       := TBrush():New(,rgb(128, 128, 128)) //Cinza BOLD
+	Private _nPagina       := 2
+	Private _nContaQuantosCliente          := 0 as integer
+	Private _nSomaTotalDeProdutosPorEstado := 0 as numeric
+	Private _nSomaTotalDeProdutosGeral     := 0 as numeric
+	Private _nContaQuantidadeRegistros     := 0 as integer
+	Private _nTipoRelatorio                := 3
+	Private oPrn           
+	Private oFont06        := TFont():New( "Arial",,06,,.F.,,,,.F.,.F. )
+	Private oFont07        := TFont():New( "Arial",,07,,.F.,,,,.F.,.F. )
+	Private oFont08        := TFont():New( "Arial",,08,,.F.,,,,.F.,.F. )
+	Private oFont09        := TFont():New( "Arial",,09,,.F.,,,,.F.,.F. )
+	Private oFont10        := TFont():New( "Arial",,10,,.F.,,,,.F.,.F. )
+	Private oFont11        := TFont():New( "Arial",,11,,.F.,,,,.F.,.F. )
+	Private oFont12        := TFont():New( "Arial",,12,,.F.,,,,.F.,.F. )
+	Private oFont13        := TFont():New( "Arial",,13,,.F.,,,,.F.,.F. )
+	Private oFont14        := TFont():New( "Arial",,14,,.F.,,,,.F.,.F. )
+	Private oFont15        := TFont():New( "Arial",,15,,.F.,,,,.F.,.F. )
+	Private oFont16        := TFont():New( "Arial",,16,,.F.,,,,.F.,.F. )
+	Private oFont17        := TFont():New( "Arial",,17,,.F.,,,,.F.,.F. )
+	Private oFont18        := TFont():New( "Arial",,18,,.F.,,,,.F.,.F. )
+	Private oFont19        := TFont():New( "Arial",,19,,.F.,,,,.F.,.F. )
+	Private oFont20        := TFont():New( "Arial",,20,,.F.,,,,.F.,.F. )
+	Private oFont06N       := TFont():New( "Arial",,06,,.T.,,,,.F.,.F. )
+	Private oFont07N       := TFont():New( "Arial",,07,,.T.,,,,.F.,.F. )
+	Private oFont08N       := TFont():New( "Arial",,08,,.T.,,,,.F.,.F. )
+	Private oFont09N       := TFont():New( "Arial",,09,,.T.,,,,.F.,.F. )
+	Private oFont10N       := TFont():New( "Arial",,10,,.T.,,,,.F.,.F. )
+	Private oFont11N       := TFont():New( "Arial",,11,,.T.,,,,.F.,.F. )
+	Private oFont12N       := TFont():New( "Arial",,12,,.T.,,,,.F.,.F. )
+	Private oFont13N       := TFont():New( "Arial",,13,,.T.,,,,.F.,.F. )
+	Private oFont14N       := TFont():New( "Arial",,14,,.T.,,,,.F.,.F. )
+	Private oFont15N       := TFont():New( "Arial",,15,,.T.,,,,.F.,.F. )
+	Private oFont16N       := TFont():New( "Arial",,16,,.T.,,,,.F.,.F. )
+	Private oFont17N       := TFont():New( "Arial",,17,,.T.,,,,.F.,.F. )
+	Private oFont18N       := TFont():New( "Arial",,18,,.T.,,,,.F.,.F. )
+	Private oFont19N       := TFont():New( "Arial",,19,,.T.,,,,.F.,.F. )
+	Private oFont20N       := TFont():New( "Arial",,20,,.T.,,,,.F.,.F. )
+
+	_nlinMax	:= 2200
+	_nLin       := 0
+	_nSaltoL    := 35
+
+	dbSelectArea("TMPLOT")
+	TMPLOT->(dbSetOrder(3))
+	TMPLOT->(dbGoTop())
+
+	While !TMPLOT->(EOF())
+
+		_cArq := "rep_" + Alltrim(TMPLOT->VEND1) + "_RELATORIO_ACOMPANHAMENTO_DE_RECALL_" + Alltrim(_cProd) + "_" + DtoS(dDataBase) + StrTran(Time(),":","") + ".PDF"
+
+		oPrn := FWMSPrinter():New(_cArq,nUsaPDF,lFormaTMSPrinter,,.T.,.F.,,"",.F.,.T.,.F.,.T.)
+		oPrn:SetLandScape()	 // Orientação do Papel (Paisagem)
+        oPrn:SetPaperSize(DMPAPER_A4)
+	    oPrn:cPathPDF := GetTempPath()
+        oPrn:SetViewPDF(.F.)  
+
+		_cLocalArquivo := GetTempPath() + _cArq
+
+		oPrn:StartPage()
+		::ImprimirCabecalho()
+		::imprimirProduto(_cProd,_cLote)
+
+		_cCodigoVendedor := TMPLOT->VEND1
+		_cEstadoCliente  := TMPLOT->ESTADO
+
+		::imprimirSupervisorERepresentante(TMPLOT->SUPER, TMPLOT->NOMREP, TMPLOT->VEND1, TMPLOT->NOMVEN,_nTipoRelatorio)
+
+			While !TMPLOT->(EOF()) .and. _cCodigoVendedor == TMPLOT->VEND1
+
+				_cEmailRepresentante := TMPLOT->MAILVEN
+
+				::saltarPagina(_cProduto, _cLoteProduto, _nTipoRelatorio)
+
+				_cEstadoCliente := TMPLOT->ESTADO
+				::imprimirCliente(TMPLOT->ESTADO)
+				
+				While !TMPLOT->(EOF()) .and. _cEstadoCliente == TMPLOT->ESTADO .and. _cCodigoVendedor == TMPLOT->VEND1
+
+					::saltarPagina(_cProduto, _cLoteProduto, _nTipoRelatorio)
+
+					_nContaQuantosCliente++
+					oPrn:Say(_nLin, 0040,TMPLOT->NOME                                   , oFont14, 100,,,1)
+					oPrn:Say(_nLin, 1200,TMPLOT->CGC                                    , oFont14, 100,,,1)
+					oPrn:Say(_nLin, 1500,TMPLOT->DOC                                    , oFont14, 100,,,1)
+					oPrn:Say(_nLin, 1800,DtoC(TMPLOT->EMISSAO)                          , oFont14, 100,,,1)
+					oPrn:Say(_nLin, 2100,Transform(TMPLOT->QUANT, "@E 999,999,999.999999"), oFont14, 100,,,1)
+					oPrn:Say(_nLin, 2400,Transform( 0, "@E 999,999,999.999999")           , oFont14, 100,,,1)
+					_nLin += 50
+
+					_nContaQuantidadeRegistros++
+					_nSomaTotalDeProdutosPorEstado += TMPLOT->QUANT 
+					_nSomaTotalDeProdutosGeral     += TMPLOT->QUANT 
+
+					TMPLOT->(dbSkip())
+
+					if _cEstadoCliente <> TMPLOT->ESTADO
+
+						::imprimirResumoTotalDoEstadoClientes()
+
+						_nContaQuantosCliente          := 0
+						_nSomaTotalDeProdutosPorEstado := 0
+
+					endif
+
+				enddo
+
+				if _cCodigoVendedor <> TMPLOT->VEND1
+
+					::imprimirResumoTotalGeral(_cProduto,_cLoteProduto)
+					::imprimirRodape()
+
+					oPrn:EndPage()
+					oPrn:Preview()
+
+					FreeObj(oPrn)
+
+					::enviarEmail("Representante",_cEmailRepresentante)
+
+				endif
+
+			enddo
+
+	enddo
+
+return
+
+
+/*/{Protheus.doc} methodName
+	(long_description)
+	@author user
+	@since 22/11/2023
+	@version version
+	@param param_name, param_type, param_descr
+	@return return_var, return_type, return_description
+	/*/
+Method enviarEmail(_cDestinatario,_cEmailDestinatario) class RPCPC003
+	Local _cAnexo      := ""
+	Local _cAssunto    := _cDestinatario + " - ARCOLOR - RELATÓRIO DE ACOMPANHAMENTO DE RECALL DE PRODUTO" 
+	Local _cBCC        := ""
+	Local _cBodyMail   := ""
+	Local _cCC         := ""
+	Local _cFromOri    := "naoresponda@arcolor.com.br"
+	Local _cImgAlert   := "\system\mensagem_alerta_recall.jpg"
+	Local _lAlert      := .T.
+	Local _lExcAnex    := .F.
+	Local _lHtmlOk     := .F.
+	Local _lRetMail    := .F.
+	Local _cMail       := "diego.rodrigues@allss.com.br; fernando.bombardi@allss.com.br" //_cEmailDestinatario
+	Local cDrive       := ""
+	Local cDir         := ""
+	Local cNome        := ""
+	Local cExt         := ""
+
+	_cBodyMail := "<div>"'
+	_cBodyMail += "<p>Prezados(as),</p>"
+	_cBodyMail += "<br>"
+	_cBodyMail += "<p> Arcolor do Brasil vem através deste e-mail informar os clientes que receberam os produtos e lotes em recall no momento.</p>"
+	_cBodyMail += "<br>"
+	_cBodyMail += "<p>Por gentileza verificar o documento em anexo e acompanhar com seus clientes.</p>"
+	_cBodyMail += "<br>"
+	_cBodyMail += "<p>Atenciosamente,</p>"
+	_cBodyMail += "<br>"
+	_cBodyMail += "</div>"
+
+	if !Empty(_cLocalArquivo)
+
+		_lRet := CpyT2S( _cLocalArquivo ,"\RECALL" ,.F. )
+		IF !_lRet
+			MsgAlert("Ocorreram erros na copia da imagem do produto tente navamente.","[RPCPC003_E231]")
+		endif
+
+		SplitPath( _cLocalArquivo, @cDrive, @cDir, @cNome, @cExt )
+
+		_cLocalArquivo := "\RECALL\" + Alltrim(cNome) + Alltrim(cExt)
+
+		_cAnexo := _cImgAlert + ";" + _cLocalArquivo
+
+	else
+
+		_cAnexo := _cImgAlert
+
+	endif
+
+	_lRetMail := U_RCFGM001("",_cBodyMail,_cMail,_cAnexo,_cFromOri,_cBCC,_cAssunto,_lExcAnex,_lAlert,_lHtmlOk,_cCC)
+	if !_lRetMail
+		ShowHelpDlg("[RPCPC003_E013]", {"Ocorreram erros no envio do e-mail do Recall de Produto."},5,;
+										{"Entre em contato com o administrador do sistema.",""},5)
+	endif
+
+Return

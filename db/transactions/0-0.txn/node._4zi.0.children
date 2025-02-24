@@ -1,0 +1,53 @@
+END
+K 7
+current
+V 16
+file _4zj.0.t0-0
+K 6
+format
+V 16
+file _4zm.0.t0-0
+K 7
+fs-type
+V 16
+file _4zo.0.t0-0
+K 9
+fsfs.conf
+V 16
+file _4zq.0.t0-0
+K 16
+min-unpacked-rev
+V 16
+file _4zs.0.t0-0
+K 12
+rep-cache.db
+V 16
+file _4zu.0.t0-0
+K 20
+rep-cache.db-journal
+V 16
+file _4zx.0.t0-0
+K 8
+revprops
+V 15
+dir _4zz.0.t0-0
+K 4
+revs
+V 15
+dir _505.0.t0-0
+K 12
+transactions
+V 15
+dir _50b.0.t0-0
+K 11
+txn-current
+V 16
+file _f0g.0.t0-0
+K 16
+txn-current-lock
+V 16
+file _f0i.0.t0-0
+K 13
+txn-protorevs
+V 15
+dir _f0k.0.t0-0

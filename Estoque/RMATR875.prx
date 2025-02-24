@@ -1,0 +1,1287 @@
+#INCLUDE "MATR875.CH"
+#INCLUDE "PROTHEUS.CH"
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Programa  ³MATR875   ³ Autor ³Felipe Nunes Toledo    ³ Data ³ 06/07/06 ³±±
+±±³Programa  ³RMATR875  ³ Autor ³Anderson C. P. Coelho  ³ Data ³ 29/10/13 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡…o ³Relacao para Analise dos Estoques.                          ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Retorno   ³Nenhum                                                      ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Parametros³Nenhum                                                      ³±±
+±±³          ³                                                            ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß           
+*/
+
+User Function RMATR875()
+
+Local   oReport
+Private _cRotina := "RMATR875"
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Funcao utilizada para verificar a ultima versao dos fontes      ³
+//³ SIGACUS.PRW, SIGACUSA.PRX e SIGACUSB.PRX, aplicados no rpo do   |
+//| cliente, assim verificando a necessidade de uma atualizacao     |
+//| nestes fontes. NAO REMOVER !!!							        ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+IF !(FindFunction("SIGACUS_V") .and. SIGACUS_V() >= 20050512)
+    Final("Atualizar SIGACUS.PRW !!!")
+Endif
+IF !(FindFunction("SIGACUSA_V") .and. SIGACUSA_V() >= 20050512)
+    Final("Atualizar SIGACUSA.PRX !!!")
+Endif
+IF !(FindFunction("SIGACUSB_V") .and. SIGACUSB_V() >= 20050512)
+    Final("Atualizar SIGACUSB.PRX !!!")
+Endif
+
+//If FindFunction("TRepInUse") .And. TRepInUse()
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³Interface de impressao                                                  ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	oReport:= ReportDef()
+	oReport:PrintDialog()
+//Else
+//	MATR875R3()
+//EndIf
+
+Return NIL
+
+/*/
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Programa  ³ReportDef ³ Autor ³Felipe Nunes Toledo    ³ Data ³06/07/06  ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡…o ³A funcao estatica ReportDef devera ser criada para todos os ³±±
+±±³          ³relatorios que poderao ser agendados pelo usuario.          ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Parametros³Nenhum                                                      ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Uso      ³MATR875			                                          ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+/*/
+Static Function ReportDef()
+Local oReport
+Local oSection1    // Secao 1
+Local oSection2    // Secao 2
+Local cTitle    := OemToAnsi(STR0001) //"Relacao para Analise dos Estoques"
+Local cAliasSG1 := "SG1"
+Local lQuery    := .F.
+#IFDEF TOP
+	cAliasSG1   := GetNextAlias()
+	lQuery      := .T.
+#ENDIF
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Criacao do componente de impressao                                      ³
+//³                                                                        ³
+//³TReport():New                                                           ³
+//³ExpC1 : Nome do relatorio                                               ³
+//³ExpC2 : Titulo                                                          ³
+//³ExpC3 : Pergunte                                                        ³
+//³ExpB4 : Bloco de codigo que sera executado na confirmacao da impressao  ³
+//³ExpC5 : Descricao                                                       ³
+//³                                                                        ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+//oReport:= TReport():New("MATR875",cTitle,"MTR875", {|oReport| ReportPrint(oReport,cAliasSG1, lQuery)},OemToAnsi(STR0002)+" "+OemToAnsi(STR0003)+" "+OemToAnsi(STR0004)) //##"Este relat¢rio demonstra a situa‡„o de cada item da estrutura"##"do produto Pai em rela‡„o ao seu saldo , seu empenho , suas  "##"entradas previstas e sua classe ABC."
+oReport:= TReport():New("RMATR875",cTitle,"RMATR875", {|oReport| ReportPrint(oReport,cAliasSG1, lQuery)},OemToAnsi(STR0002)+" "+OemToAnsi(STR0003)+" "+OemToAnsi(STR0004)) //##"Este relat¢rio demonstra a situa‡„o de cada item da estrutura"##"do produto Pai em rela‡„o ao seu saldo , seu empenho , suas  "##"entradas previstas e sua classe ABC."
+oReport:SetLandscape() //Define a orientacao de pagina do relatorio como paisagem.
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Verifica as perguntas selecionadas ("RMATR875" - antigo MTR875)³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Variaveis utilizadas para parametros                         ³
+//³ mv_par01     // De Produto                                   ³
+//³ mv_par02     // Ate Produto                                  ³
+//³ mv_par03     // Lista itens fantasmas   (1-Sim 2-Nao)        ³
+//³ mv_par04     // Lista Estr. do fantasma (1-Sim 2-Nao)        ³
+//³ mv_par05     // Impr. OP's Firmes, Previstas ou Ambas        ³
+//³ mv_par06     // De   Almoxarifado ?                          ³ 
+//³ mv_par07     // Ate  Almoxarifado ?                          ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+Pergunte(oReport:GetParam(),.F.)
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Criacao das secoes utilizadas pelo relatorio                            ³
+//³                                                                        ³
+//³TRSection():New                                                         ³
+//³ExpO1 : Objeto TReport que a secao pertence                             ³
+//³ExpC2 : Descricao da seçao                                              ³
+//³ExpA3 : Array com as tabelas utilizadas pela secao. A primeira tabela   ³
+//³        sera considerada como principal para a seção.                   ³
+//³ExpA4 : Array com as Ordens do relatório                                ³
+//³ExpL5 : Carrega campos do SX3 como celulas                              ³
+//³        Default : False                                                 ³
+//³ExpL6 : Carrega ordens do Sindex                                        ³
+//³        Default : False                                                 ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ oSection1 (Impressao Produto Pai)                           ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+oSection1 := TRSection():New(oReport,STR0019,{"SG1","SB1","SB2"},/*Ordem*/) //"Estruturas"
+oSection1:SetHeaderBreak()
+
+TRCell():New(oSection1,'G1_COD' 	,'SG1', STR0014  ,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+TRCell():New(oSection1,'B1_DESC' 	,'SB1',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+TRCell():New(oSection1,'B2_QATU'	,'SB2',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+TRCell():New(oSection1,'B2_QPEDVEN'	,'SB2',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ oSection2 (Impressao Componentes)                           ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+oSection2 := TRSection():New(oSection1,STR0020,{"SG1","SB1","SC1","SD4","SC7","SC2","SC6","SB3","SB2"},/*Ordem*/) //"Produtos"
+oSection2:SetHeaderPage()
+
+TRCell():New(oSection2,'B1_COD'  	,'SB1',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+TRCell():New(oSection2,'B1_DESC' 	,'SB1',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+TRCell():New(oSection2,'B1_TIPO' 	,'SB1',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+TRCell():New(oSection2,'B1_GRUPO'  	,'SB1',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+TRCell():New(oSection2,'B1_UM'  	,'SB1',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+TRCell():New(oSection2,'B2_QATU' 	,'SB2',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+TRCell():New(oSection2,'B2_QEMP' 	,'SB2',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+TRCell():New(oSection2,'C1_QUANT' 	,'SC1', STR0015  ,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+TRCell():New(oSection2,'C7_QUANT' 	,'SC7', STR0016  ,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+TRCell():New(oSection2,'C2_QUANT' 	,'SC2', STR0017  ,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+TRCell():New(oSection2,'C6_QTDVEN' 	,'SC6', STR0018  ,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+TRCell():New(oSection2,'B1_EMIN' 	,'SB1',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,  {|| RetFldProd(SB1->B1_COD,"B1_EMIN") })
+TRCell():New(oSection2,'B1_LE' 	    ,'SB1',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,  {|| RetFldProd(SB1->B1_COD,"B1_LE")   })
+TRCell():New(oSection2,'B1_PE' 	    ,'SB1',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,  {|| RetFldProd(SB1->B1_COD,"B1_PE") })
+TRCell():New(oSection2,'B1_TIPE'	,'SB1',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,  {|| RetFldProd(SB1->B1_COD,"B1_TIPE") })
+TRCell():New(oSection2,'B3_MEDIA' 	,'SB3',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+TRCell():New(oSection2,'B2_USAI' 	,'SB2',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+TRCell():New(oSection2,'B3_CLASSE' 	,'SB3',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+TRCell():New(oSection2,'B1_FANTASM'	,'SB1',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,  {|| RetFldProd(SB1->B1_COD,"B1_FANTASM") })  // Projeto Implementeacao de campos MRP e FANTASM no SBZ
+TRCell():New(oSection2,'G1_COD'	    ,'SG1',/*Titulo*/,/*Picture*/,/*Tamanho*/,/*lPixel*/,/*{|| code-block de impressao }*/)
+
+oSection1:SetNoFilter({"SB1","SB2"})
+oSection2:SetNoFilter({"SG1","SB1","SC1","SD4","SC7","SC2","SC6","SB3","SB2"})
+
+Return(oReport)
+
+/*/
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Programa  ³ReportPrint ³ Autor ³Felipe Nunes Toledo  ³ Data ³06/07/06  ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡…o ³A funcao estatica ReportPrint devera ser criada para todos  ³±±
+±±³          ³os relatorios que poderao ser agendados pelo usuario.       ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Retorno   ³Nenhum                                                      ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Parametros³ExpO1: Objeto Report do Relatorio                           ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Uso      ³ MATR875			                                          ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+/*/
+
+Static Function ReportPrint(oReport,cAliasSG1,lQuery)
+
+Local oSection1  := oReport:Section(1)
+Local oSection2  := oReport:Section(1):Section(1)
+Local oBreak, oBreak2
+Local oFunction
+Local cFilter
+Local nCntFor
+Local nSaldoPai  := 0
+Local nQPV       := 0
+Local aSalAlm    := {}
+Local aPai       := {}
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Variaveis usadas na impressao dos componentes da Estrutura   ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+Private nSaldoEst:=nEmp:=nSCPro:=nPCPro:=nOPPro:=nPVPro:=0
+Private dUsai := CtoD("  /  /  ") 
+
+//TRECHO INSERIDO EM SUBSTITUICAO AO TRECHO ORIGINAL
+_cQry := " SELECT SG1.R_E_C_N_O_ RECSG1, G1_FILIAL, G1_COD, G1_COMP, "
+_cQry += "        ISNULL(G1_QUANT, 0) G1_QUANT , "
+_cQry += "        ISNULL(B2_USAI ,'') B2_USAI  , "
+_cQry += "        ISNULL(B2_QATU , 0) B2_QATU  , "
+_cQry += "        ISNULL(B2_QEMP , 0) B2_QEMP  , "
+_cQry += "        ISNULL(C1_QUANT, 0) C1_QUANT , "
+_cQry += "        ISNULL(C2_QUANT, 0) C2_QUANT , "
+_cQry += "        ISNULL(C6_QTDVEN,0) C6_QTDVEN, "
+_cQry += "        ISNULL(C7_QUANT ,0) C7_QUANT   "
+_cQry += " FROM " + RetSqlName("SG1") + " SG1 (NOLOCK)"
+_cQry += "      INNER JOIN " + RetSqlName("SB1") + " B1P (NOLOCK) ON B1P.D_E_L_E_T_      = '' 
+_cQry += "                                AND B1P.B1_FILIAL       = '" + xFilial("SB1") + "' "
+_cQry += "                                AND B1P.B1_COD          = SG1.G1_COD "
+_cQry += "                                AND B1P.B1_REVATU      >= SG1.G1_REVINI "
+_cQry += "                                AND B1P.B1_REVATU      <= SG1.G1_REVFIM "
+_cQry += "      LEFT OUTER JOIN ( SELECT B2_COD, MAX(B2_USAI) B2_USAI, SUM(B2_QATU) B2_QATU, SUM(B2_QEMP) B2_QEMP "
+_cQry += "                        FROM " + RetSqlName("SB2") + " SB2 (NOLOCK)"
+_cQry += "                        WHERE SB2.D_E_L_E_T_      = '' "
+_cQry += "                          AND SB2.B2_FILIAL       = '" + xFilial("SB2") + "' "
+_cQry += "                          AND SB2.B2_LOCAL  BETWEEN '" + mv_par06 + "' AND '" + mv_par07 + "' "
+_cQry += "                        GROUP BY B2_COD "
+_cQry += "                      ) SB2B ON SB2B.B2_COD         = SG1.G1_COMP "
+_cQry += "      LEFT OUTER JOIN ( SELECT C1_PRODUTO, SUM(C1_QUANT-C1_QUJE) C1_QUANT "
+_cQry += "                        FROM " + RetSqlName("SC1") + " SC1 (NOLOCK) "
+_cQry += "                        WHERE SC1.D_E_L_E_T_      = '' "
+_cQry += "                          AND SC1.C1_FILIAL       = '" + xFilial("SC1") + "'
+_cQry += "                          AND SC1.C1_PEDIDO       = ''  "
+If MV_PAR05 == 1		//Firmes
+	_cQry += "                      AND SC1.C1_TPOP         = 'F' "
+ElseIf MV_PAR05 == 2	//Previstas
+	_cQry += "                      AND SC1.C1_TPOP         = 'P' "
+EndIf
+_cQry += "                          AND SC1.C1_QUANT        > SC1.C1_QUJE "
+_cQry += "                          AND SC1.C1_LOCAL  BETWEEN '" + mv_par06 + "' AND '" + mv_par07 + "' "
+_cQry += "                        GROUP BY C1_PRODUTO "
+_cQry += "                      ) SC1B ON SC1B.C1_PRODUTO         = SG1.G1_COMP "
+//_cQry += "      LEFT OUTER JOIN " + RetSqlName("SD4") + " SD4 ON SD4.D_E_L_E_T_      = '' "
+//_cQry += "                                AND SD4.D4_FILIAL       = '" + xFilial("SD4") + "'
+//_cQry += "                                AND SD4.D4_QUANT        > 0 "
+//_cQry += "                                AND SD4.D4_LOCAL  BETWEEN '" + mv_par06 + "' AND '" + mv_par07 + "' "
+//_cQry += "                                AND SD4.D4_COD          = SG1.G1_COMP "
+_cQry += "      LEFT OUTER JOIN ( SELECT C2_PRODUTO, SUM(C2_QUANT-C2_QUJE) C2_QUANT "
+_cQry += "                        FROM " + RetSqlName("SC2") + " SC2 (NOLOCK) "
+_cQry += "                        WHERE SC2.D_E_L_E_T_      = '' "
+_cQry += "                          AND SC2.C2_FILIAL       = '" + xFilial("SC2") + "' "
+_cQry += "                          AND SC2.C2_DATRF        = '' "
+If MV_PAR05 == 1		//Firmes
+	_cQry += "                      AND SC2.C2_TPOP         = 'F' "
+ElseIf MV_PAR05 == 2	//Previstas
+	_cQry += "                      AND SC2.C2_TPOP         = 'P' "
+EndIf
+_cQry += "                          AND SC2.C2_QUANT        > SC2.C2_QUJE "
+_cQry += "                          AND SC2.C2_LOCAL  BETWEEN '" + mv_par06 + "' AND '" + mv_par07 + "' "
+_cQry += "                        GROUP BY C2_PRODUTO "
+_cQry += "                        ) SC2B ON SC2B.C2_PRODUTO       = SG1.G1_COMP "
+_cQry += "      LEFT OUTER JOIN ( SELECT C6_PRODUTO, SUM(C6_QTDVEN-(C6_QTDEMP+C6_QTDENT)) C6_QTDVEN "
+_cQry += "                        FROM " + RetSqlName("SC6") + " SC6 (NOLOCK)"
+_cQry += "                        WHERE SC6.D_E_L_E_T_      = '' "
+_cQry += "                          AND SC6.C6_FILIAL       = '" + xFilial("SC6") + "' "
+If MV_PAR05 == 1		//Firmes
+	_cQry += "                      AND SC6.C6_TPOP         = 'F' "
+ElseIf MV_PAR05 == 2	//Previstas
+	_cQry += "                      AND SC6.C6_TPOP         = 'P' "
+EndIf
+_cQry += "                          AND (SC6.C6_QTDVEN-(SC6.C6_QTDEMP+SC6.C6_QTDENT)) > 0 "
+_cQry += "                          AND SC6.C6_LOCAL  BETWEEN '" + mv_par06 + "' AND '" + mv_par07 + "' "
+_cQry += "                          AND SC6.C6_BLQ         <> 'R' "
+_cQry += "                        GROUP BY C6_PRODUTO "
+_cQry += "                        ) SC6B ON SC6B.C6_PRODUTO       = SG1.G1_COMP "
+_cQry += "      LEFT OUTER JOIN ( SELECT C7_PRODUTO, SUM(C7_QUANT-C7_QUJE) C7_QUANT "
+_cQry += "                        FROM " + RetSqlName("SC7") + " SC7 (NOLOCK) "
+_cQry += "                        WHERE SC7.D_E_L_E_T_      = '' "
+_cQry += "                          AND SC7.C7_FILIAL       = '" + xFilial("SC7") + "' "
+If MV_PAR05 == 1		//Firmes
+	_cQry += "                      AND SC7.C7_TPOP         = 'F' "
+ElseIf MV_PAR05 == 2	//Previstas
+	_cQry += "                      AND SC7.C7_TPOP         = 'P' "
+EndIf
+_cQry += "                          AND (SC7.C7_QUANT-SC7.C7_QUJE) > 0 "
+_cQry += "                          AND SC7.C7_LOCAL  BETWEEN '" + mv_par06 + "' AND '" + mv_par07 + "' "
+_cQry += "                        GROUP BY C7_PRODUTO "
+_cQry += "                        ) SC7B ON SC7B.C7_PRODUTO       = SG1.G1_COMP "
+_cQry += " WHERE SG1.D_E_L_E_T_     = '' 
+_cQry += "   AND SG1.G1_FILIAL      = '" + xFilial("SG1") + "' "
+_cQry += "   AND SG1.G1_COD   BETWEEN '" + mv_par01       + "' AND '" + mv_par02 + "' "
+_cQry += " ORDER BY G1_FILIAL, G1_COD, G1_COMP, SG1.R_E_C_N_O_ "
+/*
+If __cUserId == "000000"
+	MemoWrite("\2.MemoWrite\"+_cRotina+"_QRY_001",_cQry)
+EndIf
+*/
+_cQry := ChangeQuery(_cQry)
+dbUseArea(.T.,"TOPCONN",TcGenQry(,,_cQry),cAliasSG1,.T.,.T.)
+dbSelectArea("SB1")
+_aStru := SB1->(dbStruct())
+For _k := 1 To Len(_aStru)
+	If _aStru[_k][2] <> "C" .AND. FieldPos(_aStru[_k][1]) > 0
+		TcSetField(cAliasSG1,_aStru[_k][1],_aStru[_k][2],_aStru[_k][3],_aStru[_k][4])
+	EndIf
+Next
+dbSelectArea("SB2")
+_aStru := SB2->(dbStruct())
+For _k := 1 To Len(_aStru)
+	If _aStru[_k][2] <> "C" .AND. FieldPos(_aStru[_k][1]) > 0
+		TcSetField(cAliasSG1,_aStru[_k][1],_aStru[_k][2],_aStru[_k][3],_aStru[_k][4])
+	EndIf
+Next
+dbSelectArea("SC1")
+_aStru := SC1->(dbStruct())
+For _k := 1 To Len(_aStru)
+	If _aStru[_k][2] <> "C" .AND. FieldPos(_aStru[_k][1]) > 0
+		TcSetField(cAliasSG1,_aStru[_k][1],_aStru[_k][2],_aStru[_k][3],_aStru[_k][4])
+	EndIf
+Next
+dbSelectArea("SC2")
+_aStru := SC2->(dbStruct())
+For _k := 1 To Len(_aStru)
+	If _aStru[_k][2] <> "C" .AND. FieldPos(_aStru[_k][1]) > 0
+		TcSetField(cAliasSG1,_aStru[_k][1],_aStru[_k][2],_aStru[_k][3],_aStru[_k][4])
+	EndIf
+Next
+dbSelectArea("SC6")
+_aStru := SC6->(dbStruct())
+For _k := 1 To Len(_aStru)
+	If _aStru[_k][2] <> "C" .AND. FieldPos(_aStru[_k][1]) > 0
+		TcSetField(cAliasSG1,_aStru[_k][1],_aStru[_k][2],_aStru[_k][3],_aStru[_k][4])
+	EndIf
+Next
+dbSelectArea("SC7")
+_aStru := SC7->(dbStruct())
+For _k := 1 To Len(_aStru)
+	If _aStru[_k][2] <> "C" .AND. FieldPos(_aStru[_k][1]) > 0
+		TcSetField(cAliasSG1,_aStru[_k][1],_aStru[_k][2],_aStru[_k][3],_aStru[_k][4])
+	EndIf
+Next
+//dbSelectArea("SD4")
+//_aStru := SD4->(dbStruct())
+//For _k := 1 To Len(_aStru)
+//	If _aStru[_k][2] <> "C" .AND. FieldPos(_aStru[_k][1]) > 0
+//		TcSetField(cAliasSG1,_aStru[_k][1],_aStru[_k][2],_aStru[_k][3],_aStru[_k][4])
+//	EndIf
+//Next
+dbSelectArea("SG1")
+_aStru := SG1->(dbStruct())
+For _k := 1 To Len(_aStru)
+	If _aStru[_k][2] <> "C" .AND. FieldPos(_aStru[_k][1]) > 0
+		TcSetField(cAliasSG1,_aStru[_k][1],_aStru[_k][2],_aStru[_k][3],_aStru[_k][4])
+	EndIf
+Next
+dbSelectArea(cAliasSG1)
+(cAliasSG1)->(dbGoTop())
+If !(cAliasSG1)->(EOF())
+	TRPosition():New(oSection1,"SB1",1,{|| xFilial("SB1") + (cAliasSG1)->G1_COD})
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³Definindo a quebra do relatorio³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	oBreak := TRBreak():New(oSection1,oSection1:Cell('G1_COD'),NIL,.F.)
+	oBreak2:= TRBreak():New(oSection2,oSection2:Cell('G1_COD'),NIL,.F.)
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³Definindo os totalizadores do relatorio³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	oFunction := TRFunction():New(oSection2:Cell('B2_QATU'  ),NIL,"SUM",oBreak2,NIL,/*Picture*/,/*uFormula*/,.F.,.F.)
+	oFunction := TRFunction():New(oSection2:Cell('B2_QEMP'  ),NIL,"SUM",oBreak2,NIL,/*Picture*/,/*uFormula*/,.F.,.F.)
+	oFunction := TRFunction():New(oSection2:Cell('C1_QUANT' ),NIL,"SUM",oBreak2,NIL,/*Picture*/,/*uFormula*/,.F.,.F.)
+	oFunction := TRFunction():New(oSection2:Cell('C7_QUANT' ),NIL,"SUM",oBreak2,NIL,/*Picture*/,/*uFormula*/,.F.,.F.)
+	oFunction := TRFunction():New(oSection2:Cell('C2_QUANT' ),NIL,"SUM",oBreak2,NIL,/*Picture*/,/*uFormula*/,.F.,.F.)
+	oFunction := TRFunction():New(oSection2:Cell('C6_QTDVEN'),NIL,"SUM",oBreak2,NIL,/*Picture*/,/*uFormula*/,.F.,.F.)
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³Inibindo o titulo da secao 1                                            ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	oSection1:Cell('B1_DESC'):HideHeader()
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³Inibindo impressao da celula utilizada apenas para Quebra               ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	oSection2:Cell('G1_COD'):Hide()
+	oSection2:Cell('G1_COD'):HideHeader()
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³Inicio da impressao do fluxo do relatorio                               ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	oReport:SetMeter( (cAliasSG1)->(RecCount()) )
+	oSection1:Init()
+	While !oReport:Cancel() .And. !(cAliasSG1)->(Eof())
+		nSaldoPai := 0
+		nQPV      := 0
+		_cPrdPai  := (cAliasSG1)->G1_COD
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³ Posiciona SG1 para produto Pai	     ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		dbSelectArea("SG1")
+		SG1->(dbSetOrder(1))
+		SG1->(dbGoTo((cAliasSG1)->RECSG1))
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³ Posiciona SB1 para produto Pai	     ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		dbSelectArea("SB1")
+		SB1->(dbSetOrder(1))
+		If !SB1->(MsSeek( xFilial("SB1")+_cPrdPai,.T.,.F. ))
+			dbSelectArea(cAliasSG1)
+			(cAliasSG1)->(dbSkip())
+			Loop
+		EndIf
+		If mv_par04 == 2 .AND. RetFldProd(SB1->B1_COD,"B1_FANTASM") == "S"  // Projeto Implementeacao de campos MRP e FANTASM no SBZ
+			dbSelectArea(cAliasSG1)
+			(cAliasSG1)->(dbSkip())
+			Loop
+		EndIf
+		dbSelectArea("SB2")
+		SB2->(dbSetOrder(1))
+		MsSeek(xFilial("SB2")+_cPrdPai,.T.,.F.)
+		While SB2->(B2_FILIAL+B2_COD) == xFilial("SB2")+_cPrdPai
+			If SB2->B2_LOCAL >= mv_par06 .Or. SB2->B2_LOCAL <= mv_par07
+				//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+				//³ Carrega array com dados do produto na data base.             ³
+				//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+				nSaldoPai+= CalcEst((cAliasSG1)->G1_COD,SB2->B2_LOCAL,dDataBase+1)[01]
+				nQPV     += SB2->(B2_QPEDVEN+B2_RESERVA)
+			EndIf
+			dbSelectArea("SB2")
+			SB2->(dbSetOrder(1))
+			SB2->(dbSkip())
+		EndDo
+		oSection1:Cell('B2_QATU'   ):SetValue( nSaldoPai )
+		oSection1:Cell('B2_QPEDVEN'):SetValue( nQPV      )
+		oReport:SkipLine()
+		oSection1:PrintLine() // Impressao da secao 1
+		oSection2:Init()
+		dbSelectArea(cAliasSG1)
+		While !oReport:Cancel() .And. !(cAliasSG1)->(Eof()) .AND. _cPrdPai == (cAliasSG1)->G1_COD
+			oReport:IncMeter()
+			//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+			//³ Posiciona SB1 para produto Filho    ³
+			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+			dbSelectArea("SB1")
+			SB1->(dbSetOrder(1))
+			SB1->(MsSeek(xFilial("SB1")+(cAliasSG1)->G1_COMP,.T.,.F.))
+			If mv_par03 == 2 .AND. RetFldProd(SB1->B1_COD,"B1_FANTASM") == "S" // Projeto Implementeacao de campos MRP e FANTASM no SBZ
+				dbSelectArea(cAliasSG1)
+				(cAliasSG1)->(dbSkip())
+				Loop
+			EndIf
+			dbSelectArea("SB3")
+			SB3->(dbSetOrder(1))
+			SB3->(MsSeek(xFilial("SB3")+SB1->B1_COD,.T.,.F.))
+			oSection2:Cell('B1_COD'    ):SetValue( SB1->B1_COD           )
+			oSection2:Cell('B1_DESC'   ):SetValue( SB1->B1_DESC          )
+			oSection2:Cell('B1_TIPO'   ):SetValue( SB1->B1_TIPO          )
+			oSection2:Cell('B1_GRUPO'  ):SetValue( SB1->B1_GRUPO         )
+			oSection2:Cell('B1_UM'     ):SetValue( SB1->B1_UM            )
+			oSection2:Cell('B2_QATU'   ):SetValue( (cAliasSG1)->B2_QATU  )
+			oSection2:Cell('B2_QEMP'   ):SetValue( (cAliasSG1)->B2_QEMP  )
+			oSection2:Cell('C1_QUANT'  ):SetValue( (cAliasSG1)->C1_QUANT )
+			oSection2:Cell('C7_QUANT'  ):SetValue( (cAliasSG1)->C7_QUANT )
+			oSection2:Cell('C2_QUANT'  ):SetValue( (cAliasSG1)->C2_QUANT )
+			oSection2:Cell('C6_QTDVEN' ):SetValue( (cAliasSG1)->C6_QTDVEN)
+			oSection2:Cell('B1_EMIN'   ):SetValue( RetFldProd(SB1->B1_COD,"B1_EMIN") )
+			oSection2:Cell('B1_LE'     ):SetValue( RetFldProd(SB1->B1_COD,"B1_LE"  ) )
+			oSection2:Cell('B1_PE'     ):SetValue( RetFldProd(SB1->B1_COD,"B1_PE"  ) )
+			oSection2:Cell('B1_TIPE'   ):SetValue( RetFldProd(SB1->B1_COD,"B1_TIPE") )
+			oSection2:Cell('B3_MEDIA'  ):SetValue( SB3->B3_MEDIA         )
+			oSection2:Cell('B2_USAI'   ):SetValue( (cAliasSG1)->B2_USAI  )
+			oSection2:Cell('B3_CLASSE' ):SetValue( SB3->B3_CLASSE        )
+			oSection2:Cell('B1_FANTASM'):SetValue( If(RetFldProd(SB1->B1_COD,"B1_FANTASM")=='S','F','N') ) // Projeto Implementeacao de campos MRP e FANTASM no SBZ
+			oSection2:PrintLine() // Impressao da secao 2
+			dbSelectArea(cAliasSG1)
+			(cAliasSG1)->(dbSkip())
+		EndDo
+		oSection2:Finish()
+	EndDo
+Else
+	MsgAlert("Nada a imprimir!",_cRotina+"_001")
+EndIf
+oSection1:Finish()
+(cAliasSG1)->(DbCloseArea())
+
+Return Nil
+
+//TRECHO DO RELATORIO PADRAO QUE FOI DESATIVADO
+Static Function RelPadrao()
+
+dbSelectarea("SG1")
+SG1->(dbSetOrder(1))
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Filtragem do relatorio                                                  ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+If lQuery
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³Transforma parametros Range em expressao SQL                            ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	MakeSqlExpr(oReport:GetParam())
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³Query do relatorio                                                      ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+ 	BEGIN REPORT QUERY oSection1
+ 	BeginSql Alias cAliasSG1
+
+		SELECT G1_FILIAL, G1_COD, G1_COMP, G1_TRT, R_E_C_N_O_ SG1RecNo
+	       
+		FROM %table:SG1% SG1 (NOLOCK)
+
+		WHERE G1_FILIAL  = %xFilial:SG1%   AND                                 
+  		G1_COD          >= %Exp:mv_par01%  AND 
+  		G1_COD          <= %Exp:mv_par02%  AND 
+		SG1.%NotDel%
+
+	ORDER BY %Order:SG1%		
+
+	EndSql 
+	END REPORT QUERY oSection1 
+
+Else
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³Transforma parametros Range em expressao ADVPL                          ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	MakeAdvplExpr(oReport:GetParam())
+	
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Condicao de Filtragem do SG1                                 ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ 
+ 	cFilter := 'G1_FILIAL=="'+xFilial("SG1")+'".And.G1_COD>="'+mv_par01+'".And.'
+	cFilter += 'G1_COD<="'+mv_par02+'"'
+
+	oSection1:SetFilter(cFilter,Indexkey())
+	
+EndIf
+TRPosition():New(oSection1,"SB1",1,{|| xFilial("SB1") + (cAliasSG1)->G1_COD})
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Definindo a quebra do relatorio³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+oBreak := TRBreak():New(oSection1,oSection1:Cell('G1_COD'),NIL,.F.)
+oBreak2:= TRBreak():New(oSection2,oSection2:Cell('G1_COD'),NIL,.F.)
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Definindo os totalizadores do relatorio³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+oFunction := TRFunction():New(oSection2:Cell('B2_QATU'  ),NIL,"SUM",oBreak2,NIL,/*Picture*/,/*uFormula*/,.F.,.F.)
+oFunction := TRFunction():New(oSection2:Cell('B2_QEMP'  ),NIL,"SUM",oBreak2,NIL,/*Picture*/,/*uFormula*/,.F.,.F.)
+oFunction := TRFunction():New(oSection2:Cell('C1_QUANT' ),NIL,"SUM",oBreak2,NIL,/*Picture*/,/*uFormula*/,.F.,.F.)
+oFunction := TRFunction():New(oSection2:Cell('C7_QUANT' ),NIL,"SUM",oBreak2,NIL,/*Picture*/,/*uFormula*/,.F.,.F.)
+oFunction := TRFunction():New(oSection2:Cell('C2_QUANT' ),NIL,"SUM",oBreak2,NIL,/*Picture*/,/*uFormula*/,.F.,.F.)
+oFunction := TRFunction():New(oSection2:Cell('C6_QTDVEN'),NIL,"SUM",oBreak2,NIL,/*Picture*/,/*uFormula*/,.F.,.F.)
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Inibindo o titulo da secao 1                                            ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+oSection1:Cell('B1_DESC'):HideHeader()
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Inibindo impressao da celula utilizada apenas para Quebra               ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+oSection2:Cell('G1_COD'):Hide()
+oSection2:Cell('G1_COD'):HideHeader()
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³Inicio da impressao do fluxo do relatorio                               ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+oReport:SetMeter( SG1->(LastRec()) )
+oSection1:Init()
+While !oReport:Cancel() .And. !(cAliasSG1)->(Eof())
+	oReport:IncMeter()
+	If !lQuery
+		dbSelectArea(cAliasSG1)
+		If G1_COD < mv_par01 .Or. G1_COD > mv_par02
+			dbSkip()
+			Loop
+		EndIf
+	EndIf
+	If mv_par04 == 2
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³ Posiciona SB1 para produto Pai	     ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		dbSelectArea("SB1")
+		SB1->(dbSetOrder(1))
+		SB1->(dbSeek( xFilial("SB1")+(cAliasSG1)->G1_COD )) 
+		If RetFldProd(SB1->B1_COD,"B1_FANTASM") == "S"  // Projeto Implementeacao de campos MRP e FANTASM no SBZ
+			dbSelectArea(cAliasSG1)
+			dbSkip()
+			Loop
+		Endif
+	Endif
+	dbSelectArea(cAliasSG1)
+	nSaldoPai := 0
+	nQPV      := 0
+	nScan:=aScan(aPai,(cAliasSG1)->G1_COD)
+	If nScan == 0
+		AADD(aPai,(cAliasSG1)->G1_COD)
+	Else
+		(cAliasSG1)->(dbSkip())
+		Loop
+	EndIf
+    aEstru:={}
+	nReg:=(cAliasSG1)->(Recno())
+	Explode((cAliasSG1)->G1_COD)
+	dbGoto(nReg)
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Posiciona SB2 para Produto Pai					             ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	dbSelectArea("SB2")
+	SB2->(dbSetOrder(1))
+	SB2->(dbSeek(xFilial("SB2")+(cAliasSG1)->G1_COD))
+	While !SB2->(EOF()) .AND. B2_FILIAL+B2_COD == xFilial()+(cAliasSG1)->G1_COD
+		If B2_LOCAL >= mv_par06 .Or. B2_LOCAL <= mv_par07
+			//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+			//³ Carrega array com dados do produto na data base.             ³
+			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+			aSalAlm	:= CalcEst((cAliasSG1)->G1_COD,B2_LOCAL,dDataBase+1)
+			nSaldoPai+= aSalAlm[1]
+			nQPV     += SB2->B2_QPEDVEN
+		EndIf
+		SB2->(dbSkip())
+	EndDo
+	dbSelectArea(cAliasSG1)
+	oSection1:Cell('B2_QATU'):SetValue( nSaldoPai )
+	oSection1:Cell('B2_QPEDVEN'):SetValue( nQPV )
+	oReport:SkipLine()
+	oSection1:PrintLine() // Impressao da secao 1
+	oSection2:Init()
+	For nCntFor :=1 to Len(aEstru)
+		If mv_par03 == 2
+			//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+			//³ Posiciona SB1 para produto Pai	     ³
+			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+			dbSelectArea("SB1")
+			SB1->(dbSetOrder(1))
+			SB1->(MsSeek(xFilial()+aEstru[nCntFor],.T.,.F.))
+			If RetFldProd(SB1->B1_COD,"B1_FANTASM") == "S" // Projeto Implementeacao de campos MRP e FANTASM no SBZ
+				Loop
+			Endif
+		Endif
+		Imprime(Nil,Nil,nCntFor,.T.)
+		oSection2:Cell('B1_COD'    ):SetValue( SB1->B1_COD   )
+		oSection2:Cell('B1_DESC'   ):SetValue( SB1->B1_DESC  )
+		oSection2:Cell('B1_TIPO'   ):SetValue( SB1->B1_TIPO  )
+		oSection2:Cell('B1_GRUPO'  ):SetValue( SB1->B1_GRUPO )
+		oSection2:Cell('B1_UM'     ):SetValue( SB1->B1_UM    )
+		oSection2:Cell('B2_QATU'   ):SetValue( nSaldoEst     )
+		oSection2:Cell('B2_QEMP'   ):SetValue( nEmp          )
+		oSection2:Cell('C1_QUANT'  ):SetValue( nSCPro        )
+		oSection2:Cell('C7_QUANT'  ):SetValue( nPCPro        )
+		oSection2:Cell('C2_QUANT'  ):SetValue( nOPPro        )
+		oSection2:Cell('C6_QTDVEN' ):SetValue( nPVPro        )
+		oSection2:Cell('B1_EMIN'   ):SetValue( RetFldProd(SB1->B1_COD,"B1_EMIN") )
+		oSection2:Cell('B1_LE'     ):SetValue( RetFldProd(SB1->B1_COD,"B1_LE") )
+		oSection2:Cell('B1_PE'     ):SetValue( RetFldProd(SB1->B1_COD,"B1_PE") )
+		oSection2:Cell('B1_TIPE'   ):SetValue( RetFldProd(SB1->B1_COD,"B1_TIPE") )
+		oSection2:Cell('B3_MEDIA'  ):SetValue( SB3->B3_MEDIA   )
+		oSection2:Cell('B2_USAI'   ):SetValue( dUsai           )
+		oSection2:Cell('B3_CLASSE' ):SetValue( SB3->B3_CLASSE  )
+		oSection2:Cell('B1_FANTASM'):SetValue( If(RetFldProd(SB1->B1_COD,"B1_FANTASM")=='S','F','N') ) // Projeto Implementeacao de campos MRP e FANTASM no SBZ
+		oSection2:PrintLine() // Impressao da secao 2
+	Next nCntFor
+	oSection2:Finish()
+	dbSelectArea(cAliasSG1)
+	dbGoto(nReg)
+	dbSkip()
+EndDo
+dbSelectArea("SC1")
+SC1->(dbSetOrder(1))
+dbSelectArea("SC2")
+SC2->(dbSetOrder(1))
+dbSelectArea("SC6")
+SC6->(dbSetOrder(1))
+dbSelectArea("SC7")
+SC7->(dbSetOrder(1))
+
+oSection1:Finish()
+(cAliasSG1)->(DbCloseArea())
+
+Return Nil
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡…o    ³MATR875   ³ Autor ³ Rodrigo de A. Sartorio³ Data ³ 02.08.95 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡…o ³Relacao da Analise de Estoques Referentes ao Produto Pai    ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³         ATUALIZACOES SOFRIDAS DESDE A CONSTRU€AO INICIAL.             ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Programador ³ Data   ³ BOPS ³  Motivo da Alteracao                     ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Marcelo Pim.³24/11/97³13529A³ Criacao de param.p/ listar itens fantasm.³±±
+±±³            ³        ³13529A³ e listar estru. do fantasma.             ³±±
+±±³Edson   M.  ³19/01/98³XXXXXX³ Inclusao do Campo C2_SLDOP.              ³±±
+±±³Edson   M.  ³03/02/98³XXXXXX³ Subst. do Campo C2_SLDOP por funcao.     ³±±
+±±³Rodrigo Sart³20/05/98³14386A³ Acerto no filtro das SC's (SC1)          ³±±
+±±³Marcos Simi.³01/07/98³13110A³ Acertos no lay-out de impressao.         ³±±
+±±³Rodrigo Sart³04/11/98³XXXXXX³ Acerto p/ Bug Ano 2000                   ³±±
+±±³Fernando J. ³07/02/99³META  ³Imprimir OP's Firmes, Previstas ou Ambas. ³±±
+±±³Patricia Sal³27/07/00³005280³Incluir mv_par06: "Qual Almoxarifado ?"   ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+Static Function MATR875R3()
+LOCAL titulo 	:= STR0001	//"Relacao para Analise dos Estoques"
+LOCAL cString  	:= "SG1"
+//LOCAL wnrel 	:= "MATR875"
+LOCAL wnrel 	:= "RMATR875"
+LOCAL cDesc1   	:= STR0002	//"Este relat¢rio demonstra a situa‡„o de cada item da estrutura"
+LOCAL cDesc2   	:= STR0003	//"do produto Pai em rela‡„o ao seu saldo , seu empenho , suas  "
+LOCAL cDesc3   	:= STR0004	//"entradas previstas e sua classe ABC."
+LOCAL Tamanho  	:= "G"
+LOCAL i			:= 0
+
+PRIVATE aReturn	:= {STR0005,1,STR0006, 1, 2, 1, "",1 }	//"Zebrado"###"Administracao"
+PRIVATE nLastKey:= 0
+//PRIVATE cPerg 	:= "MTR875"  
+PRIVATE cPerg 	:= "RMATR875"
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Funcao utilizada para verificar a ultima versao dos fontes      ³
+//³ SIGACUS.PRW, SIGACUSA.PRX e SIGACUSB.PRX, aplicados no rpo do   |
+//| cliente, assim verificando a necessidade de uma atualizacao     |
+//| nestes fontes. NAO REMOVER !!!							        ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+IF !(FindFunction("SIGACUS_V") .and. SIGACUS_V() >= 20050512)
+    Final("Atualizar SIGACUS.PRW !!!")
+Endif
+IF !(FindFunction("SIGACUSA_V") .and. SIGACUSA_V() >= 20050512)
+    Final("Atualizar SIGACUSA.PRX !!!")
+Endif
+IF !(FindFunction("SIGACUSB_V") .and. SIGACUSB_V() >= 20050512)
+    Final("Atualizar SIGACUSB.PRX !!!")
+Endif
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Verifica as perguntas selecionadas                           ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Variaveis utilizadas para parametros                         ³
+//³ mv_par01     // De Produto                                   ³
+//³ mv_par02     // Ate Produto                                  ³
+//³ mv_par03     // Lista itens fantasmas   (1-Sim 2-Nao)        ³
+//³ mv_par04     // Lista Estr. do fantasma (1-Sim 2-Nao)        ³
+//³ mv_par05     // Impr. OP's Firmes, Previstas ou Ambas        ³
+//³ mv_par06     // De   Almoxarifado ?                          ³ 
+//³ mv_par07     // Ate  Almoxarifado ?                          ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+pergunte(cPerg,.F.)
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Envia controle para a funcao SETPRINT                        ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+wnrel:=SetPrint(cString,wnrel,cPerg,@titulo,cDesc1,cDesc2,cDesc3,.F.,"",.F.,Tamanho)
+
+If nLastKey == 27
+	Set Filter To
+	Return
+Endif
+
+SetDefault(aReturn,cString)
+
+If nLastKey == 27
+	Set Filter To
+	Return
+Endif
+
+RptStatus({|lEnd| R875Imp(@lEnd,wnRel,titulo,tamanho,cString)},titulo)
+
+Return NIL
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Fun‡„o    ³ R875Imp  ³ Autor ³ Waldemiro L. Lustosa  ³ Data ³ 13.11.95 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡„o ³ Chamada do Relat¢rio                                       ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Uso      ³ MATR875			                                          ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+Static Function R875Imp(lEnd,wnRel,titulo,tamanho,cString)
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Define Variaveis                                             ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+LOCAL cRodaTxt := STR0007	//"PRODUTO(S)"
+Local i			:= 0
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Variaveis para controle do cursor de progressao do relatorio ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+LOCAL nSaldoEst:= 0
+LOCAL aSalAlm  := {}
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Variaveis tipo Private padrao de todos os relatorios         ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+PRIVATE nColAdd  := 0
+//PRIVATE nomeprog := "MATR875"
+PRIVATE nomeprog := "RMATR875"
+PRIVATE nTipo    := 0
+PRIVATE cabec1,cabec2
+PRIVATE nCntImpr := 0
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Contadores de linha e pagina                                 ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+PRIVATE li := 80 ,m_pag := 1
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Array usado na impressao da estrutura                        ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+PRIVATE aEstru:={}
+PRIVATE aPai  :={}
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Variaveis usadas na impressao dos componentes da Estrutura   ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+PRIVATE nSaldoEst:=nEmp:=nSCPro:=nPCPro:=nOPPro:=nPVPro:=0
+PRIVATE dUsai := CtoD("  /  /  ")
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Variaveis usadas na impressao da totalizacao do produto PAI  ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+PRIVATE nTotSaldo:=nTotEmp:=nTotSCPro:=nTotPCPro:=nTotOPPro:=nTotPVPro:=0
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Monta os Cabecalhos                                          ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+nColadd := iif(TamSx3('B1_COD')[1] > 15,TamSx3('B1_COD')[1]-15,0)
+
+If !tamsx3('B1_COD')[1] > 15
+	cabec1 := STR0008	//"CODIGO          DESCRICAO                      TP GRUP UM    SALDO ATUAL   EMPENHO PARA           SC's           PC's           OP's           PV's     PONTO DE         LOTE   PRAZO EST.EM       CONSUMO  ULTIMA   CL  TP"
+Else	
+	cabec1 := SUBSTR(STR0008,1,16)+SPACE(nColadd)+SUBSTR(STR0008,17,31-nColadd)+SUBSTR(STR0008,48,174)	//"CODIGO          DESCRICAO                      TP GRUP UM    SALDO ATUAL   EMPENHO PARA           SC's           PC's           OP's           PV's     PONTO DE         LOTE   PRAZO EST.EM       CONSUMO   ULTIMA   CL  TP"
+EndIf
+
+cabec2 := STR0009	//"                                                                         REQ/PV/RESERVA      COLOCADAS      COLOCADOS      COLOCADAS      COLOCADOS       PEDIDO    ECONOMICO ENTREGA  MESES         MEDIO   SAIDA      N/F"
+
+*****  	     	      123456789012345 123456789012345678901234567890 12 1234 12 999,999,999.99 999,999,999.99 999,999,999.99 999,999,999.99 999,999,999.99 999,999,999.99 9,999,999.99 9,999,999.99 99999 D  99999 99,999,999.99  11/11/1111 A  X
+***** 			      0         1         2         3         4         5         6         7         8         9        10        11        12        13        14        15        16        17        18        19        20        21
+***** 		         01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+dbSelectArea("SG1")
+SG1->(dbSetOrder(1))
+SG1->(dbSeek(xFilial("SG1")))
+
+SetRegua(LastRec())
+
+lFirst	 :=.F.
+lContinua := .T.
+
+While !Eof() .And. xFilial()==SG1->G1_FILIAL
+	
+	If lEnd
+		@ PROW()+1,001 PSAY STR0010	//"CANCELADO PELO OPERADOR"
+		lContinua := .F.
+		Exit
+	EndIf
+	
+	IncRegua()
+	
+	If G1_COD < mv_par01 .Or. G1_COD > mv_par02
+		dbSkip()
+		Loop
+	EndIf
+	
+	If mv_par04 == 2
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³ Posiciona SB1 para produto Pai	     ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		dbSelectArea("SB1")
+		SB1->(dbSetOrder(1))
+		SB1->(MsSeek(xFilial("SB1")+SG1->G1_COD))
+		If RetFldProd(SB1->B1_COD,"B1_FANTASM") == "S" // Projeto Implementeacao de campos MRP e FANTASM no SBZ
+			dbSelectArea("SG1")
+			dbSkip()
+			Loop
+		Endif
+	Endif
+	dbSelectArea("SG1")
+	
+	nScan:=aScan(aPai,G1_COD)
+	If nScan == 0
+		AADD(aPai,G1_COD)
+	Else
+		dbSkip()
+		Loop
+	EndIf
+	
+	aEstru:={}
+	nReg:=Recno()
+	Explode(G1_COD)
+	dbGoto(nReg)
+	
+	If li > 58
+		Cabec(titulo,cabec1,cabec2,nomeprog,Tamanho,nTipo)
+	EndIf
+	
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Adiciona 1 ao contador de registros impressos         ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	nCntImpr++
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Zera variaveis para Impressao do Total do produto Pai		 ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	nSaldoEst:=nTotSaldo:=nTotEmp:=nTotSCPro:=nTotPCPro:=nTotOPPro:=nTotPVPro:=0      
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Posiciona SB1 para produto Pai					             ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	dbSelectArea("SB1")
+	SB1->(dbSetOrder(1))
+	SB1->(MsSeek(xFilial()+SG1->G1_COD,.T.,.F.))
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Posiciona SB2 para Produto Pai					             ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	dbSelectArea("SB2")
+	SB2->(dbSetOrder(1))
+	SB2->(dbSeek(xFilial()+SG1->G1_COD,.T.,.F.))
+	While B2_FILIAL+B2_COD == xFilial()+SG1->G1_COD
+		If B2_LOCAL >= mv_par06 .Or. B2_LOCAL <= mv_par07
+			//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+			//³ Carrega array com dados do produto na data base.             ³
+			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+			aSalAlm	:= CalcEst(SG1->G1_COD,B2_LOCAL,dDataBase+1)
+			nSaldoEst+= aSalAlm[1]
+		EndIf
+		dbSkip()
+	EndDo
+	dbSelectArea("SG1")
+	If lFirst
+		@ li,000 PSAY __PrtThinLine()
+		li++
+	EndIf
+
+	@ li,000    PSAY STR0011+SG1->G1_COD+" - "+SB1->B1_DESC+STR0012	//"PRODUTO PAI: "###"  SALDO ATUAL  ---> "
+	@ li,PCol() PSAY nSaldoEst Picture PesqPictQt("B2_QATU",14)
+	li++
+	li++
+	lFirst:=.T.
+	
+	For i:=1 to Len(aEstru)
+		If mv_par03 == 2
+			//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+			//³ Posiciona SB1 para produto Pai	     ³
+			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+			dbSelectArea("SB1")
+			SB1->(dbSetOrder(1))
+			SB1->(MsSeek(xFilial()+aEstru[i],.T.,.F.))
+			If RetFldProd(SB1->B1_COD,"B1_FANTASM") == "S" // Projeto Implementeacao de campos MRP e FANTASM no SBZ
+				Loop
+			Endif
+		Endif
+		Imprime(titulo,tamanho,i,.F.)
+	Next i
+	
+	ImpTot(titulo,cabec1,cabec2,nomeprog,Tamanho,nTipo)
+	dbSelectArea("SG1")
+	SG1->(dbSetOrder(1))
+	SG1->(dbGoto(nReg))
+	SG1->(dbSkip())
+Enddo
+
+dbSelectArea("SC1")
+SC1->(dbSetOrder(1))
+dbSelectArea("SC2")
+SC2->(dbSetOrder(1))
+dbSelectArea("SC6")
+SC6->(dbSetOrder(1))
+dbSelectArea("SC7")
+SC7->(dbSetOrder(1))
+
+If li != 80
+	Roda(nCntImpr,cRodaTxt,Tamanho)
+EndIf
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Devolve a condicao original do arquivo principal             ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+dbSelectArea(cString)
+Set Filter To
+(cString)->(dbSetOrder(1))
+
+If aReturn[5] == 1
+	Set Printer To
+	dbCommitAll()
+	OurSpool(wnrel)
+Endif
+
+MS_FLUSH()
+
+Return NIL
+
+/*
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³ Fun‡…o   ³ Explode  ³ Autor ³ Rodrigo de A. Sartorio³ Data ³ 03/08/95 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Descri‡…o³ Faz a explosao de uma estrutura                            ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Sintaxe  ³ Explode(ExpC1) 											  ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Parametros³ ExpC1 = Codigo do produto a ser explodido                  ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Uso      ³ MATR875                                                    ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+*/
+STATIC Function Explode(cProduto)
+LOCAL nRegi
+
+dbSelectArea("SG1")
+SG1->(dbSetOrder(1))
+SG1->(dbSeek(xFilial("SG1")+cProduto))
+
+While !SG1->(Eof()) .And. G1_FILIAL+G1_COD == xFilial()+cProduto
+	
+	nRegi:=Recno()
+	nProcura:=aScan(aEstru,G1_COMP)
+	If nProcura  = 0
+		AADD(aEstru,G1_COMP)
+	EndIf
+	
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Verifica se existe sub-estrutura                ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	nRecno:=Recno()
+	If dbSeek(xFilial()+G1_COMP,.F.)
+		Explode(G1_COD)
+	Else
+		dbGoto(nRecno)
+		nProcura:=aScan(aEstru,G1_COMP)
+		If nProcura  = 0
+			AADD(aEstru,G1_COMP)
+		EndIf
+	Endif
+	
+	dbGoto(nRegi)
+	dbSkip()
+	
+Enddo
+
+Return(aEstru)
+
+/*
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³ Fun‡…o   ³ Imprime  ³ Autor ³ Rodrigo de A. Sartorio³ Data ³ 03/08/95 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Descri‡…o³ Imprime a Analise de Estoque de cada Nivel de uma estrutura³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Sintaxe  ³ Imprime()		 										  ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Uso      ³ MATR875                                                    ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+*/
+STATIC Function Imprime(titulo,tamanho,i,lRelease4)
+LOCAL lSB3:=.F.      
+LOCAL aSalAlm  := {}
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Zerando os valores das variaveis utiliadas na impressao      ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+nSaldoEst:=nEmp:=nSCPro:=nPCPro:=nOPPro:=nPVPro:=0
+dUsai := CtoD("  /  /  ")
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Posiciona os indices dos arquivos consultados                ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+dbSelectArea("SC1")
+SC1->(dbSetOrder(2))
+
+dbSelectArea("SC2")
+SC2->(dbSetOrder(2))
+
+dbSelectArea("SC6")
+SC6->(dbSetOrder(2))
+
+dbSelectArea("SC7")
+SC7->(dbSetOrder(2))
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Posiciona SB1 										         ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+dbSelectArea("SB1")
+SB1->(dbSetOrder(1))
+If SB1->(MsSeek(xFilial()+aEstru[i],.T.,.F.))
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Posiciona SB2											     ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	dbSelectArea("SB2")
+	SB2->(dbSetOrder(1))
+	SB2->(dbSeek(xFilial()+aEstru[i]))
+	While !SB2->(EOF()) .AND. B2_FILIAL+B2_COD == xFilial()+aEstru[i]
+		If B2_LOCAL >= mv_par06 .And. B2_LOCAL <= mv_par07
+			nEmp+=(If(mv_par05==1,SB2->B2_QEMP,If(mv_par05==2,SB2->B2_QEMPPRE,SB2->B2_QEMP+SB2->B2_QEMPPRE))+SB2->B2_RESERVA)
+			aSalAlm := CalcEst(B2_COD,SB2->B2_LOCAL,dDataBase+1)
+			nSaldoEst+= aSalAlm[1]
+			If dUsai < B2_USAI
+        		dUsai := B2_USAI
+			EndIf
+		EndIf
+		dbSkip()
+	EndDo
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Posiciona-se no arquivo de Demandas para pegar dados         ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	dbSelectArea("SB3")
+	lSB3:=dbSeek(xFilial()+aEstru[i])
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Aglutina as Solicitacos de Compra sem pedido colocado        ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	dbSelectArea("SC1")
+	dbSeek(xFilial()+aEstru[i])
+	While !Eof() .And. C1_FILIAL+C1_PRODUTO == xFilial()+aEstru[i]
+		//-- Valida se a OP deve ser Impressa ou n„o
+		If !MtrAValOP(mv_par05, 'SC1')
+			dbSkip()
+			Loop
+		EndIf
+		If C1_LOCAL < mv_par06 .Or. C1_LOCAL > mv_par07
+			dbSkip()
+			Loop	
+		EndIf
+		If C1_QUJE < C1_QUANT .And. Empty(C1_PEDIDO)
+			nSCPro += (C1_QUANT - C1_QUJE)
+		EndIf
+		dbSkip()
+	EndDo
+	dbSelectArea("SD4")
+	SD4->(dbSetOrder(1))
+	SD4->(dbSeek(cSeek := xFilial("SD4") + aEstru[i]))
+	do While !SD4->(Eof()) .And. SD4->(D4_FILIAL + D4_COD) == cSeek
+		If SD4->D4_QUANT < 0
+			nSCPro += ( SD4->D4_QUANT * -1 )
+		Endif
+		dbSkip()
+	Enddo		
+
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Aglutina as Ordens de Producao em aberto                     ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	dbSelectArea("SC2")
+	dbSeek(xFilial()+aEstru[i])
+	While !Eof() .And. C2_FILIAL+C2_PRODUTO == xFilial()+aEstru[i]
+		//-- Valida se a OP deve ser Impressa ou n„o
+		If !MtrAValOP(mv_par05, 'SC2')
+			dbSkip()
+			Loop
+		EndIf
+		If C2_LOCAL < mv_par06 .Or. C2_LOCAL > mv_par07
+			dbSkip()
+			Loop	
+		EndIf		
+		If Empty(C2_DATRF) .And. aSC2Sld() > 0
+			nOPPro += aSC2Sld()
+		EndIf
+		dbSkip()
+	EndDo
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Aglutina os Pedidos de Vendas ainda nao entregues            ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	dbSelectArea("SC6")
+	dbSeek(xFilial()+aEstru[i])
+	While !Eof() .And. C6_FILIAL+C6_PRODUTO == xFilial()+aEstru[i]
+		//-- Valida se a OP deve ser Impressa ou n„o
+		If !MtrAValOP(mv_par05, 'SC6')
+			dbSkip()
+			Loop
+		EndIf
+		If C6_LOCAL < mv_par06 .Or. C6_LOCAL > mv_par07
+			dbSkip()
+			Loop	
+		EndIf
+		If ( C6_QTDVEN - ( C6_QTDEMP + C6_QTDENT ) ) > 0
+			nPVPro += ( C6_QTDVEN - ( C6_QTDEMP + C6_QTDENT ) )
+		EndIf
+		dbSkip()
+	EndDo
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Aglutina os Pedidos de Compra ainda nao entregues            ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	dbSelectArea("SC7")
+	dbSeek(xFilial()+aEstru[i])
+	While !Eof() .And. C7_FILIAL+C7_PRODUTO == xFilial()+aEstru[i]
+		//-- Valida se a OP deve ser Impressa ou n„o
+		If !MtrAValOP(mv_par05, 'SC7')
+			dbSkip()
+			Loop
+		EndIf
+		If C7_LOCAL < mv_par06 .Or. C7_LOCAL > mv_par07
+			dbSkip()
+			Loop	
+		EndIf
+		If (C7_QUANT-C7_QUJE) > 0 .And. Empty(C7_RESIDUO)
+			nPCPro += (C7_QUANT-C7_QUJE)
+		EndIf
+		dbSkip()
+	EndDo
+
+	If !lRelease4
+		If li > 58
+			Cabec(titulo,cabec1,cabec2,nomeprog,Tamanho,nTipo)
+		EndIf             
+
+		@ li,000 PSAY SB1->B1_COD
+		@ li,016+nColadd PSAY Substr(SB1->B1_DESC,1,30)
+		
+		If nColadd > 0
+			li++
+			
+			If li > 58
+				Cabec(titulo,cabec1,cabec2,nomeprog,Tamanho,nTipo)
+			EndIf 
+			
+			@ li,000 PSAY "-"
+		EndIf
+		
+		@ li,047 PSAY SB1->B1_TIPO
+		@ li,050 PSAY SB1->B1_GRUPO
+		@ li,055 PSAY SB1->B1_UM
+		@ li,058 PSAY nSaldoEst    	Picture PesqPictQt("B2_QATU",14)
+		@ li,073 PSAY nEmp			Picture PesqPictQt("B2_QEMP",14)
+		@ li,088 PSAY nSCPro    		Picture PesqPictQt("C1_QUANT",14)
+		@ li,103 PSAY nPCPro    		Picture PesqPictQt("C7_QUANT",14)
+		@ li,118 PSAY nOPPro    		Picture PesqPictQt("C2_QUANT",14)
+		@ li,133 PSAY nPVPro    		Picture PesqPictQt("C6_QTDVEN",14)
+		@ li,148 PSAY RetFldProd(SB1->B1_COD,"B1_EMIN") Picture PesqPictQt("B1_EMIN",12)
+		@ li,161 PSAY RetFldProd(SB1->B1_COD,"B1_LE") 	 Picture PesqPictQt("B1_LE",12)
+		@ li,174 PSAY RetFldProd(SB1->B1_COD,"B1_PE") Picture PesqPictQt("B1_PE",12)
+		@ li,180 PSAY RetFldProd(SB1->B1_COD,"B1_TIPE")
+		If lSB3
+			If SB3->B3_MEDIA != 0
+				@ li,183 PSAY nSaldoEst/SB3->B3_MEDIA Picture "99999"
+			Else
+				@ li,183 PSAY "99999"
+			EndIf
+			@ li,189 PSAY SB3->B3_MEDIA Picture PesqPictQt("B3_MEDIA",13)
+		EndIf
+		@ li,204 PSAY SB2->B2_USAI
+		If lSB3
+			@ li,215 PSAY SB3->B3_CLASSE
+		EndIf
+		If RetFldProd(SB1->B1_COD,"B1_FANTASM") == "S" // Projeto Implementeacao de campos MRP e FANTASM no SBZ
+			@ li,218 PSAY "F"
+		Else
+			@ li,218 PSAY "N"
+		Endif
+		li++
+		//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+		//³ Soma no Totalizador por Produto Pai				       ³
+		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+		nTotSaldo+=nSaldoEst
+		nTotEmp+=nEmp
+		nTotSCPro+=nSCPro
+		nTotPCPro+=nPCPro
+		nTotOPPro+=nOPPro
+		nTotPVPro+=nPVPro
+	EndIf
+EndIf
+Return
+/*
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³ Fun‡…o   ³ ImpTot   ³ Autor ³ Rodrigo de A. Sartorio³ Data ³ 03/08/95 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Descri‡…o³ Imprime Totais por Produto Pai                             ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Sintaxe  ³ ImpTot()	    	 										  ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³ Uso      ³ MATR875                                                    ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+*/
+STATIC Function ImpTot(titulo,cabec1,cabec2,nomeprog,Tamanho,nTipo)
+
+li++
+If li > 58
+	Cabec(titulo,cabec1,cabec2,nomeprog,Tamanho,nTipo)
+	li++
+EndIf
+@ li,000 PSAY STR0013	//"T O T A I S  :"
+@ li,058 PSAY nTotSaldo			Picture PesqPictQt("B2_QATU",14)
+@ li,073 PSAY nTotEmp			Picture PesqPictQt("B2_QEMP",14)
+@ li,088 PSAY nTotSCPro    		Picture PesqPictQt("C1_QUANT",14)
+@ li,103 PSAY nTotPCPro    		Picture PesqPictQt("C7_QUANT",14)
+@ li,118 PSAY nTotOPPro    		Picture PesqPictQt("C2_QUANT",14)
+@ li,133 PSAY nTotPVPro    		Picture PesqPictQt("C6_QTDVEN",14)
+li++
+
+Return

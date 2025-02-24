@@ -1,0 +1,316 @@
+#Include "PROTHEUS.CH" 
+#Include "TOPCONN.CH"
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออหออออออัอออออออออออออปฑฑ
+ฑฑบPrograma  ณRNFSTATUS  บAutor  ณLivia Della COrte     บ Data ณ  11/01/2016 บฑฑ
+ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออสออออออฯอออออออออออออนฑฑ
+ฑฑบDesc.     ณRelatorio de status de Nfe				  บฑฑ
+ฑฑบ          ณplanilha.                                                   บฑฑ
+ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
+ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+*/
+
+User Function RNFSTATUS()
+
+Local oButton1,oButton2,oFil1,oFil2,oCombo,oDt1,oDt2,oArqNome
+Local oFont1 := TFont():New("ARIAL",,016,,.T.,,,,,.F.,.F.)
+Local oSay1,oSay2,oSay3,oSay4,oSay5
+
+Private nCombo //:= 6
+Private cFil1 := "01"
+Private cFil2 := "01"
+Private dDt1 := Date() - 30
+Private dDt2 := Date()   
+Private cArqNome     := "MonitorNfe"
+Private aItens := {"1 - Inutiliza็ใo Nใo Transmitida","2 - Cancelamento Nใo Transmitido","3 - Rejei็ใo","4 - Danfe Nใo Impressa", "5 - Cancelamento Homologado","6 - Inutiliza็ใo Homologada","7 - Todos"}
+//                     1        						2            						3 			4         	            	5
+
+Static oDlg
+
+DEFINE MSDIALOG oDlg TITLE "Monitor de Nfe" FROM 000, 000  TO 230, 670 COLORS 1, 16777215 PIXEL
+
+@ 012, 016 SAY  oSay1 PROMPT "Data de:"     SIZE 035, 009 OF oDlg FONT oFont1 COLORS 0, 16777215 PIXEL
+@ 012, 180 SAY  oSay2 PROMPT "Data at้:"    SIZE 035, 009 OF oDlg FONT oFont1 COLORS 0, 16777215 PIXEL
+@ 033, 016 SAY  oSay3 PROMPT "Filial de:"  SIZE 040, 011 OF oDlg FONT oFont1 COLORS 0, 16777215 PIXEL
+@ 033, 179 SAY  oSay4 PROMPT "Filial at้:" SIZE 044, 009 OF oDlg FONT oFont1 COLORS 0, 16777215 PIXEL
+@ 055, 016 SAY  oSay5 PROMPT "Situa็ใo NFe:"      SIZE 066, 009 OF oDlg FONT oFont1 COLORS 0, 16777215 PIXEL
+//@ 077, 016 SAY  oSay5 PROMPT "Nome do Arquivo:"      SIZE 066, 009 OF oDlg FONT oFont1 COLORS 0, 16777215 PIXEL
+
+@ 012, 083 MSGET oDt1  VAR dDt1  SIZE 083, 012 OF oDlg COLORS 0, 16777215 FONT oFont1 PIXEL
+@ 012, 243 MSGET oDt2  VAR dDt2  SIZE 084, 012 OF oDlg COLORS 0, 16777215 FONT oFont1 PIXEL
+@ 032, 084 MSGET oFil1 VAR cFil1 SIZE 083, 012 OF oDlg COLORS 0, 16777215 FONT oFont1 PIXEL
+@ 034, 245 MSGET oFil2 VAR cFil2 SIZE 083, 012 OF oDlg COLORS 0, 16777215 FONT oFont1 PIXEL
+//@ 074, 084 MSGET oArqNome VAR cArqNome SIZE 083, 012 OF oDlg COLORS 0, 16777215 FONT oFont1 PIXEL
+@ 055, 084 MSCOMBOBOX oCombo VAR nCombo ITEMS aItens SIZE 200, 012 OF oDlg COLORS 0, 16777215 FONT oFont1 PIXEL
+
+@ 099, 094 BUTTON oButton1 PROMPT "Processar" SIZE 044, 012 OF oDlg FONT oFont1 ACTION (oDlg:End(),Processa({||aRNFSTATUS()})) PIXEL
+@ 099, 235 BUTTON oButton2 PROMPT "Cancelar"  SIZE 046, 012 OF oDlg FONT oFont1 ACTION oDlg:End() PIXEL
+
+ACTIVATE MSDIALOG oDlg CENTERED
+
+Return
+
+Static Function ARNFSTATUS()
+
+
+Local cSheet := "Monitor de Notas Eletr๔nicas"
+Local cTable := "NFe"
+Local cOpc   := SubStr(nCombo,1,1)
+Local cFil3  := ""
+Local cEmissao  :=""
+Local nNumero := 1 
+Local nNumOld := 1
+Local cSerie    :=""
+Local cSeFAz    :=""
+Local cForne	:=""
+Local oFont2 := TFont():New("ARIAL",,016,,.T.,,,,,.F.,.F.)	
+Local aItens1 := {}    
+Local lImprime := .T.		 
+
+
+
+Private oExcel := FWMSEXCEL():New()
+
+oExcel:AddworkSheet(cSheet)
+oExcel:AddTable (cSheet,cTable)
+oExcel:AddColumn(cSheet,cTable,"Filial"    ,1,1)
+oExcel:AddColumn(cSheet,cTable,"Emissใo"  ,1,1)
+oExcel:AddColumn(cSheet,cTable,"N๚mero"      ,1,1)
+oExcel:AddColumn(cSheet,cTable,"S้rie"    ,1,1)
+oExcel:AddColumn(cSheet,cTable,"Retorno Sefaz",1,1)
+
+aLinha:={}
+
+if cOpc <> "1"
+
+cAliasTop := GetNextAlias()
+
+  cQuery:= " 	select  DISTINCT f3_filial "
+  cQuery+= " 		, SUBSTR(F3_emissao,7,2)||'/'||SUBSTR(F3_emissao,5,2)||'/'||SUBSTR(F3_emissao,1,4)    emissao "
+  cQuery+= " 		, f3_nfiscal numero                                                                                 "                        
+  cQuery+= " 		, F3_SERIE serie"
+  cQuery+= " 		, F3_CODRSEF || ' - ' || zcr_descr   sefaz" 
+  cQuery+= " 		, f3_dtcanc "
+  cQuery+= "  from sF3010        "  
+  
+  cQuery+= "  	join zcr010 on F3_CODRSEF = zcr_cod "
+  cQuery+= "  where                                "
+  cQuery+= "  	f3_filial between '" + cFil1 + "' and  '" + cFil2 + "'"
+  cQuery+= "  	and f3_emissao between '" + dtos(dDt1) + "' and  '" + dtos(dDt2) + "'"
+  cQuery+= "  	and F3_especie = 'SPED'  and SUBSTR(f3_cfo,1,1) > '4' "
+  cQuery+= "  	and D_E_L_E_T_ = ' ' and F3_CODRSEF <> ' ' "  
+
+  If cOpc = "2"         //  cancelamento nao transmitido/Nใo autorizado
+	cQuery+= " AND   ( F3_CODRSEF = '100' OR F3_CODRSEF = '501') and f3_dtcanc <> ' ' "
+  EndIf
+ 
+  If cOpc = "3"
+	cQuery+= " AND F3_CODRSEF not in ( ' ', '100','101', '102', '501', '103')"  // Rejei็๕es
+  EndIf                         
+ 
+  If cOpc = "4"
+	cQuery+= " AND F3_CODRSEF = '103' "  // Sem monitora็ใo.
+  EndIf   
+   
+  If cOpc = "5"
+	cQuery+= " AND F3_CODRSEF = '101' "  // Cancelamento
+  EndIf 
+ 
+  If cOpc = "6"
+	cQuery+= " AND F3_CODRSEF = '102' "  // Inutiliza็๕es
+  EndIf 
+   
+  If  cOpc = "7"
+	cQuery+= " AND  ( (( F3_CODRSEF = '100' or F3_CODRSEF = ' ' OR F3_CODRSEF = '501') and f3_dtcanc <> ' ') "
+	cQuery+= " OR (F3_CODRSEF not in ( '100')) )"  // Rejei็๕es  e Sem monitora็ใo.
+  EndIf
+                
+  cQuery+= " group by  f3_filial  , SUBSTR(F3_emissao,7,2)||'/'||SUBSTR(F3_emissao,5,2)||'/'||SUBSTR(F3_emissao,1,4)  , f3_nfiscal , F3_SERIE , f3_dtcanc, F3_CODRSEF, zcr_descr  "                                                       
+  cQuery+= " order by   f3_filial  , SUBSTR(F3_emissao,7,2)||'/'||SUBSTR(F3_emissao,5,2)||'/'||SUBSTR(F3_emissao,1,4)  , f3_nfiscal , F3_SERIE"                                                                                                     
+                                                     
+  
+dbUseArea(.T.,"TOPCONN",TcGenQry(,,cQuery),cAliasTop,.T.,.T.)
+dbSelectArea(cAliasTop)                                                                              
+Do While (cAliasTop)->(!Eof())
+
+	cFil3  := (cAliasTop)->f3_filial
+	cEmissao :=(cAliasTop)->EMISSAO
+	nNumero  :=(cAliasTop)->numero
+	cSerie   :=(cAliasTop)->serie
+  	cSeFAz   :=trim((cAliasTop)->sefaz) +  iiF(alltrim((cAliasTop)->f3_dtcanc) =="" .and. "101"$(cAliasTop)->sefaz,"", " / Nfe Cancelada no Sistema TOTVS em:" +(cAliasTop)->f3_dtcanc)                                        
+
+	oExcel:AddRow(cSheet,cTable,{cFil3 ,cEmissao  ,nNumero ,cSerie, cSEFAZ }) 
+
+	aLinha:={}
+	AAdd(aLinha, cFil3) 	
+	AAdd(aLinha, cEmissao) 	
+	AAdd(aLinha, nNumero) 	
+	AAdd(aLinha, cSerie)   
+	AAdd(aLinha, cSEFAZ)   
+		                                   	
+	(cAliasTop)->(dbSkip()) 
+	
+	aadd(aItens1,aLinha)
+	 		
+EndDo   
+(cAliasTop)->(DbCloseArea())                                                                 
+EndIf
+
+
+if cOpc == "1" .OR. cOpc == "5" 
+
+cAliasInut := GetNextAlias()
+  cQuery:= " 	select  DISTINCT FT_filial "
+  cQuery+= " 		, FT_emissao   emissao "
+  cQuery+= " 		, min (FT_nfiscal) numMin "                           
+  cQuery+= " 		, max (FT_nfiscal) numMax  "
+  cQuery+= " 		, FT_SERIE serie" 
+  cQuery+= "  from sFT010        "
+  cQuery+= "  where                                "
+  cQuery+= "  	FT_filial between '" + cFil1 + "' and  '" + cFil2 + "'"
+  cQuery+= "  	and FT_emissao between '" + dtos(dDt1) + "' and  '" + dtos(dDt2) + "'"
+  cQuery+= "  	and FT_especie = 'SPED'  and SUBSTR(FT_cfop,1,1) > '4' "
+  cQuery+= "  	and D_E_L_E_T_ = ' ' "         
+  cQuery+= " group by  FT_filial , FT_emissao,FT_seRIE  
+  cQuery+= " order by   FT_filial , FT_emissao,FT_seRIE  "                                                       
+  
+dbUseArea(.T.,"TOPCONN",TcGenQry(,,cQuery),cAliasInut,.T.,.T.)
+
+dbSelectArea(cAliasInut) 	  	
+Do While (cAliasInut)->(!Eof())  //Inutiliza็ใo  	 		
+	cFil3  := (cAliasInut)->FT_filial
+	cEmissao :=(cAliasInut)->EMISSAO
+	nNumero  := val((cAliasInut)->nummin)  
+	nNumOld  := val((cAliasInut)->NUmMAX)
+	cSerie   := (cAliasInut)->serie
+		
+	While nNumOld - nNumero > 1
+	 
+			cNumero:= alltrim(str(nNumero))  
+			cNUmero:= replicate("0", 9-len(cNumero)) + cNUmero  
+			lImprime := u_CRNFSTATUS(cFil3 ,cEmissao,cNumero ,cSerie)		
+
+			IF lImprime 
+				nNumero +=1		
+			ELse
+				cEmissao := ""
+		 		cSeFAz := "Inutiliza็ใo Nใo Transmitida"
+		   		oExcel:AddRow(cSheet,cTable,{cFil3 , cEmissao ,cNumero ,cSerie, cSeFAz }) 
+		   			aLinha:= {}
+		   			AAdd(aLinha, cFil3) 	
+					AAdd(aLinha, cEmissao) 	
+					AAdd(aLinha, nNumero) 	
+					AAdd(aLinha, cSerie)   
+					AAdd(aLinha, cSEFAZ)   
+						                                   
+					aadd(aItens1,aLinha) 
+		   		nNumero +=1		   		
+			EndIf 	
+			
+	   		
+	loop
+	EndDo 
+	
+(cAliasInut)->(dbSkip())
+loop	 	
+EndDo
+  
+EndIf
+   
+ 
+If len(aItens1)>0                                              
+
+	DEFINE FONT oBold NAME "Arial" SIZE 0, -12 BOLD
+	DEFINE MSDIALOG oDlgx FROM 000,000  TO 450,1000 TITLE OemToAnsi("Monitor Nfe") Of oMainWnd PIXEL
+		 
+	_atit_cab1:= 	{"Filial","Emissใo","Numero","S้rie","Retorno Sefaz"} 
+	oListBox2 := TWBrowse():New( 32 ,002,500,190                              ,,_atit_cab1, ,oDlgx,,,,,{||},,,,,,,.F.,,.T.,,.F.,,, )  	
+	oListBox2:AddColumn(TCColumn():New( "Filial"  		,{|| aItens1[ oListBox2:nAt, 01 ] },,,,'LEFT',,.F.,.F.,,,,.F.,))        //1
+	oListBox2:AddColumn(TCColumn():New( "Emissใo"  		,{|| aItens1[ oListBox2:nAt, 02 ] },,,,'RIGHT',,.F.,.F.,,,,.F.,)) 		//2
+	oListBox2:AddColumn(TCColumn():New( "Numero" 		,{|| aItens1[ oListBox2:nAt, 03 ] },,,,'RIGHT',,.F.,.F.,,,,.F.,))   	//3
+	oListBox2:AddColumn(TCColumn():New( "S้rie"  		,{|| aItens1[ oListBox2:nAt, 04 ] },,,,'RIGHT',,.F.,.F.,,,,.F.,)) 		//4
+	oListBox2:AddColumn(TCColumn():New( "Retorno Sefaz"	,{|| aItens1[ oListBox2:nAt, 05 ] },,,,'LEFT',,.F.,.F.,,,,.F.,)) 		//5
+    oListBox2:SetArray(aitens1)	
+
+	@ 007,905 	BTNBMP oBtn2 RESOURCE "SDUFIND" 		SIZE 30,30 ACTION (oDlgx:End(),Processa({||u_RNFSTATUS()}))   		MESSAGE "Parametros"
+	@ 007,940 	BTNBMP oBtn2 RESOURCE "Salvar" 			SIZE 30,30 ACTION u_BRNFSTATUS()     		MESSAGE "Salvar Excel"
+	@ 007,973	BTNBMP oBtn6 RESOURCE "Final" 			SIZE 30,30 ACTION (oDlgx:End()) 	 	MESSAGE "Sair"
+	    
+	ACTIVATE MSDIALOG oDlgx CENTERED
+
+   //	lImprime:= MsgYesNo( "Arquivo: " + cArqNome + ".xls gerado!" +CHR(13)+CHR(10) +"Abre arquivo?", "Monitor Nfe" )
+	
+Else
+	MSGALERT( "Nใo hแ Dados!", "Monitor Nfe" ) 
+	u_RNFSTATUS()
+EndIf
+ 
+ 
+   
+                                                                   
+Return
+
+
+User Function BRNFSTATUS()  
+Local lret
+Local lshow
+Local nRet := ""
+Local cHora01  := replace(time(),":","")
+
+cArqNome := "MonitorNfe_" + dtos(date()) + cHora01     
+
+lRet := ExistDir('C:\temp\')    
+                           
+if  !lRet   	
+	nRet := MakeDir( "C:\temp" ) 
+	lRet:= .T.	 
+EndIf
+
+If lRet
+	oExcel:Activate()                                                     
+	oExcel:GetXMLFile("C:\temp\"  + trim(cArqNome) + ".xls")   
+	oExcelApp := MsExcel():New()  	
+	lShow:= MsgYesNo( "Arquivo: " + cArqNome + ".xls gerado!" +CHR(13)+CHR(10) +"Abre arquivo?", "Monitor Nfe" )
+	If lShow
+		oExcelApp:WorkBooks:Open( "C:\temp\" + trim(cArqNome) + ".xls" )
+		oExcelApp:SetVisible(.T.)    
+	 EndIf 
+EndIf
+	 
+Return
+
+/*@ verifica salto de numera็ใo da especie SPED*/
+
+User Function CRNFSTATUS(cFil3 ,cEmissao  ,cNumero ,cSerie)
+
+Local cQuery 
+Local cAlias
+Private lReturn := .F.  
+
+cAlias:= GetNextAlias()
+  cQuery:= " 	select  count(*) count  from sFT010        "
+  cQuery+= "  where                                "
+  cQuery+= "  	FT_especie = 'SPED'  "  // and SUBSTR(FT_cfop,1,1) > '4' "  desconsidero CFOP por notas de entrada com formulario proprio
+  cQuery+= "  	and FT_filial = '" + cFil3 + "'" 
+  cQuery+= "  	and FT_nfiscal = '" + cNumero + "'" 
+  cQuery+= "  	and FT_serie = '" + cSerie + "'"  
+ // cQuery+= "  	and FT_emissao <= '" + dtos(dDt2) + "'" 
+  cQuery+= "  	and D_E_L_E_T_ = ' ' "          
+  cQuery+= " group by  FT_filial , FT_emissao,FT_seRIE  "                                                      
+ dbUseArea(.T.,"TOPCONN",TcGenQry(,,cQuery),cAlias,.T.,.T.)
+
+dbSelectArea(cAlias)                                                                              
+Do While (cAlias)->(!Eof())	  	
+		if   (cAlias)->count >=1
+			lReturn := .T.
+		EndIf
+		(cAlias)->(dbSkip())
+	loop
+EndDO  
+(cAlias)->(DbCloseArea()) 	                   
+
+Return (lReturn)

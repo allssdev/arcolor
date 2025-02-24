@@ -1,0 +1,44 @@
+#include "totvs.ch"
+
+/*/{Protheus.doc} RPCPC005
+    Classe para atualizar dados da Ordem de Produção.
+    @author Fernando Bombardi
+    @since 16/12/2023
+    /*/
+Class RPCPC005 
+
+    Public Method New() CONSTRUCTOR
+    Public Method GravarIniOP()
+
+EndClass
+
+/*/{Protheus.doc} methodName
+    Metodo construtor da classe
+    @author Fernando Bombardi
+    @since 16/12/2023
+    /*/
+Method New() class RPCPC005
+Return
+
+
+/*/{Protheus.doc} GravarIniOP
+    Metodo para atualizar o campo C2_XINIOP apos a alteração do Empenho Multiplo.
+    @author Fernando Bombardi
+    @since 16/12/2023
+    /*/
+Method GravarIniOP() class RPCPC005
+Local _aArea := GetArea()
+
+    dbSelectArea("SC2")
+    dbSetOrder(1)
+    if dbSeek(FWXFilial("SC2")+cOp)
+        RecLock("SC2",.F.)
+        SC2->C2_XINIOP := Alltrim(RetCodUsr()) + " - " + Time() + " - " + DtoC(dDataBase)
+        SC2->(MsUnlock())
+    endif
+
+RestArea(_aArea)
+Return
+
+
+

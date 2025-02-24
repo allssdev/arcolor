@@ -1,0 +1,188 @@
+#INCLUDE "totvs.ch"
+#include "tlpp-core.th"
+
+/*/{Protheus.doc} RPCPA005
+    Rastreabilidade - Rotina para Recall
+    @type  Function
+    @author Fernando Bombardi
+    @since 23/10/2023
+    @version 1.0
+    /*/
+User Function RPCPA005()
+Private _cLote   := Space(TamSX3( 'D3_LOTECTL' )[01]) as Character
+Private _cProd   := Space(TamSX3( 'B1_COD' )[01]) as Character
+Private _aItem   :={"  ", "PA", "PI", "MP\EM"} as Array
+
+Private _cTexto1 := "A ARCO-ÍRIS BRASIL IND. E COM. DE PRODUTOS ALIMENTÍCOS LTDA, vem por meio desta informar " + ;
+                    "de forma voluntária a seus clientes e consumidores mediante nosso respeito e transparência e " + ;
+                    "conforme o Legislação vigente estabelecida pela Agência Nacional de Vigilância Sanitária - " + ;
+                    "ANVISA, através da Resolução RDC Nº 655, DE 24 DE MARÇO DE 2022 que o(s) produto(s) abaixo " + ;
+                    "mencionado(s) , apresenta(am) não conformidade relacionada a impressão incorreta da data " + ;
+                    "de fabricação do produto." as Character
+Private _cTexto2 := 'DESCRIÇÃO "DATA DE FABRICAÇÃO" IMPRESSA INCORRETAMENTE' as Character
+Private _cTexto3 := "NÃO FOI IDENTIFICADO NENHUM RISCO OU AGRAVO A SAÚDE DO CONSUMIDOR." as Character
+Private _cTexto4 := "Solicitamos aos clientes que possuam produtos deste lote que entrem em contato com a Arcólor através de seu serviço de atendimento ao " + ;
+                    "consumidor para que seja agendada sua substituição." + ;
+                    "Esclarecemos que o processo de troca não implicará em qualquer custo." as Character
+
+/* Voltar para colocar em produção
+Private _cTexto1 := "" as Character
+Private _cTexto2 := "" as Character
+Private _cTexto3 := "" as Character
+Private _cTexto4 := "" as Character
+*/
+
+Private _oDlg as Object
+
+Public _ctargetDir as Character
+
+oFont := TFont():New('Courier new',,-18,.T.)
+
+_oDlg :=TDialog():New(180,180,780,1300,'',,,,,CLR_BLACK,CLR_WHITE,,,.T.)
+
+	otMultiBtn := tMultiBtn():New( 05,10,'Recall de Produtos',_oDlg,,520,150, 'AVG_EMBTO',0,'Mensagem',3 )
+	otMultiBtn:SetFonts('Tahoma',16,'Tahoma',10)
+	otMultiBtn:AddButton('&Enviar Recall')
+	otMultiBtn:AddButton('&Anexar Imagem')
+	otMultiBtn:AddButton('&Sair')
+	otMultiBtn:bAction := {|x,y| DefinirMenu(y) }
+
+    oSay1  := TSay():New(55,10,{||'Lote:'},_oDlg,,oFont,,,,.T.,CLR_RED,CLR_WHITE,200,20)
+	oTGet1 := tGet():New(55,50,{|u| if(PCount()>0,_cLote:=u,_cLote)}, _oDlg ,096,009,"@!",{ ||   },,,,,,.T.,,, {|| .T. } ,,,,.F.,,"","_cLote")
+
+    oSay2  := TSay():New(55,190,{||'Produto:'},_oDlg,,oFont,,,,.T.,CLR_RED,CLR_WHITE,200,20)
+	oTGet2 := tGet():New(55, 250, {|u| if(PCount()>0,_cProd:=u,_cProd)}, _oDlg, 096, 009, "@!", { || }, , , , , , .T., , , {|| .T.}, , , , .F., , "", "_cProd")
+    oTGet2:cF3     := 'SB1'
+
+    oSay3  := TSay():New(55,395,{||'Tipo:'},_oDlg,,oFont,,,,.T.,CLR_RED,CLR_WHITE,200,20)
+    _cCboTip:= _aItem[1]
+    oCombo1 := TComboBox():New(55,451,{|u|if(PCount()>0,_cCboTip:=u,_cCboTip)},;
+    _aItem,100,10,_oDlg,,{|| };
+    ,,,,.T.,,,,,,,,,'_cCboTip')
+
+    oSay4  := TSay():New(80,10,{||'1- INFORMAÇÕES INICIAIS E-MAIL:'},_oDlg,,oFont,,,,.T.,CLR_RED,CLR_WHITE,200,20)
+    oTMultget1 := tMultiget():new( 90, 10, {| u | if( pCount() > 0, _cTexto1 := u, _cTexto1 ) }, ;
+    _oDlg, 260, 92, , , , , , .T. )
+
+    oSay5  := TSay():New(80,290,{||'2- MOTIVO DO RECOLHIMENTO:'},_oDlg,,oFont,,,,.T.,CLR_RED,CLR_WHITE,200,20)
+    oTMultget2 := tMultiget():new( 90, 290, {| u | if( pCount() > 0, _cTexto2 := u, _cTexto2 ) }, ;
+    _oDlg, 260, 92, , , , , , .T. )          
+
+    oSay6  := TSay():New(190,10,{||'3- RISCO E AGRAVO À SAUDE DOS CONSUMIDORES:'},_oDlg,,oFont,,,,.T.,CLR_RED,CLR_WHITE,300,20)
+    oTMultget1 := tMultiget():new( 200, 10, {| u | if( pCount() > 0, _cTexto3 := u, _cTexto3 ) }, ;
+    _oDlg, 260, 92, , , , , , .T. )
+
+    oSay7  := TSay():New(190,290,{||'4- ORIENTAÇÕES AOS CONSUMIDORES:'},_oDlg,,oFont,,,,.T.,CLR_RED,CLR_WHITE,200,20)
+    oTMultget2 := tMultiget():new( 200, 290, {| u | if( pCount() > 0, _cTexto4 := u, _cTexto4 ) }, ;
+    _oDlg, 260, 92, , , , , , .T. )          
+
+_oDlg:Activate()
+
+Return
+
+/*/{Protheus.doc} DefinirMenu
+//TODO Rotina para Menu definição botões rotina.
+@author Fernando Bombardi (ALLSS)
+@since 27/10/2023
+@version 1
+
+@type function 
+/*/
+Static Function DefinirMenu(_nBtSel) as logical
+
+	DO CASE
+
+		CASE _nBtSel == 1
+            if validationForm()
+                oRPCPC002 := RPCPC002():NEW() 
+                MsgRun("Aguarde... executando os processos de Recall de Produtos!",,{|| oRPCPC002:ConsultaLote(_cLote, _cProd, _cCboTip, _cTexto1, _cTexto2, _cTexto3, _cTexto4) })
+                _oDlg:End()
+                MsgInfo("Processo finalizado com sucesso!","[RPCPA005_013] - Aviso")
+            endif
+
+		CASE _nBtSel == 2
+             FileDlg()
+
+        OTHERWISE
+            _oDlg:End()
+
+	END CASE
+
+Return(.T.)
+
+/*/{Protheus.doc} FileDlg
+    (long_description)
+    @type  Static Function
+    @author user
+    @since 15/11/2023
+    @version version
+    @param param_name, param_type, param_descr
+    @return return_var, return_type, return_description
+    @example
+    (examples)
+    @see (links_or_references)
+/*/
+Static Function FileDlg()
+local _cDir := "c:\"
+Local nRet := MakeDir( "\RECALL" )
+Local cDrive, cDir, cNome, cExt
+
+if !ExistDir( "\RECALL" )
+    nRet := MakeDir( "\RECALL" )
+    if nRet != 0
+        ShowHelpDlg("[RPCPA005_E002]", {"Não foi possível criar o diretório. Erro: " + cValToChar( FError() ),""},5,;
+                                    {"Entre em contato com o administrador do sistema.",""},5)
+    endif
+endif
+
+_ctargetDir:= tFileDialog( "All files (*.jpg) | All Text files (*.jpg) ",;
+        'Selecao de Imagens',, _cDir, .F.,  )
+
+if !Empty(_ctargetDir)
+    _lRet := CpyT2S( _ctargetDir ,"\RECALL" ,.F. )
+    IF !_lRet
+        MsgAlert("Ocorreram erros na copia da imagem do produto tente navamente.","[RPCPC005_E003]")
+    else
+        MsgInfo("Imagem anexada com sucesso! Clique e 'Enviar Recall' para enviar a comunicação do Recall aos Clientes.", "[RPCPA005] - Aviso")
+    endif
+
+    SplitPath( _ctargetDir, @cDrive, @cDir, @cNome, @cExt )
+
+    _ctargetDir := "\RECALL\" + Alltrim(cNome) + Alltrim(cExt)
+endif
+
+return
+
+/*/{Protheus.doc} validationForm
+    Função para realizar a validação dos dados do formulário
+    @type  Static Function
+    @author Fernando Bombardi
+    @since 15/11/2023
+    @version 1.0
+/*/
+Static Function validationForm()
+Local _lReturnValidation := .T. as logical
+Local _cTipoProduto := Alltrim(Posicione("SB1",1,FWFilial("SB1")+_cProd,"B1_TIPO")) as character
+
+    Do Case
+        /*
+        Case Empty(_ctargetDir) .and. Alltrim(_cCboTip) == "PA"
+            ShowHelpDlg("[RPCPA005_E001]", {"A imagem do produto não foi selecionada.",""},5,;
+                                    {"Selecione do arquivo para envio do Recall de Produtos.",""},5)
+            _lReturnValidation := .F.
+        */
+        Case Empty(_cLote)
+            ShowHelpDlg("[RPCPA005_E010]", {"O lote do produto não foi informado.",""},5,;
+                                    {"Informe o número do lote para realizar o envio do Recall de Produtos.",""},5)
+            _lReturnValidation := .F.
+        Case Empty(_cProd)
+            ShowHelpDlg("[RPCPA005_E020]", {"O código do produto não foi informado.",""},5,;
+                                    {"Informe o código do produto para realizar o envio do Recall de Produtos.",""},5)
+            _lReturnValidation := .F.
+        Case !_cTipoProduto $ Alltrim(_cCboTip)
+            ShowHelpDlg("[RPCPA005_E030]", {"O código do produto informado não é do mesmo tipo de produto selecionado.",""},5,;
+                                    {"O tipo do produto deve ser o mesmo conforme o cadastro do produto.",""},5)
+            _lReturnValidation := .F.
+    End Case
+
+Return(_lReturnValidation)

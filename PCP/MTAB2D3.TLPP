@@ -1,0 +1,153 @@
+#include "Totvs.ch"
+#include "tlpp-core.th"
+ 
+/*/{Protheus.doc} MTAB2D3
+Localização: Função B2AtuComD3 - Atualiza o SB2 baseado no SD3
+@type user function
+@author Fernando Bombardi
+@since 31/01/2024
+/*/
+User Function MTAB2D3()
+Local _aArea := GetArea()
+Local _cProd := ParamIXB[1]
+
+If ( SD3->D3_TM == "999" .AND. SD3->D3_CF == "RE1" .AND. SD3->D3_QTMAIOR > 0 )
+
+    oMTAB2D3 := MTAB2D3():NEW()
+    dbSelectArea("SB1")
+    dbSetOrder(1)
+    IF dbSeek(xFilial("SB1")+Alltrim(_cProd))
+        if Alltrim(SB1->B1_TIPO) == "EM"
+            if oMTAB2D3:getLotQuantity(SD3->D3_COD, SD3->D3_OP) //Consulta se existe mais de um lote empenhado
+                if !oMTAB2D3:getBatchExpirationDate(SD3->D3_COD, SD3->D3_OP, SD3->D3_DTVALID, SD3->D3_LOTECTL) //Consulta se não é o lote mais novo
+
+                    SD3->D3_XQTAJUS := SD3->D3_QTMAIOR
+                    SD3->D3_QUANT   := SD3->D3_QUANT - SD3->D3_QTMAIOR
+                    SD3->D3_QTMAIOR := 0
+
+                else
+
+                    _nLargestQuantity := oMTAB2D3:getTotalBatchQuantity(SD3->D3_COD, SD3->D3_OP, SD3->D3_DTVALID, SD3->D3_LOTECTL, SD3->D3_IDENT)
+                    SD3->D3_QUANT     := SD3->D3_QUANT   + _nLargestQuantity
+                    SD3->D3_QTMAIOR   := SD3->D3_QTMAIOR + _nLargestQuantity
+
+                endif
+            endif
+        endif
+    EndIf
+    FreeObj(oMTAB2D3)
+endif
+
+RestArea(_aArea)
+Return
+
+//37872001001 
+//ES96BA         
+//0095           
+//0097           
+//0101     
+
+/*/{Protheus.doc} className
+    (long_description)
+    @author user
+    @since 31/01/2024
+    @version version
+    /*/
+Class MTAB2D3
+
+    Public Method New() constructor
+    Public Method getLotQuantity()
+    Public Method getBatchExpirationDate()
+    Public Method getTotalBatchQuantity()
+    
+EndClass
+
+/*/{Protheus.doc} methodName
+    Metodo construtor da classe
+    @author Fernando Bombardi
+    @since 31/01/2024
+    /*/
+Method New() Class MTAB2D3
+Return
+
+/*/{Protheus.doc} getLotQuantity
+    Metodo para verificar se a embalagem empenhada possui mais de um lote.
+    @author Fernando Bombardi
+    @since 31/01/2024
+    /*/
+Method getLotQuantity(_cCode, _cProductionOrder) Class MTAB2D3
+Local _lRet := .F.
+
+    BeginSql Alias "TMPSD4"
+        SELECT COUNT(*) AS QTDLOTE
+        FROM %table:SD4% SD4 (NOLOCK)
+        WHERE SD4.D4_FILIAL     = %xFilial:SD4%
+        AND SD4.D4_COD     = %Exp:_cCode%
+        AND SD4.D4_OP     = %Exp:_cProductionOrder%
+        AND SD4.%NotDel%
+    EndSql
+    _cQry :=  GetLastQuery()[2]
+    dbSelectArea("TMPSD4")
+    if TMPSD4->(!EOF())
+        if TMPSD4->QTDLOTE > 1
+            _lRet := .T.
+        endif
+    endif
+    TMPSD4->(dbCloseArea())
+
+Return(_lRet)
+
+/*/{Protheus.doc} getBatchExpirationDate
+    Metodo para verificar se o lote é o mais novo do empenho
+    @author Fernando Bombardi
+    @since 31/01/2024
+    /*/
+Method getBatchExpirationDate(_cCode, _cProductionOrder, _dBatchExpirationDate, _cProductLot) Class MTAB2D3
+Local _lRet := .F.
+
+    BeginSql Alias "TMPSD4"
+        SELECT D4_COD, D4_LOTECTL, D4_DTVALID
+        FROM %table:SD4% SD4 (NOLOCK)
+        WHERE SD4.D4_FILIAL     = %xFilial:SD4%
+        AND SD4.D4_COD     = %Exp:_cCode%
+        AND SD4.D4_OP     = %Exp:_cProductionOrder%
+        AND SD4.%NotDel%
+        ORDER BY D4_DTVALID DESC
+    EndSql
+    _cQry :=  GetLastQuery()[2]
+    dbSelectArea("TMPSD4")
+    if TMPSD4->(!EOF())
+        if Alltrim(TMPSD4->D4_LOTECTL) == Alltrim(_cProductLot) .and. StoD(TMPSD4->D4_DTVALID) == _dBatchExpirationDate
+            _lRet := .T.
+        endif
+    endif
+    TMPSD4->(dbCloseArea())
+
+Return(_lRet)
+
+/*/{Protheus.doc} getBatchExpirationDate
+    Metodo para verificar se o lote é o mais novo do empenho
+    @author Fernando Bombardi
+    @since 31/01/2024
+    /*/
+Method getTotalBatchQuantity(_cCode, _cProductionOrder, _dBatchExpirationDate, _cProductLot, _cIdent) Class MTAB2D3
+Local _nSumQtAjus := 0
+
+    BeginSql Alias "TMPSD3"
+        SELECT SUM(D3_XQTAJUS) AS QTAJUS
+        FROM %table:SD3% SD3 (NOLOCK)
+        WHERE SD3.D3_FILIAL     = %xFilial:SD4%
+        AND SD3.D3_COD     = %Exp:_cCode%
+        AND SD3.D3_OP     = %Exp:_cProductionOrder%
+        AND SD3.D3_IDENT = %Exp:_cIdent%
+        AND SD3.D3_XQTAJUS > 0
+        AND SD3.%NotDel%
+    EndSql
+    _cQry :=  GetLastQuery()[2]
+    dbSelectArea("TMPSD3")
+    if TMPSD3->(!EOF())
+        _nSumQtAjus := TMPSD3->QTAJUS
+    endif
+    TMPSD3->(dbCloseArea())
+
+Return(_nSumQtAjus)

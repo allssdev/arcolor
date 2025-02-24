@@ -1,0 +1,963 @@
+#INCLUDE "RWMAKE.CH"
+#INCLUDE "PROTHEUS.CH"
+
+#DEFINE _CRFL CHR(13)+CHR(10)
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍ»±±
+±±ºPrograma  ³RPONR002  ºAutor  ³Anderson C. P. Coelho º Data ³  23/02/15 º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºDesc.     ³ Relatório de Absenteísmo do Ponto Eletrônico.              º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºPremissas ³ * As horas consideradas no período filtrado, excluem as    º±±
+±±º          ³vinculadas a dias de feriados (tabela SP3) ou a datas em queº±±
+±±º          ³o funcionário esteja com algum tipo de afastamento.         º±±
+±±º          ³ * As horas normais são vinculadas aos IDs de Ponto         º±±
+±±º          ³relacionados no parâmetro "MV_IDPNOR" ou, em sua ausência,  º±±
+±±º          ³aos IDs "001A/002A/026A" (vinculados a tabela SP9).         º±±
+±±º          ³ * Algumas faltas abonadas poderão ser consideradas como    º±±
+±±º          ³horas trabalhadas. Isso ocorre quando o Motivo do abono for º±±
+±±º          ³relacionado no parâmetro  "MV_IDPNOR" (tabela SP6).         º±±
+±±º          ³ * As horas extras são entendidas como eventos com o campo  º±±
+±±º          ³P9_IDPON em branco e o campo P9_TIPOCOD igual a '1'.        º±±
+±±º          ³ * Para quaisquer fins, serão considerados apenas eventos   º±±
+±±º          ³com integração com a Folha de Pagamento, isso é, com o campoº±±
+±±º          ³P9_CODFOL preenchido.                                       º±±
+±±º          ³ * A presente rotina cria uma tabela temporária no banco de º±±
+±±º          ³dados, iniciada por "SP8_", mais o código da empresa/filial,º±±
+±±º          ³o nome da rotina "_RPONR002_", mais outros caracteres de    º±±
+±±º          ³controle, mas a exclui ao término do processamento do       º±±
+±±º          ³relatório.                                                  º±±
+±±º          ³ * Os dois primeiros parâmetros de data da rotina poderão   º±±
+±±º          ³ser selecionados por meio da telinha que é apresentada na   º±±
+±±º          ³saída do campo (validação) ou, ao pressionar ESC ou         º±±
+±±º          ³CANCELAR, poderá também ser informada manualmente.          º±±
+±±º          ³ * A rotina sempre converterá as horas lidas p/ centesimais.º±±
+±±º          ³ * Filtros específicos dos usuários poderão ser realizados  º±±
+±±º          ³por meio da Personalização de Relatórios, podendo influir   º±±
+±±º          ³na performance de geração do relatório.                     º±±
+±±º          ³ * As perguntas de usuário consideram o grupo de perguntas  º±±
+±±º          ³na tabela SX1 com tamanho total de 10 caracteres, por       º±±
+±±º          ³questões de compatibilidade. O grupo de perguntas levará o  º±±
+±±º          ³nome da presente rotina.                                    º±±
+±±º          ³ * A ordem de apresentação do relatório será definida pela  º±±
+±±º          ³ordem dos campos da seção I (totais por funcionário).       º±±
+±±º          ³ * As colunas de eventos serão dinamicamente apresentadas   º±±
+±±º          ³(quando a seleção for por "Em Coluna"), conforme o conteúdo º±±
+±±º          ³da tabela SP9.                                              º±±
+±±º          ³ * Por meio de parâmetros, o usuário poderá selecionar se   º±±
+±±º          ³apresentará os eventos "Em Linha" ou "Em Coluna" e se       º±±
+±±º          ³apresentará os valores extras ou não, alterando assim o     º±±
+±±º          ³layout do relatório.                                        º±±
+±±º          ³ * Foi incorporada uma opção para que o usuário possa inibirº±±
+±±º          ³a apresentação dos eventos de faltas (MV_PAR07).            º±±
+±±º          ³ * Para correta funcionalidade das rotinas, o campo         º±±
+±±º          ³P8_TPMARCA deverá estar preenchido.                         º±±
+±±º          ³ O total de Horas não trabalhadas foi modificado para       º±±
+±±º          ³alcançar a diferença entre o total previsto, menos o total  º±±
+±±º          ³trabalhado. A diferença entre este resultado e as faltas    º±±
+±±º          ³justificadas, será o total de horas não justificadas.       º±±
+±±º          ³Contudo, o analítico de Eventos não considerará esta        º±±
+±±º          ³diferença, senão do que foi realmente apontado.             º±±
+±±º          ³ * O relatório não considerará funcionários que estejam     º±±
+±±º          ³vinculados a Regra de Apontamento cujo campo de Pagamento deº±±
+±±º          ³Horas Normais (PA_HRNORM) seja igual a "Não".               º±±
+±±º          ³ * A coluna absenteísmo, na primeira linha por funcionário  º±±
+±±º          ³poderá ser conferida pelos eventos apresentados em linhas.  º±±
+±±º          ³Contudo, nestes eventos, também poderão ser apresentados    º±±
+±±º          ³eventos considerados como horas trabalhadas (como 'serviço  º±±
+±±º          ³externo', por exemplo).                                     º±±
+±±º          ³ * Este relatório sempre converterá as horas sexagenais paraº±±
+±±º          ³centesimais.                                                º±±
+±±º          ³ * Poderá ocorrer de a coluna de horas Justificadas         º±±
+±±º          ³(primeira linha por funcionário) apresentar resultado       º±±
+±±º          ³negativo, quando o total de horas realizadas for maior que oº±±
+±±º          ³total de horas previstas. Isso será mantido para que tenha  º±±
+±±º          ³como realizar filtragens no Excel de maneira mais fácil e   º±±
+±±º          ³identificar caso a caso.                                    º±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³PARÂMETROS³ DESCRITIVO                                                 ³±±
+±±³----------³------------------------------------------------------------³±±
+±±³MV_IDPNOR ³ Neste parâmetro, relacionar todos os IDs do Ponto para os  ³±±
+±±³          ³eventos cadastrados na tabela SP9 que se referem a Horas    ³±±
+±±³          ³Normais realizadas. Estes eventos deverão estar separados   ³±±
+±±³          ³por barra.                                                  ³±±
+±±³          ³ Exemplo: 001A/002A/026A                                    ³±±
+±±³----------³------------------------------------------------------------³±±
+±±³MV_IDANOR ³ Neste parâmetro, relacionar os códigos dos motivos de abono³±±
+±±³          ³cadastrados na tabela SP6, que se referem a ausências que   ³±±
+±±³          ³serão consideradas como horas trabalhadas.                  ³±±
+±±³          ³ Exemplo: 009/010                                           ³±±
+±±³----------³------------------------------------------------------------³±±
+±±³MV_EXCAFA ³ Neste parâmetro, relacionar tipos de afastamento que não   ³±±
+±±³          ³serão considerados pela rotina como afastamento, tais como  ³±±
+±±³          ³férias, licença maternidade, dentre outros.                 ³±±
+±±³          ³Vide tabela "30" SX5 e SR8.                                 ³±±
+±±³          ³ Exemplo: B/D/F                                             ³±±
+±±³          ³                                                            ³±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³   DATA   ³ Programador   ³Manutencao efetuada                         ³±±
+±±³17/04/2015³Anderson Coelho³ Alterada a ordem das colunas dos eventos   ³±±
+±±³          ³               ³explodidos, relativo a justificativas, sendo³±±
+±±³          ³               ³a sua nomenclatura iniciada por "J_".       ³±±
+±±³17/04/2015³Anderson Coelho³Retirado o tratamento para apresentação das ³±±
+±±³          ³               ³horas extras.                               ³±±
+±±³21/04/2015³Anderson Coelho³Realizado novo tratamento para que a        ³±±
+±±³          ³               ³sequencia/semana do turno seja coletada se  ³±±
+±±³          ³               ³baseando nas alterações automáticas a cada  ³±±
+±±³          ³               ³domingo, culminando assim na mais correta   ³±±
+±±³          ³               ³identificação das horas previstas.          ³±±
+±±³          ³               ³                                            ³±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºUso       ³ Protheus11                                                 º±±
+±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+
+User Function RPONR002()
+
+Local   oReport
+
+Private oSection
+Private oBreak
+Private oSection2
+Private _cRotina := "RPONR002"
+Private cPerg    := _cRotina
+Private _cHrDe   := "S"								//SuperGetMv("MV_HORASDE",,"S")		//Se "S", identifica que a rotina ir'a converter as horas da SP8, SPC, etc. para decimais
+Private _cIdPon  := FormatIn(SuperGetMv("MV_IDPNOR",,""/*"001A/002A/026A"*/  ),"/")		//IDs do Ponto que serao considerados como horas normais de trabalho
+Private _cIdAbo  := FormatIn(SuperGetMv("MV_IDANOR",,""/*"009/010"       */  ),"/")		//IDs de Abono do Ponto que serao considerados como horas normais de trabalho
+Private _cExcAf  := FormatIn(SuperGetMv("MV_EXCAFA",,""/*"B/D/F"         */  ),"/")		//Códigos de Tipo de Afastamento que serão considerados como exceção para os afastamentos registrados (SR8)
+Private _cS_MV08 := ""
+Private _cJ_MV08 := ""
+Private _cNTrabJ := ""
+Private _cToler  := ""
+Private _cAfast  := ""
+Private _nNTrab  := 0
+Private _nNTrabJ := 0
+Private _nNTrabN := 0
+Private _nTotal  := 0
+Private _nPorAb  := 0
+Private _nToler  := 0
+Private _nAfast  := 0
+Private _aCpos   := {}
+
+If FindFunction("TRepInUse") //.AND. TRepInUse()
+	ValidPerg()
+	If !Pergunte(cPerg,.T.)
+		Return
+	EndIf
+	oReport := ReportDef()
+	oReport:PrintDialog()
+EndIf
+
+Return
+
+/*ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÚÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄ¿±±
+±±³Programa  ³ReportDef ³ Autor ³Anderson C. P. Coelho  º Data ³ 06/02/15 ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Descri‡…o ³A funcao estatica ReportDef devera ser criada para todos os ³±±
+±±³          ³relatorios que poderao ser agendados pelo usuario.          ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Retorno   ³ExpO1: Objeto do relatório                                  ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³Parametros³Nenhum                                                      ³±±
+±±ÃÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´±±
+±±³   DATA   ³ Programador   ³Manutencao efetuada                         ³±±
+±±ÀÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+/*/
+
+Static Function ReportDef()
+
+Local oReport
+Local cTitulo  := "Relatório de Absenteísmo Gerencial - Ponto Eletrônico"
+Local _aOrd    := {}
+
+oReport := TReport():New(_cRotina,cTitulo,cPerg,{|oReport| PrintReport(oReport)},"Emissao do relatório, de acordo com o intervalo informado na opção de Parâmetros.")
+oReport:SetLandscape() 
+oReport:SetTotalInLine(.F.)
+Pergunte(oReport:uParam,.F.)
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Secao 1                                                                ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+oSection := TRSection():New(oReport,"Resumo Geral",{"CTT","SRA","SP8","SRJ","SR6","SPJ"},_aOrd/*{Array com as ordens do relatório}*/,/*Campos do SX3*/,/*Campos do SIX*/)
+oSection:SetTotalInLine(.F.)
+TRCell():New(oSection,"RA_CC"       ,"PONTMP"/*Tabela*/,RetTitle("RA_CC"      ),PesqPict("SRA","RA_CC"      ),TamSx3("RA_CC"     )[1],/*lPixel*/,{|| PONTMP->RA_CC      })	// Centro de Custo
+TRCell():New(oSection,"CTT_DESC01"  ,"PONTMP"/*Tabela*/,RetTitle("CTT_DESC01" ),PesqPict("CTT","CTT_DESC01" ),TamSx3("CTT_DESC01")[1],/*lPixel*/,{|| PONTMP->CTT_DESC01 })	// Descrição do Centro de Custo
+TRCell():New(oSection,"RA_MAT"      ,"PONTMP"/*Tabela*/,RetTitle("RA_MAT"     ),PesqPict("SRA","RA_MAT"     ),TamSx3("RA_MAT"    )[1],/*lPixel*/,{|| PONTMP->RA_MAT     })	// Matrícula
+TRCell():New(oSection,"RA_NOME"     ,"PONTMP"/*Tabela*/,RetTitle("RA_NOME"    ),PesqPict("SRA","RA_NOME"    ),TamSx3("RA_NOME"   )[1],/*lPixel*/,{|| PONTMP->RA_NOME    })	// Nome
+TRCell():New(oSection,"RJ_FUNCAO"   ,"PONTMP"/*Tabela*/,RetTitle("RJ_FUNCAO"  ),PesqPict("SRJ","RJ_FUNCAO"  ),TamSx3("RJ_FUNCAO" )[1],/*lPixel*/,{|| PONTMP->RJ_FUNCAO  })	// Função
+TRCell():New(oSection,"RJ_DESC"     ,"PONTMP"/*Tabela*/,RetTitle("RJ_DESC"    ),PesqPict("SRJ","RJ_DESC"    ),TamSx3("RJ_DESC"   )[1],/*lPixel*/,{|| PONTMP->RJ_DESC    })	// Descrição da Função
+TRCell():New(oSection,"R6_TURNO"    ,"PONTMP"/*Tabela*/,RetTitle("R6_TURNO"   ),PesqPict("SR6","R6_TURNO"   ),TamSx3("R6_TURNO"  )[1],/*lPixel*/,{|| PONTMP->R6_TURNO   })	// Turno
+TRCell():New(oSection,"R6_DESC"     ,"PONTMP"/*Tabela*/,RetTitle("R6_DESC"    ),PesqPict("SR6","R6_DESC"    ),TamSx3("R6_DESC"   )[1],/*lPixel*/,{|| PONTMP->R6_DESC    })	// Descrição do Turno
+TRCell():New(oSection,"DIAS_PREV"   ,"PONTMP"/*Tabela*/,"D.Prev."              ,                             ,08                     ,/*lPixel*/,{|| PONTMP->DIAS_PREV  })	// Previsão de Dias para o Período Selecionado
+TRCell():New(oSection,"HORAS_PREV"  ,"PONTMP"/*Tabela*/,"Hr.Prev."             ,"@E 999,999.99"              ,15                     ,/*lPixel*/,{|| PONTMP->HORAS_PREV })	// Previsão de Horas para o Período Selecionado
+TRCell():New(oSection,"DIAS_TRAB"   ,"PONTMP"/*Tabela*/,"D.Trab."              ,                             ,08                     ,/*lPixel*/,{|| PONTMP->DIAS_TRAB  })	// Dias  Efetivamente Trabalhados para o Período Selecionado
+TRCell():New(oSection,"HORAS_TRAB"  ,"PONTMP"/*Tabela*/,"Hr.Trab."             ,"@E 999,999.99"              ,15                     ,/*lPixel*/,{|| IIF(PONTMP->HORAS_TRAB>0,PONTMP->HORAS_TRAB,0) })	// Horas Efetivamente Trabalhadas para o Período Selecionado
+
+//If MV_PAR07 == 2
+	_nTotal  := 0
+	_nNTrab  := 0
+	_nNTrabJ := 0
+	_nNTrabN := 0
+	_cNTrabJ := ""
+	_cS_MV08 := ""
+	_cJ_MV08 := ""
+	_cQry := " SELECT DISTINCT P6_CODIGO, P6_DESC "
+	_cQry += " FROM " + RetSqlName("SP6") + " SP6 "
+	_cQry += " WHERE SP6.D_E_L_E_T_     = '' "
+	_cQry += "   AND SP6.P6_FILIAL      = '" + xFilial("SP6") + "' "
+	_cQry += "   AND SP6.P6_CODIGO NOT IN "+_cIdAbo+" "
+	_cQry += " ORDER BY P6_CODIGO "
+	dbUseArea(.T.,"TOPCONN",TcGenQry(,,_cQry),"SP6TMP",.F.,.T.)
+	dbSelectArea("SP6TMP")
+	If !SP6TMP->(EOF())
+		dbSelectArea("SP6TMP")
+		SP6TMP->(dbGoTop())
+		While !SP6TMP->(EOF())
+			If !Empty(SP6TMP->P6_CODIGO)
+				If !Empty(_cNTrabJ)
+					_cNTrabJ  += "+"
+				EndIf
+				_cNTrabJ  += "PONTMP->PD"+SP6TMP->P6_CODIGO+"_1" 
+			EndIf
+			dbSelectArea("SP6TMP")
+			SP6TMP->(dbSkip())
+		EndDo
+		If !Empty(_cNTrabJ)
+			_cNTrabJ  += "+"
+		EndIf
+		_cAfast  := "(IIF(PONTMP->HORAS_AFAS = 0, 0, IIF((PONTMP->HORAS_PREV-PONTMP->HORAS_TRAB)>PONTMP->HORAS_AFAS, PONTMP->HORAS_AFAS, (PONTMP->HORAS_PREV-PONTMP->HORAS_TRAB))))"
+		_cNTrabJ += _cAfast
+		TRCell():New(oSection,"_NNTRAB"     ,        /*Tabela*/,"Não Trab."            ,"@E 999,999.99"              ,15                     ,/*lPixel*/,{|| &("_nNTrab  := (IIF((PONTMP->HORAS_PREV-PONTMP->HORAS_TRAB) > 0, (PONTMP->HORAS_PREV-PONTMP->HORAS_TRAB), 0))"                 )})	// Horas não trabalhadas (justificadas ou não) para o Período Selecionado
+		TRCell():New(oSection,"_NNTRABJ"    ,        /*Tabela*/,"Justific."            ,"@E 999,999.99"              ,15                     ,/*lPixel*/,{|| &("_nNTrabJ := (IIF((PONTMP->HORAS_PREV-PONTMP->HORAS_TRAB) > 0, ("+_cNTrabJ+")                         , 0))"                 )})	// Horas não trabalhadas Justificadas para o Período Selecionado
+		TRCell():New(oSection,"_NNTRABN"    ,        /*Tabela*/,"Absenteísmo"          ,"@E 999,999.99"              ,15                     ,/*lPixel*/,{|| &("_nNTrabN := (IIF((PONTMP->HORAS_PREV-PONTMP->HORAS_TRAB) > 0, ((PONTMP->HORAS_PREV-PONTMP->HORAS_TRAB)-("+_cNTrabJ+")), 0))")})	// Horas não trabalhadas NÃO justificadas para o Período Selecionado
+		TRCell():New(oSection,"_NPORAB"     ,        /*Tabela*/,"% Absent."            ,"@E 999.99"                  ,09                     ,/*lPixel*/,{|| &("_nPorAb  := ((_nNTrabN/PONTMP->HORAS_PREV)*100)"                                                                            )})	// % Absenteísmo
+		TRCell():New(oSection,"_nToler"     ,        /*Tabela*/,"TOLERÂNCIA"           ,"@E 999,999.99"              ,15                     ,/*lPixel*/,{|| &("_nToler  := (IIF((PONTMP->HORAS_PREV-PONTMP->HORAS_TRAB) > 0 .AND. ("+_cAfast+"+PONTMP->PD_SPC-_nNTrabJ-_nNTrabN) > 0, ("+_cAfast+"+PONTMP->PD_SPC-_nNTrabJ-_nNTrabN), 0))"     )})	// Horas relativas a arredondamentos provenientes das tolerâncias de atraso/extra
+		TRCell():New(oSection,"_nAfast"     ,        /*Tabela*/,"AFASTAMENTOS"         ,"@E 999,999.99"              ,15                     ,/*lPixel*/,{|| &("_nAfast  := "+_cAfast+" "                                                                                                   )})	// Horas relativas a afastamentos não considerados como absenteísmo
+		_cJ_MV08 := " LEFT OUTER JOIN (	SELECT PC_MAT "
+		_cJ_MV08 += "                        , SUM(CASE WHEN ((P9_TIPOCOD = '1' AND P9_IDPON IN "+_cIdPon+")                           ) AND PC_QUANTC >= PC_QTABONO THEN PC_QUANTC  ELSE 0 END) NORMAL_1 "
+		_cJ_MV08 += "                        , SUM(CASE WHEN ((P9_TIPOCOD = '1' AND P9_IDPON IN "+_cIdPon+") OR PC_ABONO IN "+_cIdAbo+")                             THEN PC_QTABONO ELSE 0 END) NORMAL_2 "
+		//Justificado e não justificado
+		_cS_MV08 += " , MAX(ISNULL(PD_SPC, 0)) PD_SPC "
+		_cJ_MV08 += "                        , SUM(CASE WHEN P9_CODFOL <> '' AND P9_TIPOCOD = '2' AND PC_ABONO NOT IN "+_cIdAbo+" AND PC_QUANTC >= PC_QTABONO                                        THEN PC_QUANTC ELSE 0          END) PD_SPC "
+		dbSelectArea("SP6TMP")
+		SP6TMP->(dbGoTop())
+		While !SP6TMP->(EOF())
+			If MV_PAR07 == 2
+				&('TRCell():New(oSection,"'+"PD"+SP6TMP->P6_CODIGO+"_1"+'","PONTMP"/*Tabela*/,"'+SubStr(SP6TMP->P6_DESC,1,10)+'","@E 999,999.99",15,/*lPixel*/,{|| PONTMP->PD'+SP6TMP->P6_CODIGO+'_1 })')
+				//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+				//³ Alinhamento a direita as colunas de valor                              ³
+				//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+				oSection:Cell("PD"+SP6TMP->P6_CODIGO+"_1"):SetHeaderAlign("RIGHT" )
+			EndIf
+			//Justificado
+			_cS_MV08 += " , MAX(ISNULL(PD"+SP6TMP->P6_CODIGO+"_1, 0)) PD"+SP6TMP->P6_CODIGO+"_1 "
+//			_cJ_MV08 += "                        , SUM(CASE WHEN P9_CODFOL <> '' AND P9_TIPOCOD = '2' AND PC_ABONO NOT IN "+_cIdAbo+" AND PC_QUANTC >= PC_QTABONO AND PC_ABONO = '"+SP6TMP->P6_CODIGO+"' THEN  (CASE WHEN '"+_cHrDe+"' = 'S' THEN ROUND((CAST(PC_QTABONO AS INT)+(((PC_QTABONO -CAST(PC_QTABONO AS INT))*100)/60)), 2) ELSE PC_QTABONO END)  ELSE 0          END) PD"+SP6TMP->P6_CODIGO+"_1 "
+			_cJ_MV08 += "                        , SUM(CASE WHEN PC_ABONO NOT IN "+_cIdAbo+" AND PC_QUANTC >= PC_QTABONO AND PC_ABONO = '"+SP6TMP->P6_CODIGO+"' THEN PC_QTABONO  ELSE 0          END) PD"+SP6TMP->P6_CODIGO+"_1 "
+			dbSelectArea("SP6TMP")
+			SP6TMP->(dbSkip())
+		EndDo
+		_cJ_MV08 += " FROM(     SELECT PC_FILIAL , PC_CC , PC_MAT , PC_PD "
+		_cJ_MV08 += "                , (CASE WHEN PC_QTABONO > PC_QUANTC THEN 0 ELSE (CASE WHEN '"+_cHrDe+"' = 'S' THEN ROUND((CAST(PC_QUANTC  AS INT)+(((PC_QUANTC  -CAST(PC_QUANTC  AS INT))*100)/60)), 2) ELSE PC_QUANTC END) END) PC_QUANTC  "
+		_cJ_MV08 += "                , (CASE WHEN '"+_cHrDe+"' = 'S' THEN ROUND((CAST(PC_QTABONO AS INT)+(((PC_QTABONO -CAST(PC_QTABONO AS INT))*100)/60)), 2) ELSE PC_QTABONO END) PC_QTABONO "
+		_cJ_MV08 += "                , PC_DATA, P9_TIPOCOD, P9_IDPON, P9_CODFOL, PC_ABONO "
+		_cJ_MV08 += "           FROM  " + RetSqlName("SPC") + " SPC001 "
+		_cJ_MV08 += "                     INNER JOIN " + RetSqlName("SP9") + " SP9 ON SP9.D_E_L_E_T_ = '' "
+		_cJ_MV08 += "                                                          AND SP9.P9_FILIAL      = '" + xFilial("SP9") + "' "
+		_cJ_MV08 += "                                                          AND SP9.P9_CODIGO      = SPC001.PC_PD "
+		_cJ_MV08 += "           WHERE SPC001.D_E_L_E_T_      = ' ' 
+		_cJ_MV08 += "             AND SPC001.PC_FILIAL       = '" + xFilial("SPC") + "' "
+		_cJ_MV08 += "             AND SPC001.PC_DATA   BETWEEN '" + DTOS(MV_PAR01) + "' AND '" + DTOS(MV_PAR02) + "' "
+		_cJ_MV08 += "             AND SPC001.PC_DATA NOT IN (SELECT (CASE WHEN P3_MESDIA = '' THEN P3_DATA ELSE SUBSTRING(SPC001.PC_DATA,1,4)+P3_MESDIA END) "
+		_cJ_MV08 += "                                                       FROM " + RetSqlName("SP3") + " SP3 " 
+		_cJ_MV08 += "                                                       WHERE  SP3.D_E_L_E_T_ = '' "
+		_cJ_MV08 += "                                                         AND  SP3.P3_FILIAL  = '" + xFilial("SP3") + "' "
+		_cJ_MV08 += "                                                         AND (SP3.P3_DATA    = SPC001.PC_DATA OR SUBSTRING(SP3.P3_DATA,5,4) = SUBSTRING(SPC001.PC_DATA,5,4)) "  
+		_cJ_MV08 += "                                                      ) "
+		_cJ_MV08 += "             AND (	SELECT COUNT(*) "
+		_cJ_MV08 += "                 	FROM " + RetSqlName("SR8") + " SR8  "
+		_cJ_MV08 += "                 	WHERE  SR8.D_E_L_E_T_   = '' "
+		_cJ_MV08 += "                 	  AND  SR8.R8_FILIAL    = '" + xFilial("SR8") + "' "
+		_cJ_MV08 += "                 	  AND  SR8.R8_TIPO NOT IN "+_cExcAf
+		_cJ_MV08 += "                 	  AND  SR8.R8_MAT       = SPC001.PC_MAT "
+		_cJ_MV08 += "                 	  AND  SPC001.PC_DATA BETWEEN SR8.R8_DATAINI AND SR8.R8_DATAFIM "
+		_cJ_MV08 += "                 ) = 0 "
+		_cJ_MV08 += "       UNION ALL "
+		_cJ_MV08 += "           SELECT PH_FILIAL PC_FILIAL "
+		_cJ_MV08 += "                , PH_CC PC_CC "
+		_cJ_MV08 += "                , PH_MAT PC_MAT "
+		_cJ_MV08 += "                , PH_PD PC_PD "
+		_cJ_MV08 += "                , (CASE WHEN PH_QTABONO > PH_QUANTC THEN 0 ELSE (CASE WHEN '"+_cHrDe+"' = 'S' THEN ROUND((CAST(PH_QUANTC  AS INT)+(((PH_QUANTC  -CAST(PH_QUANTC  AS INT))*100)/60)), 2) ELSE PH_QUANTC END) END) PC_QUANTC "
+		_cJ_MV08 += "                , (CASE WHEN '"+_cHrDe+"' = 'S' THEN ROUND((CAST(PH_QTABONO AS INT)+(((PH_QTABONO -CAST(PH_QTABONO AS INT))*100)/60)), 2) ELSE PH_QTABONO END) PC_QTABONO "
+		_cJ_MV08 += "                , PH_DATA PC_DATA, P9_TIPOCOD, P9_IDPON, P9_CODFOL, PH_ABONO PC_ABONO "
+		_cJ_MV08 += "           FROM " + RetSqlName("SPH") + " SPH001 "
+		_cJ_MV08 += "                     INNER JOIN " + RetSqlName("SP9") + " SP9 ON SP9.D_E_L_E_T_ = '' "
+		_cJ_MV08 += "                                                          AND SP9.P9_FILIAL      = '" + xFilial("SP9") + "' "
+		_cJ_MV08 += "                                                          AND SP9.P9_CODIGO      = SPH001.PH_PD "
+		_cJ_MV08 += "           WHERE SPH001.D_E_L_E_T_      = ' ' 
+		_cJ_MV08 += "             AND SPH001.PH_FILIAL       = '" + xFilial("SPH") + "' "
+		_cJ_MV08 += "             AND SPH001.PH_DATA   BETWEEN '" + DTOS(MV_PAR01) + "' AND  '" + DTOS(MV_PAR02) + "' "
+		_cJ_MV08 += "             AND SPH001.PH_DATA NOT IN (SELECT (CASE WHEN P3_MESDIA = '' THEN P3_DATA ELSE SUBSTRING(SPH001.PH_DATA,1,4)+P3_MESDIA END) "
+		_cJ_MV08 += "                                                       FROM " + RetSqlName("SP3") + " SP3 " 
+		_cJ_MV08 += "                                                       WHERE  SP3.D_E_L_E_T_ = '' "
+		_cJ_MV08 += "                                                         AND  SP3.P3_FILIAL  = '" + xFilial("SP3") + "' "
+		_cJ_MV08 += "                                                         AND (SP3.P3_DATA    = SPH001.PH_DATA OR SUBSTRING(SP3.P3_DATA,5,4) = SUBSTRING(SPH001.PH_DATA,5,4)) "  
+		_cJ_MV08 += "                                                      ) "
+		_cJ_MV08 += "             AND (	SELECT COUNT(*) "
+		_cJ_MV08 += "                 	FROM " + RetSqlName("SR8") + " SR8  "
+		_cJ_MV08 += "                 	WHERE  SR8.D_E_L_E_T_   = '' "
+		_cJ_MV08 += "                 	  AND  SR8.R8_FILIAL    = '" + xFilial("SR8") + "' "
+		_cJ_MV08 += "                 	  AND  SR8.R8_TIPO NOT IN "+_cExcAf
+		_cJ_MV08 += "                 	  AND  SR8.R8_MAT       = SPH001.PH_MAT "
+		_cJ_MV08 += "                 	  AND  SPH001.PH_DATA BETWEEN SR8.R8_DATAINI AND SR8.R8_DATAFIM "
+		_cJ_MV08 += "                 ) = 0 "
+		_cJ_MV08 += "     ) PCUNTMP "
+		_cJ_MV08 += " GROUP BY PC_MAT) SPCTOT ON SPCTOT.PC_MAT = PON.RA_MAT "
+	EndIf
+	SP6TMP->(dbCloseArea())
+	/*TRECHO INSERIDO EM 17/04/2015 APÓS AS HORAS TRABALHADAS (A EXPLOSÃO DOS EVENTOS SERÁ IMPRESSA APÓS)
+	TRCell():New(oSection,"_NNTRABJ"    ,                  ,"Absenteísmo"          ,"@E 999,999.99"              ,15                     ,          ,{|| &("_NNTRABJ := ("+_cNTrabJ+") + PONTMP->HORAS_AFAS")})	// Horas não trabalhadas NÃO justificadas para o Período Selecionado
+	TRCell():New(oSection,"_NNTRABN"    ,                  ,"Justif."              ,"@E 999,999.99"              ,15                     ,          ,{|| &("_NNTRABN := (IIF((PONTMP->HORAS_PREV-PONTMP->HORAS_TRAB) > 0, (PONTMP->HORAS_PREV-PONTMP->HORAS_TRAB), 0)-("+_cNTrabJ+")-PONTMP->HORAS_AFAS)")})	// Horas não trabalhadas Justificadas para o Período Selecionado
+//	TRCell():New(oSection,"_NNTRAB"     ,                  ,"N.Trab."              ,"@E 999,999.99"              ,15                     ,          ,{|| &(_cNTrabJ )})	// Horas não trabalhadas (justificadas ou não) para o Período Selecionado
+	TRCell():New(oSection,"_NNTRAB"     ,                  ,"Não Trab."            ,"@E 999,999.99"              ,15                     ,          ,{|| &("_nNTrab  := (IIF((PONTMP->HORAS_PREV-PONTMP->HORAS_TRAB) > 0, (PONTMP->HORAS_PREV-PONTMP->HORAS_TRAB), 0))" )})	// Horas não trabalhadas (justificadas ou não) para o Período Selecionado
+//	TRCell():New(oSection,"_NPORAB"     ,                  ,"% Absent."            ,"@E 999.99"                  ,09                     ,          ,{|| &("_NPORAB  := (("+_cNTrabJ+")/PONTMP->HORAS_PREV)*100")})	// % Absenteísmo
+//	TRCell():New(oSection,"_NPORAB"     ,                  ,"% Absent."            ,"@E 999.99"                  ,09                     ,          ,{|| &("_NPORAB  := ((PONTMP->HORAS_PREV-PONTMP->HORAS_TRAB)/PONTMP->HORAS_PREV)*100")})	// % Absenteísmo
+	TRCell():New(oSection,"_NPORAB"     ,                  ,"% Absent."            ,"@E 999.99"                  ,09                     ,          ,{|| &("_NPORAB  := ((("+_cNTrabJ+")+PONTMP->HORAS_AFAS)/PONTMP->HORAS_PREV)*100")})	// % Absenteísmo
+	*/
+//EndIf
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Alinhamento central para as colunas de dias                            ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+oSection:Cell("DIAS_PREV"  ):SetHeaderAlign("CENTER")
+oSection:Cell("DIAS_TRAB"  ):SetHeaderAlign("CENTER")
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Alinhamento a direita as colunas de valor                              ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+oSection:Cell("HORAS_PREV" ):SetHeaderAlign("RIGHT" )
+oSection:Cell("HORAS_TRAB" ):SetHeaderAlign("RIGHT" )
+oSection:Cell("_NNTRAB"    ):SetHeaderAlign("RIGHT" )
+oSection:Cell("_NNTRABJ"   ):SetHeaderAlign("RIGHT" )
+oSection:Cell("_NNTRABN"   ):SetHeaderAlign("RIGHT" )
+oSection:Cell("_NPORAB"    ):SetHeaderAlign("RIGHT" )
+oSection:Cell("_nToler"    ):SetHeaderAlign("RIGHT" )
+oSection:Cell("_nAfast"    ):SetHeaderAlign("RIGHT" )
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Troca descricao do total dos itens                                     ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+//oReport:Section(1):SetTotalText("T O T A I S ")
+oSection:SetTotalText("")
+
+//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+//³ Secao 2                                                                ³
+//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+oSection2 := TRSection():New(oSection,"Analítico de Eventos",{"SPC","SP9"},/*{Array com as ordens do relatório}*/,/*Campos do SX3*/,/*Campos do SIX*/)
+oSection2:SetTotalInLine(.F.)
+
+//Definição das colunas do relatório
+If MV_PAR07 == 1
+	TRCell():New(oSection2,"PC_MAT"     ,"SPCTMP"/*Tabela*/,RetTitle("PC_MAT"     ),PesqPict("SPC","PC_MAT"     ),TamSx3("PC_MAT"    )[1],/*lPixel*/,{|| SPCTMP->PC_MAT                            })	// Matrícula
+	TRCell():New(oSection2,"PC_PD"      ,"SPCTMP"/*Tabela*/,RetTitle("PC_PD"      ),PesqPict("SPC","PC_PD"      ),TamSx3("PC_PD"     )[1],/*lPixel*/,{|| SPCTMP->PC_PD                             })	// Verba de Falta
+	TRCell():New(oSection2,"P9_DESC"    ,"SPCTMP"/*Tabela*/,RetTitle("P9_DESC"    ),PesqPict("SP9","P9_DESC"    ),TamSx3("P9_DESC"   )[1],/*lPixel*/,{|| SPCTMP->P9_DESC                           })	// Descrição Verba de Falta
+	TRCell():New(oSection2,"PC_QUANTC"  ,"SPCTMP"/*Tabela*/,"Injust."              ,"@E 999,999.99"              ,15                     ,/*lPixel*/,{|| IIF(SPCTMP->PC_HE>0.OR.SPCTMP->PC_QUANTC==0, 0, (SPCTMP->PC_QUANTC - SPCTMP->PC_QTABONO)) })	// Somatória de Horas  por PC_PD (Verba)
+	TRCell():New(oSection2,"PC_QTABONO" ,"SPCTMP"/*Tabela*/,"Justif."              ,"@E 999,999.99"              ,15                     ,/*lPixel*/,{|| IIF(SPCTMP->PC_HE>0,0,SPCTMP->PC_QTABONO)                                                 })	// Somatória de Abonos por PC_PD (Verba)
+	TRCell():New(oSection2,"_NTOTAL"    ,        /*Tabela*/,"N.Trab."              ,"@E 999,999.99"              ,15                     ,/*lPixel*/,{|| (IIF(SPCTMP->PC_HE>0.OR.SPCTMP->PC_QUANTC==0, 0, (SPCTMP->PC_QUANTC - SPCTMP->PC_QTABONO))+IIF(SPCTMP->PC_HE>0,0,SPCTMP->PC_QTABONO)) })	// Somatória do Total não trabalhado por PC_PD (Verba)
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Alinhamento central para as colunas de dias                            ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	oSection2:Cell("PC_MAT"    ):SetHeaderAlign("CENTER")
+	oSection2:Cell("PC_PD"     ):SetHeaderAlign("CENTER")
+	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+	//³ Alinhamento a direita as colunas de valor                              ³
+	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+	oSection2:Cell("PC_QUANTC" ):SetHeaderAlign("RIGHT" )
+	oSection2:Cell("PC_QTABONO"):SetHeaderAlign("RIGHT" )
+	oSection2:Cell("_NTOTAL"   ):SetHeaderAlign("RIGHT" )
+	//oBreak2 := TRBreak():New(oSection2,oSection2:Cell("PC_MAT"),"Total")
+	TRFunction():New(oSection2:Cell("PC_QUANTC" ),NIL,"SUM",oBreak)
+	TRFunction():New(oSection2:Cell("PC_QTABONO"),NIL,"SUM",oBreak)
+	TRFunction():New(oSection2:Cell("_NTOTAL"   ),NIL,"SUM",oBreak)
+EndIf
+
+//oSection2:SetParentFilter( {||	(PONTMP->RA_FILIAL+PONTMP->RA_CC+PONTMP->RA_MAT) == (SPCTMP->PC_FILIAL+SPCTMP->PC_CC+SPCTMP->PC_MAT) }, {|| (SPCTMP->PC_FILIAL+SPCTMP->PC_CC+SPCTMP->PC_MAT) } )
+oSection2:SetParentFilter( {||	(PONTMP->RA_CC+PONTMP->RA_MAT) == (SPCTMP->PC_CC+SPCTMP->PC_MAT) }, {|| (SPCTMP->PC_FILIAL+SPCTMP->PC_CC+SPCTMP->PC_MAT) } )
+oSection2:SetTotalText("")
+
+Return(oReport)
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍ»±±
+±±ºPrograma  ³PrintReportºAutor ³Anderson C. P. Coelho º Data ³  23/02/15 º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºDesc.     ³Processamento das informações para impressão (Print).       º±±
+±±º          ³                                                            º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºUso       ³ Programa Principal                                         º±±
+±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+
+Static Function PrintReport(oReport)
+
+Local _cTabDat := "%SP8_"+cNumEmp+"_"+_cRotina+"_"+__cUserId+"_"+DTOS(Date())+StrTran(Time(),":","")+"_001%"
+Local _cTpSP9  := "%'2'%"
+Local _cParSP9 := "2' OR P9_TIPOCOD = '1"
+Local _cField  := ""
+Local _cOrder  := ""		//"RA_FILIAL, RA_CC, CTT_DESC01, RA_MAT, RA_NOME, RJ_FUNCAO, RJ_DESC, R6_TURNO, R6_DESC"
+Local _cSitua  := ""
+Local _cCateg  := ""
+Local _cFilCTT := oSection:GetSqlExp("CTT")
+Local _cFilSRA := oSection:GetSqlExp("SRA")
+Local _cFilSP8 := oSection:GetSqlExp("SP8")
+Local _cFilSRJ := oSection:GetSqlExp("SRJ")
+Local _cFilSR6 := oSection:GetSqlExp("SR6")
+Local _cFilSPJ := oSection:GetSqlExp("SPJ")
+Local _cFilSPC := oSection2:GetSqlExp("SPC")
+Local _cFilSP9 := oSection2:GetSqlExp("SP9")
+Local _cField2 := ""
+Local _cOrder2 := "PC_CC, PC_MAT, PC_PD, P9_DESC"
+Local _nDias   := 0
+
+If Empty(MV_PAR01) .OR. MV_PAR01 > MV_PAR02 .OR. MV_PAR03 > MV_PAR04 .OR. MV_PAR05 > MV_PAR06
+	MsgStop("Parâmetros informados incorretamente!",_cRotina+"_001")
+	Return
+EndIf
+For _x := 1 To Len(RTrim(MV_PAR08))
+	If _x > 1
+		_cSitua += "/"
+	EndIf
+	_cSitua += SubStr(RTrim(MV_PAR08),_x,1)
+Next
+_cSitua := "%"+FormatIn(_cSitua,"/")+"%"
+_cExcAf := "%"+_cExcAf              +"%"
+_cIdPon := "%"+_cIdPon              +"%"
+For _x  := 1 To Len(RTrim(MV_PAR09))
+	If _x > 1
+		_cCateg += "/"
+	EndIf
+	_cCateg += SubStr(RTrim(MV_PAR09),_x,1)
+Next
+_cCateg := "%"+FormatIn(_cCateg,"/")+"%"
+_cQry := " CREATE TABLE " + StrTran(_cTabDat,"%","")+_CRFL
+_cQry += "     ( "+_CRFL
+_cQry += "      TMP_DATA VARCHAR(8) "+_CRFL
+_cQry += "     ) "
+//MemoWrite("\"+_cRotina+"_QRY_001.txt",_cQry)
+If TCSQLExec(_cQry) < 0
+	MsgStop("[TCSQLError] " + TCSQLError(),_cRotina+"_002")
+	Return
+EndIf
+If (_nDias := MV_PAR02 - MV_PAR01) > 0
+	_cQry  := ""
+	For _x := 1 To (_nDias+1)
+		_cQry += "INSERT INTO ["+StrTran(_cTabDat,"%","")+"] (TMP_DATA) VALUES ("+DTOS(MV_PAR01+_x-1)+")" + _CRFL
+	Next
+//	MemoWrite("\"+_cRotina+"_QRY_002.txt",_cQry)
+	If TCSQLExec(_cQry) < 0
+		MsgStop("[TCSQLError] " + TCSQLError(),_cRotina+"_003")
+		Return
+	EndIf
+EndIf
+If !Empty(_cFilCTT)
+	_cFilCTT := "%AND "+_cFilCTT+"%"
+EndIf
+If Empty(_cFilCTT)
+	_cFilCTT := "%%"
+EndIf
+If !Empty(_cFilSRA)
+	_cFilSRA := "%AND "+_cFilSRA+"%"
+EndIf
+If Empty(_cFilSRA)
+	_cFilSRA := "%%"
+EndIf
+If !Empty(_cFilSP8)
+	_cFilSP8 := "%AND "+_cFilSP8+"%"
+EndIf
+If Empty(_cFilSP8)
+	_cFilSP8 := "%%"
+EndIf
+If !Empty(_cFilSRJ)
+	_cFilSRJ := "%AND "+_cFilSRJ+"%"
+EndIf
+If Empty(_cFilSRJ)
+	_cFilSRJ := "%%"
+EndIf
+If !Empty(_cFilSR6)
+	_cFilSR6 := "%AND "+_cFilSR6+"%"
+EndIf
+If Empty(_cFilSR6)
+	_cFilSR6 := "%%"
+EndIf
+If !Empty(_cFilSPJ)
+	_cFilSPJ := "%AND "+_cFilSPJ+"%"
+EndIf
+If Empty(_cFilSPJ)
+	_cFilSPJ := "%%"
+EndIf
+If !Empty(_cFilSPC)
+	_cFilSPC := "%AND "+_cFilSPC+"%"
+EndIf
+If Empty(_cFilSPC)
+	_cFilSPC := "%%"
+EndIf
+If !Empty(_cFilSP9)
+	_cFilSP9 := "%AND "+_cFilSP9+"%"
+EndIf
+If Empty(_cFilSP9)
+	_cFilSP9 := "%%"
+EndIf
+For _x := 1 To Len(oSection:aCell)
+	If !UPPER("_nNTrab" )$UPPER(AllTrim(oSection:aCell[_x]:cName)) .AND.;
+	   !UPPER("_nNTrabJ")$UPPER(AllTrim(oSection:aCell[_x]:cName)) .AND.;
+	   !UPPER("_nNTrabN")$UPPER(AllTrim(oSection:aCell[_x]:cName)) .AND.;
+	   !UPPER("_nPorAb" )$UPPER(AllTrim(oSection:aCell[_x]:cName)) .AND.;
+	   !UPPER("_nToler" )$UPPER(AllTrim(oSection:aCell[_x]:cName)) .AND.;
+	   !UPPER("_nAfast" )$UPPER(AllTrim(oSection:aCell[_x]:cName))
+		If !Empty(oSection:aCell[_x]:cAlias) .AND. AllTrim(oSection:aCell[_x]:cAlias) <> "PONTMP"
+			If aScan(_aCpos, AllTrim(oSection:aCell[_x]:cName)) == 0
+				_cField  += ", " + AllTrim(oSection:aCell[_x]:cName)
+			EndIf
+		EndIf
+		If !"HORAS_"$UPPER(AllTrim(oSection:aCell[_x]:cName))
+			If !Empty(_cOrder)
+				_cOrder += ", "
+			EndIf
+			_cOrder  += AllTrim(oSection:aCell[_x]:cName)
+		EndIf
+	EndIf
+Next
+If MV_PAR07 <> 1
+	oSection2:Disable()
+EndIf
+_cS_MV08 := "%" + StrTran(_cS_MV08,"  "," ") + " " + _cField + "%"
+_cJ_MV08 := "%" + StrTran(_cFilSPJ,"%","") + " " + StrTran(_cJ_MV08,"  "," ") + "%"
+_cField  := "%" + _cField + "%"
+_cOrder  := "%" + _cOrder + "%"
+For _x := 1 To Len(oSection:AUSERFILTER)
+	oSection:AUSERFILTER[_x][02] := oSection:AUSERFILTER[_x][03] := ""
+Next
+oSection:CSQLEXP := ""
+
+/*
+								  AND (	SELECT COUNT(*)
+								  		FROM %table:SR8% SR8 
+								  		WHERE SR8.%NotDel%
+										  AND SR8.R8_FILIAL     = %xFilial:SR8%
+										  AND (SR8.R8_TIPO NOT IN %Exp:_cExcAf%)
+										  AND SR8.R8_MAT        = SRA.RA_MAT
+										  AND TMP.TMP_DATA BETWEEN SR8.R8_DATAINI AND SR8.R8_DATAFIM
+					  				  ) = 0
+							 ) TABPROC 
+*/
+MakeSqlExpr(oReport:uParam)
+oSection:BeginQuery()
+	BeginSql alias "PONTMP"
+		SELECT RA_FILIAL, RA_CC, CTT_DESC01, RA_MAT, RA_NOME, RJ_FUNCAO, RJ_DESC, R6_TURNO, R6_DESC
+			, SUM( CASE WHEN HORAS_PREV <> 0 THEN 1 ELSE 0 END ) DIAS_PREV
+			, SUM(HORAS_PREV) HORAS_PREV
+			, SUM(HORAS_AFAS) HORAS_AFAS
+			, SUM(DIAS_TRAB) DIAS_TRAB 
+			,(CASE WHEN MAX(ISNULL(NORMAL_1,0)+ISNULL(NORMAL_2,0)) > 0 THEN MAX(ISNULL(NORMAL_1,0)+ISNULL(NORMAL_2,0)) ELSE SUM(CASE WHEN HORAS_TRAB < 0 THEN (HORAS_TRAB+24) ELSE HORAS_TRAB END) END) HORAS_TRAB
+			%Exp:_cS_MV08%
+		FROM (
+				SELECT RA_FILIAL, RA_CC    , CTT_DESC01
+					 , RA_MAT   , RA_NOME  , RJ_FUNCAO, RJ_DESC, R6_TURNO, R6_DESC, P8_DATA  
+					 , SUM(DIAS_TRAB) DIAS_TRAB
+					 , SUM(HORAS_TRAB) HORAS_TRAB
+					 , HORAS_PREV
+					 , HORAS_AFAS
+					 %Exp:_cField%
+				FROM (
+						SELECT ISNULL(RA_FILIAL,%xFilial:SRA%) RA_FILIAL, ISNULL(RA_CC, '') RA_CC
+							 , ISNULL(CTT_DESC01, '') CTT_DESC01
+							 , ISNULL(RA_MAT    , '') RA_MAT   , ISNULL(RA_NOME, '') RA_NOME
+							 , ISNULL(RJ_FUNCAO , '') RJ_FUNCAO, ISNULL(RJ_DESC, '') RJ_DESC
+							 , ISNULL(R6_TURNO  , '') R6_TURNO , ISNULL(R6_DESC, '') R6_DESC
+							 , TABPROC.TMP_DATA P8_DATA
+							 , (CASE WHEN ISNULL(P8_TPMARCA,'') = '1E' THEN 1 ELSE 0 END) DIAS_TRAB
+							 , (CASE WHEN SUBSTRING(ISNULL(P8_TPMARCA,''),2,1)='E' 
+										THEN -(CASE WHEN %Exp:_cHrDe% = 'S' THEN ROUND((CAST(ISNULL(P8_HORA,'0') AS INT)+(((CAST(ISNULL(P8_HORA,'0') AS FLOAT(2))-CAST(ISNULL(P8_HORA,'0') AS INT))*100)/60)), 2) ELSE P8_HORA END) 
+										ELSE  (CASE WHEN %Exp:_cHrDe% = 'S' THEN ROUND((CAST(ISNULL(P8_HORA,'0') AS INT)+(((CAST(ISNULL(P8_HORA,'0') AS FLOAT(2))-CAST(ISNULL(P8_HORA,'0') AS INT))*100)/60)), 2) ELSE P8_HORA END) 
+								END) HORAS_TRAB
+							 , PJ_HRTOTAL HORAS_PREV
+							 , SPJ_AFAST HORAS_AFAS
+							%Exp:_cField%
+						FROM (	SELECT	TMP_DATA
+									,	(CASE WHEN %Exp:_cHrDe% = 'S' THEN ROUND((CAST((ISNULL(PJ_HRSTRAB, 0)+ISNULL(PJ_HRSTRA2, 0)+ISNULL(PJ_HRSTRA3, 0)+ISNULL(PJ_HRSTRA4, 0)) AS INT)+((((ISNULL(PJ_HRSTRAB, 0)+ISNULL(PJ_HRSTRA2, 0)+ISNULL(PJ_HRSTRA3, 0)+ISNULL(PJ_HRSTRA4, 0)) -CAST((ISNULL(PJ_HRSTRAB, 0)+ISNULL(PJ_HRSTRA2, 0)+ISNULL(PJ_HRSTRA3, 0)+ISNULL(PJ_HRSTRA4, 0)) AS INT))*100)/60)), 2) ELSE (ISNULL(PJ_HRSTRAB, 0)+ISNULL(PJ_HRSTRA2, 0)+ISNULL(PJ_HRSTRA3, 0)+ISNULL(PJ_HRSTRA4, 0)) END) PJ_HRTOTAL
+									, 	RA_TNOTRAB TURNO
+									,	(CASE WHEN (	SELECT COUNT(*)
+														FROM %table:SR8% SR8 
+												  		WHERE SR8.%NotDel%
+														  AND SR8.R8_FILIAL     = %xFilial:SR8%
+														  AND (SR8.R8_TIPO     IN %Exp:_cExcAf%)
+														  AND SR8.R8_MAT        = RA_MAT
+														  AND TMP_DATA BETWEEN SR8.R8_DATAINI AND SR8.R8_DATAFIM
+									  				 ) > 0	THEN (CASE WHEN %Exp:_cHrDe% = 'S' THEN ROUND((CAST((ISNULL(PJ_HRSTRAB, 0)+ISNULL(PJ_HRSTRA2, 0)+ISNULL(PJ_HRSTRA3, 0)+ISNULL(PJ_HRSTRA4, 0)) AS INT)+((((ISNULL(PJ_HRSTRAB, 0)+ISNULL(PJ_HRSTRA2, 0)+ISNULL(PJ_HRSTRA3, 0)+ISNULL(PJ_HRSTRA4, 0)) -CAST((ISNULL(PJ_HRSTRAB, 0)+ISNULL(PJ_HRSTRA2, 0)+ISNULL(PJ_HRSTRA3, 0)+ISNULL(PJ_HRSTRA4, 0)) AS INT))*100)/60)), 2) ELSE (ISNULL(PJ_HRSTRAB, 0)+ISNULL(PJ_HRSTRA2, 0)+ISNULL(PJ_HRSTRA3, 0)+ISNULL(PJ_HRSTRA4, 0)) END)
+									  				 		ELSE 0
+										END) SPJ_AFAST
+									,	SRA.*
+								FROM %Exp:_cTabDat% TMP
+									INNER JOIN %table:SRA% SRA ON SRA.%NotDel%
+														 AND  SRA.RA_FILIAL        = %xFilial:SRA%
+														 AND (SRA.RA_CC      BETWEEN %Exp:MV_PAR05% AND %Exp:MV_PAR06%)
+														 AND (SRA.RA_SITFOLH      IN %Exp:_cSitua%)
+														 AND (SRA.RA_CATFUNC      IN %Exp:_cCateg%)
+														 AND (SRA.RA_REGRA    NOT IN (	SELECT PA_CODIGO
+														 								FROM %table:SPA% SPA
+														 								WHERE SPA.%NotDel%
+														 								  AND SPA.PA_FILIAL     = %xFilial:SPA%
+														 								  AND SPA.PA_HRNORM     = 'N'
+														 							 )
+								 							 )
+														 AND (SRA.RA_MAT          IN (	SELECT DISTINCT P8_MAT
+														 								FROM (	SELECT DISTINCT P8_MAT
+														 										FROM %table:SP8% SP8X
+																 								WHERE SP8X.%NotDel%
+														 										  AND SP8X.P8_FILIAL     = %xFilial:SP8%
+																								  AND (SP8X.P8_MAT BETWEEN %Exp:MV_PAR03% AND %Exp:MV_PAR04%)
+														 									UNION ALL
+														 										SELECT DISTINCT PG_MAT P8_MAT
+														 										FROM %table:SPG% SPGX
+														 										WHERE SPGX.%NotDel%
+														 										  AND SPGX.PG_FILIAL     = %xFilial:SPG%
+																								  AND (SPGX.PG_MAT BETWEEN %Exp:MV_PAR03% AND %Exp:MV_PAR04%)
+														 									 ) SP8VER
+														 							 )
+														 	 )
+														 %Exp:_cFilSRA%
+									LEFT OUTER JOIN %table:SPF% TNO ON TNO.%NotDel%
+													 			   AND TNO.PF_FILIAL  = %xFilial:SPF%
+																   AND TNO.PF_MAT     = SRA.RA_MAT
+																   AND TNO.PF_DATA    = (	SELECT MAX(PF_DATA)
+																							FROM %table:SPF% SPF
+																							WHERE SPF.%NotDel%
+																							  AND SPF.PF_FILIAL  = %xFilial:SPF%
+																							  AND SPF.PF_MAT     = SRA.RA_MAT
+																							  AND SPF.PF_DATA   <= TMP.TMP_DATA
+																						)
+									INNER JOIN      %table:SPJ% SPJ ON SPJ.%NotDel%
+																   AND SPJ.PJ_FILIAL  = %xFilial:SPJ%
+																   AND SPJ.PJ_TURNO   = (CASE WHEN ISNULL(TNO.PF_TURNOPA,'') <> '' THEN ISNULL(TNO.PF_TURNOPA,'') ELSE RA_TNOTRAB END)
+																   AND SPJ.PJ_DIA     = DATEPART(DW,TMP.TMP_DATA)
+/*TRECHO ALTERADO EM 21/04/2015 PARA QUE O SISTEMA CONSIDERE A ALTERAÇÃO AUTOMÁTICA DAS SEQUENCIAS/SEMANAS DOS TURNOS, PARA QUE AS HORAS PREVISTAS REPRESENTEM A REALIDADE
+																   AND SPJ.PJ_SEMANA  = (CASE WHEN ISNULL(TNO.PF_SEQUEPA,'') <> '' 
+																   								THEN ISNULL(TNO.PF_SEQUEPA,'') 
+																   								ELSE ISNULL((	SELECT MIN(SPJMIN.PJ_SEMANA)
+																												FROM %table:SPJ% SPJMIN
+																												WHERE SPJMIN.%NotDel%
+																												  AND SPJMIN.PJ_FILIAL  = %xFilial:SPJ%
+																												  AND SPJMIN.PJ_TURNO   = (CASE WHEN ISNULL(TNO.PF_TURNOPA,'') <> '' THEN ISNULL(TNO.PF_TURNOPA,'') ELSE RA_TNOTRAB END)
+																												  AND SPJMIN.PJ_DIA     = DATEPART(DW,TMP.TMP_DATA))
+																											, '')
+																						END)
+*/
+														   AND CAST(SPJ.PJ_SEMANA AS FLOAT(20)) = ROUND(
+																										(CASE WHEN ((( 
+																														SELECT COUNT(*) + (CASE WHEN DATEPART(DW,%Exp:MV_PAR01%) = 1 THEN 0 ELSE 1 END)
+																														FROM %Exp:_cTabDat% TMPX
+																														WHERE TMPX.TMP_DATA <= TMP.TMP_DATA
+																														  AND DATEPART(DW,TMPX.TMP_DATA) = 1
+																													  )
+																													  /
+																													  ( 
+																													  	SELECT CAST(MAX(PJ_SEMANA) AS FLOAT(20))
+																														FROM %table:SPJ% SPJ 
+																														WHERE SPJ.%NotDel%
+																														  AND SPJ.PJ_FILIAL  = %xFilial:SPJ%
+																														  AND SPJ.PJ_TURNO   = (CASE WHEN ISNULL(TNO.PF_TURNOPA,'') <> '' THEN ISNULL(TNO.PF_TURNOPA,'') ELSE RA_TNOTRAB END) 
+																													  )
+																													 ) 
+																													- 
+																													CAST((( 
+																															SELECT COUNT(*) + (CASE WHEN DATEPART(DW,%Exp:MV_PAR01%) = 1 THEN 0 ELSE 1 END)
+																															FROM %Exp:_cTabDat% TMPX
+																															WHERE TMPX.TMP_DATA <= TMP.TMP_DATA
+																																AND DATEPART(DW,TMPX.TMP_DATA) = 1
+																														  )
+																														  /
+																														  ( 
+																														  	SELECT CAST(MAX(PJ_SEMANA) AS FLOAT(20))
+																															FROM %table:SPJ% SPJ 
+																															WHERE SPJ.%NotDel%
+																															  AND SPJ.PJ_FILIAL  = %xFilial:SPJ%
+																															  AND SPJ.PJ_TURNO   = (CASE WHEN ISNULL(TNO.PF_TURNOPA,'') <> '' THEN ISNULL(TNO.PF_TURNOPA,'') ELSE RA_TNOTRAB END) 
+																														  )
+																														 ) AS INT)
+																													) = 0
+																												THEN ( 
+																														SELECT CAST(MAX(PJ_SEMANA) AS FLOAT(20))
+																														FROM %table:SPJ% SPJ 
+																														WHERE SPJ.%NotDel%
+																														  AND SPJ.PJ_FILIAL  = %xFilial:SPJ%
+																														  AND SPJ.PJ_TURNO   = (CASE WHEN ISNULL(TNO.PF_TURNOPA,'') <> '' THEN ISNULL(TNO.PF_TURNOPA,'') ELSE RA_TNOTRAB END) 
+																													  )
+																												ELSE (
+																														(
+																															CAST(((((
+																																		SELECT COUNT(*) + (CASE WHEN DATEPART(DW,%Exp:MV_PAR01%) = 1 THEN 0 ELSE 1 END)
+																																		FROM %Exp:_cTabDat% TMPX
+																																		WHERE TMPX.TMP_DATA <= TMP.TMP_DATA
+																																			AND DATEPART(DW,TMPX.TMP_DATA) = 1
+																																	)
+																																	/
+																																	( 
+																																		SELECT CAST(MAX(PJ_SEMANA) AS FLOAT(20))
+																																		FROM %table:SPJ% SPJ 
+																																		WHERE SPJ.%NotDel%
+																																		  AND SPJ.PJ_FILIAL  = %xFilial:SPJ%
+																																		  AND SPJ.PJ_TURNO   = (CASE WHEN ISNULL(TNO.PF_TURNOPA,'') <> '' THEN ISNULL(TNO.PF_TURNOPA,'') ELSE RA_TNOTRAB END) 
+																																  	)
+																															       )
+																																   -
+																																	CAST((
+																																			SELECT COUNT(*) + (CASE WHEN DATEPART(DW,%Exp:MV_PAR01%) = 1 THEN 0 ELSE 1 END)
+																																			FROM %Exp:_cTabDat% TMPX
+																																			WHERE TMPX.TMP_DATA <= TMP.TMP_DATA
+																																			  AND DATEPART(DW,TMPX.TMP_DATA) = 1
+																																		 )
+																																		 /
+																																		 (
+																																		 	SELECT CAST(MAX(PJ_SEMANA) AS FLOAT(20))
+																																			FROM %table:SPJ% SPJ 
+																																			WHERE SPJ.%NotDel%
+																																			  AND SPJ.PJ_FILIAL  = %xFilial:SPJ%
+																																			  AND SPJ.PJ_TURNO   = (CASE WHEN ISNULL(TNO.PF_TURNOPA,'') <> '' THEN ISNULL(TNO.PF_TURNOPA,'') ELSE RA_TNOTRAB END) 
+																																		 )
+																																		AS INT)) * 10
+																																) 
+																															AS INT) * ( SELECT CAST(MAX(PJ_SEMANA) AS FLOAT(20))
+																																	FROM %table:SPJ% SPJ 
+																																	WHERE SPJ.%NotDel%
+																																	  AND SPJ.PJ_FILIAL  = %xFilial:SPJ%
+																																	  AND SPJ.PJ_TURNO   = (CASE WHEN ISNULL(TNO.PF_TURNOPA,'') <> '' THEN ISNULL(TNO.PF_TURNOPA,'') ELSE RA_TNOTRAB END) 
+																																  )
+																														) / 10
+																													 )
+																										END)
+																									, 0)
+								WHERE TMP.TMP_DATA BETWEEN %Exp:MV_PAR01% AND %Exp:MV_PAR02%
+								  AND TMP.TMP_DATA NOT IN (	SELECT (CASE WHEN P3_MESDIA = '' THEN P3_DATA ELSE (SUBSTRING(TMP.TMP_DATA,1,4)+P3_MESDIA) END)
+								  							FROM %table:SP3% SP3 
+								  							WHERE  SP3.%NotDel%
+													 		  AND  SP3.P3_FILIAL   = %xFilial:SP3%
+													 		  AND (SP3.P3_DATA     = TMP.TMP_DATA OR SUBSTRING(SP3.P3_DATA,5,4) = SUBSTRING(TMP.TMP_DATA,5,4))  
+					  						  			  )
+							 ) TABPROC 
+							LEFT OUTER JOIN (	SELECT P8_FILIAL
+													 , P8_CC
+													 , P8_MAT
+													 , P8_APONTA
+													 , P8_TPMCREP
+													 , P8_TPMARCA
+													 , P8_HORA
+													 , P8_DATA
+												FROM %table:SP8% SP8001
+												WHERE SP8001.%NotDel%
+											UNION ALL
+												SELECT PG_FILIAL  P8_FILIAL
+													 , PG_CC      P8_CC
+													 , PG_MAT     P8_MAT
+													 , PG_APONTA  P8_APONTA
+													 , PG_TPMCREP P8_TPMCREP
+													 , PG_TPMARCA P8_TPMARCA
+													 , PG_HORA    P8_HORA
+													 , PG_DATA    P8_DATA
+												FROM %table:SPG% SPG001
+												WHERE SPG001.%NotDel%
+											) SP8 ON SP8.P8_FILIAL        = %xFilial:SP8%
+												 AND SP8.P8_DATA          = TABPROC.TMP_DATA
+												 AND SP8.P8_MAT           = TABPROC.RA_MAT
+												 AND SP8.P8_APONTA        = 'S'
+												 AND SP8.P8_TPMCREP       = ''
+												 %Exp:_cFilSP8%
+							LEFT OUTER JOIN %table:CTT% CTT ON CTT.%NotDel%
+												 AND CTT.CTT_FILIAL       = %xFilial:CTT%
+												 AND CTT.CTT_CUSTO        = TABPROC.RA_CC
+												 %Exp:_cFilCTT%
+							LEFT OUTER JOIN %table:SRJ% SRJ ON SRJ.%NotDel%
+												 AND SRJ.RJ_FILIAL        = %xFilial:SRJ%
+												 AND SRJ.RJ_FUNCAO        = TABPROC.RA_CODFUNC
+												 %Exp:_cFilSRJ%
+							LEFT OUTER JOIN %table:SR6% SR6 ON SR6.%NotDel%
+												 AND SR6.R6_FILIAL        = %xFilial:SR6%
+												 AND SR6.R6_TURNO         = TABPROC.TURNO
+												 %Exp:_cFilSR6%
+					) PON001
+				GROUP BY RA_FILIAL, RA_CC, CTT_DESC01, RA_MAT, RA_NOME, RJ_FUNCAO, RJ_DESC, R6_TURNO, R6_DESC, P8_DATA, HORAS_PREV, HORAS_AFAS
+						 %Exp:_cField%
+			 ) PON
+						%Exp:_cJ_MV08%
+		GROUP BY RA_FILIAL, RA_CC, CTT_DESC01, RA_MAT, RA_NOME, RJ_FUNCAO, RJ_DESC, R6_TURNO, R6_DESC 
+				 %Exp:_cField%
+		ORDER BY %Exp:_cOrder%
+	EndSql
+oSection:EndQuery()
+//MemoWrite("\"+_cRotina+"_QRY_004.txt",oSection:CQUERY)
+//SEÇÃO II
+If MV_PAR07 == 1
+	_cOrder2  := "%" + _cOrder2  + "%"
+	For _x := 1 To Len(oSection2:AUSERFILTER)
+		oSection2:AUSERFILTER[_x][02] := oSection2:AUSERFILTER[_x][03] := ""
+	Next
+	oSection2:CSQLEXP := ""
+	MakeSqlExpr(oReport:uParam)
+	oSection2:BeginQuery()
+		BeginSql alias "SPCTMP"
+			SELECT PC_FILIAL, PC_CC, PC_MAT, PC_PD, ISNULL(P9_DESC,'') P9_DESC
+				 , SUM((CASE WHEN P9_TIPOCOD = %Exp:_cTpSP9% 
+				 				THEN (CASE WHEN %Exp:_cHrDe% = 'S' THEN ROUND((CAST(PC_QUANTC  AS INT)+(((PC_QUANTC -CAST(PC_QUANTC  AS INT))*100)/60)), 2) ELSE PC_QUANTC  END) 
+				 				ELSE 0
+				 	  END)) PC_QUANTC
+				 , SUM((CASE WHEN P9_TIPOCOD = %Exp:_cTpSP9%
+				 				THEN (CASE WHEN %Exp:_cHrDe% = 'S' THEN ROUND((CAST(PC_QTABONO AS INT)+(((PC_QTABONO-CAST(PC_QTABONO AS INT))*100)/60)), 2) ELSE PC_QTABONO END)
+				 				ELSE 0
+				 	  END)) PC_QTABONO
+				 , SUM((CASE WHEN P9_TIPOCOD = %Exp:_cTpSP9%
+				 				THEN 0
+				 				ELSE (CASE WHEN %Exp:_cHrDe% = 'S' THEN ROUND((CAST(PC_QUANTC  AS INT)+(((PC_QUANTC -CAST(PC_QUANTC  AS INT))*100)/60)), 2) ELSE PC_QUANTC  END)
+				 	  END)) PC_HE
+			FROM (	SELECT PC_FILIAL
+						 , PC_CC
+						 , PC_MAT
+						 , PC_PD
+						 , (CASE WHEN PC_QTABONO > PC_QUANTC THEN 0 ELSE PC_QUANTC END) PC_QUANTC 
+						 , PC_QTABONO
+						 , PC_DATA
+					FROM %table:SPC% SPC001
+					WHERE SPC001.%NotDel%
+				 UNION ALL
+				 	SELECT PH_FILIAL  PC_FILIAL
+				 		 , PH_CC      PC_CC
+				 		 , PH_MAT     PC_MAT
+				 		 , PH_PD      PC_PD
+				 		 , (CASE WHEN PH_QTABONO > PH_QUANTC THEN 0 ELSE PH_QUANTC END) PC_QUANTC
+				 		 , PH_QTABONO PC_QTABONO
+				 		 , PH_DATA    PC_DATA
+					FROM %table:SPH% SPH001
+					WHERE SPH001.%NotDel%
+				 ) PON 
+				INNER JOIN      %table:SP9% SP9    ON SP9.%NotDel%
+												  AND SP9.P9_FILIAL      = %xFilial:SP9%
+												  AND (SP9.P9_TIPOCOD    = %Exp:_cParSP9%)
+							  					  AND SP9.P9_CODFOL     <> ''
+												  AND (SP9.P9_IDPON NOT IN %Exp:_cIdPon% )
+												  AND SP9.P9_CODIGO      = PON.PC_PD
+												  %Exp:_cFilSP9%
+				INNER JOIN      %table:SRA% SRA    ON SRA.%NotDel%
+												  AND SRA.RA_FILIAL      = %xFilial:SRA%
+												  AND (SRA.RA_SITFOLH   IN %Exp:_cSitua%)
+												  AND (SRA.RA_CATFUNC   IN %Exp:_cCateg%)
+												  AND (SRA.RA_REGRA NOT IN (	SELECT PA_CODIGO
+												 								FROM %table:SPA% SPA
+												 								WHERE SPA.%NotDel%
+												 								  AND SPA.PA_FILIAL     = %xFilial:SPA%
+												 								  AND SPA.PA_HRNORM     = 'N'
+												 							 )
+						 							  )
+												  AND SRA.RA_MAT         = PON.PC_MAT
+												  %Exp:_cFilSRA%
+			WHERE PON.PC_FILIAL       = %xFilial:SPC%
+			  AND (PON.PC_MAT   BETWEEN %Exp:MV_PAR03% AND %Exp:MV_PAR04%)
+			  AND (PON.PC_CC    BETWEEN %Exp:MV_PAR05% AND %Exp:MV_PAR06%)
+			  AND (PON.PC_DATA  BETWEEN %Exp:MV_PAR01% AND %Exp:MV_PAR02%)
+			  AND SUBSTRING(PON.PC_DATA,5,4) NOT IN (	SELECT (CASE WHEN P3_MESDIA = '' THEN SUBSTRING(P3_DATA,5,4) ELSE P3_MESDIA END) 
+														FROM %table:SP3% SP3  
+														WHERE  SP3.D_E_L_E_T_ = '' 
+														  AND  SP3.P3_FILIAL  = %xFilial:SP3%
+														  AND (SP3.P3_DATA    = PON.PC_DATA OR SUBSTRING(SP3.P3_DATA,5,4) = SUBSTRING(PON.PC_DATA,5,4))   
+													) 
+			  AND (	SELECT COUNT(*) 
+			  		FROM %table:SR8% SR8 
+			  		WHERE SR8.%NotDel% 
+					  AND SR8.R8_FILIAL     = %xFilial:SR8% 
+					  AND (SR8.R8_TIPO NOT IN %Exp:_cExcAf%)
+					  AND SR8.R8_MAT        = PON.PC_MAT 
+					  AND PON.PC_DATA  BETWEEN SR8.R8_DATAINI AND SR8.R8_DATAFIM 
+  				  ) = 0
+			  %Exp:_cFilSPC%
+			GROUP BY PC_FILIAL, PC_CC, PC_MAT, PC_PD, P9_DESC
+			ORDER BY %Exp:_cOrder2%
+		EndSql
+	oSection2:EndQuery()
+//	MemoWrite("\"+_cRotina+"_QRY_005.txt",oSection2:CQUERY)
+EndIf
+
+oSection:Print()
+
+//Criação/alimentação da tabela temporária de range de datas
+_cQry := " DROP TABLE " + StrTran(_cTabDat,"%","")
+//MemoWrite("\"+_cRotina+"_QRY_006.txt",_cQry)
+If TCSQLExec(_cQry) < 0
+	MsgStop("[TCSQLError] " + TCSQLError(),_cRotina+"_006")
+EndIf
+
+Return
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+±±ÉÍÍÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍËÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍ»±±
+±±ºPrograma  ³ValidPerg ºAutor  ³Anderson C. P. Coelho º Data ³  23/02/15 º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÊÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºDesc.     ³Verifica se as perguntas existem na SX1. Caso não existam,  º±±
+±±º          ³as cria.                                                    º±±
+±±ÌÍÍÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹±±
+±±ºUso       ³ Programa Principal                                         º±±
+±±ÈÍÍÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼±±
+±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±±
+ßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßßß
+*/
+
+Static Function ValidPerg()
+
+Local _aArea := GetArea()
+Local aRegs  := {}
+Local _aTam  := {}
+
+cPerg := PADR(cPerg,10)
+
+_aTam := TamSx3("P8_DATA"   )
+AADD(aRegs,{cPerg,"01","Da Data               ?","","","mv_ch1",_aTam[03],_aTam[01],_aTam[02],0,"G","NAOVAZIO().AND.PutPerMvPar('"+AllTrim(cPerg)+"','01','02')","MV_PAR01",""              ,"","","","",""            ,"","","","",""             ,"","","","","","","","","","","","","",""   ,"",""})
+AADD(aRegs,{cPerg,"02","Até a Data            ?","","","mv_ch2",_aTam[03],_aTam[01],_aTam[02],0,"G","NAOVAZIO()"                                                ,"MV_PAR02",""              ,"","","","",""            ,"","","","",""             ,"","","","","","","","","","","","","",""   ,"",""})
+_aTam := TamSx3("RA_MAT"    )
+AADD(aRegs,{cPerg,"03","Da Matrícula          ?","","","mv_ch3",_aTam[03],_aTam[01],_aTam[02],0,"G",""                                                          ,"MV_PAR03",""              ,"","","","",""            ,"","","","",""             ,"","","","","","","","","","","","","","SRA","",""})
+AADD(aRegs,{cPerg,"04","Até a Matrícula       ?","","","mv_ch4",_aTam[03],_aTam[01],_aTam[02],0,"G","NAOVAZIO()"                                                ,"MV_PAR04",""              ,"","","","",""            ,"","","","",""             ,"","","","","","","","","","","","","","SRA","",""})
+_aTam := TamSx3("RA_CC"     )
+AADD(aRegs,{cPerg,"05","Do Centro de Custo    ?","","","mv_ch5",_aTam[03],_aTam[01],_aTam[02],0,"G",""                                                          ,"MV_PAR05",""              ,"","","","",""            ,"","","","",""             ,"","","","","","","","","","","","","","CTT","",""})
+AADD(aRegs,{cPerg,"06","Até o Centro de Custo ?","","","mv_ch6",_aTam[03],_aTam[01],_aTam[02],0,"G","NAOVAZIO()"                                                ,"MV_PAR06",""              ,"","","","",""            ,"","","","",""             ,"","","","","","","","","","","","","","CTT","",""})
+_aTam := {01,00,"N"}
+AADD(aRegs,{cPerg,"07","Apresenta Eventos     ?","","","mv_ch7",_aTam[03],_aTam[01],_aTam[02],0,"C","NAOVAZIO()"                                                ,"MV_PAR07","Em Linhas"     ,"","","","","Em Colunas"  ,"","","","","Não Apresenta","","","","","","","","","","","","","",""   ,"",""})
+_aTam := {15,00,"C"}
+AADD(aRegs,{cPerg,"08","Situações             ?","","","mv_ch8",_aTam[03],_aTam[01],_aTam[02],0,"G","fSituacao()"                                               ,"MV_PAR08",""              ,"","","","",""            ,"","","","",""             ,"","","","","","","","","","","","","",""   ,"",""})
+AADD(aRegs,{cPerg,"09","Categorias            ?","","","mv_ch9",_aTam[03],_aTam[01],_aTam[02],0,"G","fCategoria()"                                              ,"MV_PAR09",""              ,"","","","",""            ,"","","","",""             ,"","","","","","","","","","","","","",""   ,"",""})
+
+For i := 1 To Len(aRegs)
+	dbSelectArea("SX1")
+	SX1->(dbSetOrder(1))
+	If !SX1->(dbSeek(cPerg+aRegs[i,2]))
+		RecLock("SX1",.T.)
+		For j := 1 To FCount()
+			If j <= Len(aRegs[i])
+				FieldPut(j,aRegs[i,j])
+			Else
+				Exit
+			EndIf
+		Next
+		SX1->(MsUnlock())
+	EndIf
+Next
+
+RestArea(_aArea)
+
+Return

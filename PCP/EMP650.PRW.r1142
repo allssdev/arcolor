@@ -1,0 +1,29 @@
+#include 'totvs.ch'
+#include 'protheus.ch'
+
+/*/{Protheus.doc} EMP650
+Ponto de entrar para alterar o empenho deletando o lote informado dos produtos intermediarios, chamado pelo fonte RPCPA003.
+@authorDiego Rodrigues(ALL System Solutions)
+@since 16/01/2024
+@version P12
+@type function
+@see https://allss.com.br
+/*/
+
+User function EMP650()
+ 
+    Local aArea  := GetArea()
+    local nx
+    For nx := 1 to len(Acols) // Percorre todas as linhas da acols
+
+        dbSelectArea("SB1")
+        SB1->(dbSetOrder(1))
+        SB1->(MsSeek(FWFilial("SB1")+Acols[nx][nPosCod]),.T.,.F.)
+         IF SB1->B1_TIPO = 'PI' // Verifica se linha nao esta Deletada
+            Acols[nx][nPosLotCTL] := Space(30)
+        EndIF
+    Next nx
+ 
+    RestArea(aArea)
+ 
+Return
