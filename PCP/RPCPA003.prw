@@ -182,6 +182,8 @@ ElseIf _dIni  < ddatabase .or. _dEntr < ddatabase
 ElseIf  _dEntr < _dIni 
 	 MSGBOX("Data de Entrega MENOR que a Data de Previsão de Início!",_cRotina+"_004","ALERT")
 	_dEntr := _dIni  
+elseif !U_RPCPE019(_cPRODUTO)
+	 MSGBOX("Problema Roteiro",_cRotina+"_004","ALERT")
 Else
 	FOR  _nY:=1 TO val(_nX)
 	   	

@@ -182,6 +182,8 @@ static function PrtReport(oReport)
 	//Local oSection := oReport:Section(1)
 	Local _cTpOper := "%"+FormatIn(SuperGetMv("MV_FATOPER",,"01|ZZ|9"),"|")+"%"
 	Local _cTpCons := "%"+FormatIn(SuperGetMv("MV_XOPECON",,"06"),"|")+"%"
+	Local _cTpVC   := "%"+FormatIn(SuperGetMv("MV_XOPEVCO",,"VC"),"|")+"%"
+	Local _cTpNVen := "%"+FormatIn(SuperGetMv("MV_XOPENVE",,"01|ZZ|9|VC"),"|")+"%" //Não venda
 	Local _cCpoSum := ""
 	Local _cFlOper := ""
 	Local _cOrder  := ""
@@ -241,10 +243,12 @@ static function PrtReport(oReport)
 	if MV_PAR06 == 1
 		_cFlOper := "% AND SUA.UA_TPOPER IN " + FormatIn(SuperGetMv("MV_FATOPER",,"01|ZZ|9"),"|") + "%"
 	elseif MV_PAR06 == 2
-		_cFlOper := "%	AND SUA.UA_TPOPER  NOT IN " + FormatIn(SuperGetMv("MV_FATOPER",,"01|ZZ|9"),"|") + "%"
+		_cFlOper := "%	AND SUA.UA_TPOPER  NOT IN " + FormatIn(SuperGetMv("MV_XOPENVE",,"01|ZZ|9|VC"),"|") + "%"
+	elseif MV_PAR06 == 3
+		_cFlOper := "%	AND SUA.UA_TPOPER  NOT IN " + FormatIn(SuperGetMv("MV_XOPEVCO",,"VC"),"|") + "%"
 	elseif MV_PAR06 == 4
 		_cFlOper := "%	AND SUA.UA_TPOPER  IN " + FormatIn(SuperGetMv("MV_XOPECON",,"06"),"|") + "%"
-	ElseIf MV_PAR06 == 4 
+	ElseIf MV_PAR06 == 5 
 		_cFlOper := "%	AND SUA.UA_TPOPER  IN " + FormatIn(SuperGetMv("MV_XOPEVCO",,"VC"),"|") + "%"
 	endif
 	if !Empty(_cFilSUA)

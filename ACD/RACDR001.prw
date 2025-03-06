@@ -159,7 +159,7 @@ static function Imprime()
 		If _lTelNet
 			CB5SetImp(_cImpress,_lTelNet)
 		Else
-			CB5SetImp(GetMV("MV_ACDIMP"),_lTelNet) 
+			CB5SetImp(GetMV("MV_ACDIMP"),_lTelNet)
 		EndIf
 			for _x := _aMv[3] to _nQtde // Qtde de Etiquetas //Funcionando
 				MSCBBEGIN(1,6,95.62) // MSCBBEGIN(1,6,95.70) 

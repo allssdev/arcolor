@@ -33,15 +33,16 @@ Local _cArmz    := "%" + FormatIn(SUPERGETMV( "MV_XARMZPRI",.F.,"01"),"/")+ "%"
             GROUP BY B8_FILIAL,B8_PRODUTO,B8_LOTECTL,B8_LOTEFOR, B8_DTVALID, B8_SALDO, B8_EMPENHO, B8_LOCAL, B8_NUMLOTE
             ORDER BY B8_FILIAL,B8_PRODUTO,B8_DTVALID,B8_LOCAL,B8_LOTECTL,B8_NUMLOTE
         EndSql
-
-        dbSelectArea("SD4")
-        SD4->(dbSetOrder(1))
-		SD4->(MsSeek(xFilial("SD4")+aItems[_nEmp][1]+_cOp+aItems[_nEmp][4]+aItems[_nEmp][6], .T.,.F.))
-        If !Empty(aItems[_nEmp][6]) .and. !Empty(SALDOS->B8_LOTEFOR)
-            Reclock("SD4",.F.)
-                SD4->D4_XLOTFOR := SALDOS->B8_LOTEFOR
-            SD4->(MsUnlock())
-        EndIf
+       If SALDOS->(!EOF())
+            dbSelectArea("SD4")
+            SD4->(dbSetOrder(1))
+            SD4->(MsSeek(xFilial("SD4")+aItems[_nEmp][1]+_cOp+aItems[_nEmp][4]+aItems[_nEmp][6], .T.,.F.))
+            If !Empty(aItems[_nEmp][6]) .and. !Empty(SALDOS->B8_LOTEFOR)
+                Reclock("SD4",.F.)
+                    SD4->D4_XLOTFOR := SALDOS->B8_LOTEFOR
+                SD4->(MsUnlock())
+            EndIf
+        EndIF
         SALDOS->(dbCloseArea())
     Next
 

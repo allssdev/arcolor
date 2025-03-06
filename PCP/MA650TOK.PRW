@@ -1,7 +1,7 @@
 #include "totvs.ch"
 
 /*/{Protheus.doc} User Function MA650TOK
-    LOCALIZAÇÃO : Function A650TudoOk() - Responsável por validar a Enchoice em relação as datas de início previsto e entrega prevista com prazo de entrega. 
+    LOCALIZAÇÃO : Function MA650TOK() - Responsável por validar se os produtos possuem saldos na abertura da ordem de produção
     DESCRIÇÃO : Permite executar a validação do usuário ao confirmar a OP.
     @type  Function
     @author Fernando Bombardi
@@ -21,16 +21,6 @@ Private _cPicQtd   := PesqPict("SC2","C2_QUANT")
 If  IIF(FUNNAME() == 'RPCPA003',_nY == 1,!_lRet)
     BeginSql Alias "ESTRUTURA"
         SELECT G1_FILIAL, G1_REVFIM, G1_COD, G1_COMP, B1_DESC, G1_QUANT, 
-        /*CASE
-            WHEN (SELECT SUM(B8_SALDO - B8_EMPENHO) 
-                  FROM %table:SB8% SB8 
-                  WHERE SB8.B8_FILIAL = SG1.G1_FILIAL AND B8_LOCAL IN %Exp:_cArmz% AND SB8.B8_PRODUTO = SG1.G1_COMP AND SB8.D_E_L_E_T_ = '') <> 0 
-            THEN (SELECT SUM(B8_SALDO - B8_EMPENHO) 
-                  FROM %table:SB8% SB8 
-                  WHERE SB8.B8_FILIAL = SG1.G1_FILIAL AND B8_LOCAL IN %Exp:_cArmz% AND SB8.B8_PRODUTO = SG1.G1_COMP AND SB8.D_E_L_E_T_ = '')
-            ELSE 0
-        END AS SALDO
-        */
         CASE
             WHEN (SELECT SUM(B8_SALDO) -ISNULL((SELECT SUM(D4_QUANT) D4QUANT FROM SD4010 SD4 (NOLOCK)
                                                 INNER JOIN SC2010 SC2 (NOLOCK) ON SC2.D_E_L_E_T_ = '' 

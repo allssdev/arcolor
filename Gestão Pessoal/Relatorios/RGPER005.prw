@@ -4,7 +4,7 @@
 #include 'olecont.ch'
 #include 'rwmake.ch'
 #define STR_PULA CHR(13) + CHR(10)
-Static cDirTmp 		:= GetTempPath()
+Static cDirTmp 		:= "c:\relato\"//GetTempPath()
 /*/{Protheus.doc} RGPER005
 Função de usuário responsável por emitir o relatório de conferência dos eventos do Ponto Eletrônico (SIGAPON), para envio ao DJ
 @author Rodrigo Telecio (rodrigo.telecio@allss.com.br)
@@ -79,7 +79,7 @@ if lRet
 	if Empty(AllTrim(mv_par09))
         cArquivo	:= cDirTmp + cRotina + cExtensao
     else
-        cArquivo    := AllTrim(mv_par09)
+        cArquivo    := AllTrim(mv_par09)+cRotina+DTOS(dDataBase)+ cExtensao
 	endif
 endif
 if lRet
@@ -217,7 +217,7 @@ if lRet
     oFWMsExcel:Activate()
     oFWMsExcel:GetXMLFile(cArquivo)
     oExcel := MsExcel():New()
-    //oExcel:WorkBooks:Open(cArquivo)
+    oExcel:WorkBooks:Open(cArquivo)
     oExcel:SetVisible(.T.)
     oExcel:Destroy()
 endif
@@ -312,6 +312,6 @@ Função para coleta do diretório para salvar arquivo.
 /*/
 user function CAPARQ()
 local cTitulo 	:= 'Escolha o diretório para salvar o arquivo'
-local cDirTmp 	:= GetTempPath()
-mv_par09 		:= cGetFile('*.xml|*.xml',cTitulo,1,cDirTmp,.F.,nOR(GETF_LOCALHARD,GETF_LOCALFLOPPY,GETF_RETDIRECTORY),.F.,.T.)
+//local cDirTmp 	:= GetTempPath()
+mv_par09 		:= cGetFile('*.xml|*.xml',cTitulo,1,cDirTmp,.T.,nOR(GETF_LOCALHARD,GETF_LOCALFLOPPY,GETF_RETDIRECTORY),.F.,.T.)
 return .T.

@@ -105,6 +105,27 @@ user function MA440VLD()
 			if ExistBlock("RFATR049")
 				U_RFATR049(	M->C5_NUM )
 			endif
+			
+			//17/10/2024 - Diego Rodrigues - Melhoria para validar pedidos que não foram atualizados e possuem produtos da linha industrial
+			BeginSql Alias "LINDSC5"
+				SELECT
+					B5_XLINPRO
+				FROM SC6010 SC6 (NOLOCK)
+				INNER JOIN SB5010 SB5 (NOLOCK) ON SB5.D_E_L_E_T_ = '' AND B5_COD = C6_PRODUTO 
+												AND B5_FILIAL = C6_FILIAL AND B5_XLINPRO = '1'
+				INNER JOIN SC5010 SC5 (NOLOCK) ON SC5.D_E_L_E_T_ = '' AND C5_NUM = C6_NUM AND C5_XLININD = '2'
+				WHERE SC6.D_E_L_E_T_ = ''
+					AND C6_NUM = %Exp:M->C5_NUM%
+				GROUP BY B5_XLINPRO, C6_NUM
+			EndSql
+
+			if LINDSC5->(!EOF())
+				while !RecLock("SC5",.F.) ; enddo
+					SC5->C5_XLININD := LINDSC5->B5_XLINPRO
+				SC5->(MsUnLock()) 
+			endif
+			LINDSC5->(dbCloseArea())
+
 
 			//19/07/2024 - Diego Rodrigues - Envio de e-mail para pedidos da linha Industrial
 			if ExistBlock("RFATE072") .and. SC5->C5_XLININD == '1' .and. SC5->C5_TPOPER == '01'

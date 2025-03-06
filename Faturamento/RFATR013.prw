@@ -135,11 +135,11 @@ static function RunReport(_cRotOrig)
 	Local _nRecCB7  := 0
 	local _x
 	Private oPrn   	:= TMSPrinter():New()
-	Private oFont1 	:= TFont():New( "Arial",,07,,.T.,,,,,.F. ) //-ok
-	Private oFont2 	:= TFont():New( "Arial",,10,,.F.,,,,,.F. ) //-ok
-	Private oFont3 	:= TFont():New( "Arial",,12,,.T.,,,,,.F. ) //-ok
-	Private oFont4 	:= TFont():New( "Arial",,12,,.F.,,,,,.F. ) //-ok
-	Private oFont5 	:= TFont():New( "Arial",,18,,.F.,,,,,.F. ) //-ok
+	Private oFont1 	:= TFont():New( "Arial",,12,,.T.,,,,,.F. ) //-ok
+	Private oFont2 	:= TFont():New( "Arial",,15,,.F.,,,,,.F. ) //-ok
+	Private oFont3 	:= TFont():New( "Arial",,17,,.T.,,,,,.F. ) //-ok
+	Private oFont4 	:= TFont():New( "Arial",,17,,.F.,,,,,.F. ) //-ok
+	Private oFont5 	:= TFont():New( "Arial",,23,,.F.,,,,,.F. ) //-ok
 	Private nLinAd	:= 0005
 	Private nLinAdj	:= 0035
 	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ 

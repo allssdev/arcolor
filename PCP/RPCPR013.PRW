@@ -5,7 +5,7 @@
 #define DMPAPER_A4 9
 #define ENT (CHR(13)+CHR(10))
 /*/{Protheus.doc} RPCPR013
-Rotina para impressão de Ordem de Produção baseado no fonte RPCPR006.
+Rotina para impressão de Ordem de Produção por roteiro baseado no fonte RPCPR006.
 @author Diego Rodrigues (diego.rodrigues@allss.com.br)
 @since 14/03/2024
 @version P12
@@ -218,9 +218,11 @@ private _aItOpe				:= {{0035,"Recurso"			,3},; //1
 private _aItApont           := {{0035,"Item"			,3},; //1
 								{0060,"Qtde" 	     	,3},; //2  
 		  						{0115,"Conferente"		,3},; //3
-								{0215,"Resp.Apont."		,3},; //4
-                                {0315,"Data"	        ,3},; //5
-								{0375,"Observação"		,3}}  //6
+								{0215,"Data Ini"	    ,3},; //4 {0215,"Resp.Apont."		,3},; //4
+                                {0265,"Hora Ini"	    ,3},; //5 {0315,"Data Fim"	    ,3},; //5
+                                {0315,"Data Fim"	    ,3},; //6
+                                {0375,"Hora Fim"	    ,3},; //7
+								{0425,"Observação"		,3}}  //8
 private _aItParada          := {{0035,"Inicio"			,3},; //1
 								{0090,"Término"	     	,3},; //2  
 		  						{0155,"Tipo"	    	,3},; //3
@@ -501,7 +503,6 @@ while !(_cAlias)->(EOF())
             _cQrySD4    += "    SD4.D4_NUMLOTE,                                                                         " + ENT
             _cQrySD4    += "    SD4.D4_ROTEIRO,                                                                          " + ENT
             _cQrySD4    += "    SD4.D4_OPERAC,                                                                          " + ENT
-            //_cQrySD4    += "    ISNULL(ZZB_CODUSR,'') ZZB_CODUSR,                                                       " + ENT
             _cQrySD4    += "    ISNULL(SB5.B5_XEMBPRI,'2') B5_XEMBPRI                                                   " + ENT
             _cQrySD4    += "FROM                                                                                        " + ENT
             _cQrySD4    +=      RetSqlName("SD4") + " AS SD4 (NOLOCK)                                                   " + ENT
@@ -536,16 +537,6 @@ while !(_cAlias)->(EOF())
             EndIf
             _cQrySD4    += "WHERE                                                                                       " + ENT
             _cQrySD4    += "    SD4.D4_OP BETWEEN '" + (_cAlias)->(C2_NUM + C2_ITEM + C2_SEQUEN + C2_ITEMGRD) + "' AND '" + (_cAlias)->(C2_NUM + C2_ITEM + C2_SEQUEN + C2_ITEMGRD) + "' " + ENT
-			/*
-            if _nX == 1
-                _cQrySD4 += "       AND SB1B.B1_TIPO = 'EM' .AND. SD4.D4_OPERAC = '01'                                  " + ENT
-			elseif _nX == 2
-		       	_cQrySD4 += "       AND SB1B.B1_TIPO = 'EM'                                                             " + ENT
-            Else
-                _cQrySD4 += "       AND SB1B.B1_TIPO <> 'EM'                                                            " + ENT
-			endif       
-            */
-            //_cQrySD4    += "    AND SD4.D4_OPERAC = '" + ZZBOPER->ZZB_OPERAC + "'                                       " + ENT   
             _cQrySD4    += "    AND SD4.D4_OPERAC = '" + SG2TEMP->G2_OPERAC + "'                                       " + ENT   
             _cQrySD4    += "    AND SD4.D_E_L_E_T_ = ''                                                                 " + ENT
             _cQrySD4    += "GROUP BY                                                                                    " + ENT
@@ -560,22 +551,14 @@ while !(_cAlias)->(EOF())
             _cQrySD4    += "    SD4.D4_LOTECTL,                                                                         " + ENT
             _cQrySD4    += "    SD4.D4_NUMLOTE,                                                                         " + ENT
             _cQrySD4    += "    SD4.D4_OPERAC,                                                                          " + ENT
-            //_cQrySD4    += "    ZZB_CODUSR,                                                                             " + ENT
+            _cQrySD4    += "    SD4.D4_ROTEIRO,                                                                         " + ENT         //_cQrySD4    += "    ZZB_CODUSR,                                                                             " + ENT
             _cQrySD4    += "    ISNULL(SB5.B5_XEMBPRI,'2')                                                              " + ENT
             _cQrySD4    += "ORDER BY                                                                                    " + ENT
             _cQrySD4    += "    SD4.D4_OP,                                                                              " + ENT
-            /*
-			if _nX == 2
-                _cQrySD4    += "    ISNULL(SB5.B5_XEMBPRI,'2'),                                                         " + ENT
-                _cQrySD4    += "    SD4.D4_COD                                                                          " + ENT
-            else
-                _cQrySD4    += "    SD4.D4_COD                                                                          " + ENT
-            endif
-            */
+            _cQrySD4    += "    ISNULL(SB5.B5_XEMBPRI,'2'),                                                             " + ENT
             _cQrySD4    += "    SB1B.B1_TIPO,                                                                           " + ENT
             _cQrySD4    += "    SD4.D4_OPERAC,                                                                          " + ENT
-            _cQrySD4    += "    ISNULL(SB5.B5_XEMBPRI,'2'),                                                             " + ENT
-            _cQrySD4    += "    SD4.D4_COD                                                                               " + ENT
+            _cQrySD4    += "    SD4.D4_COD                                                                              " + ENT
 
             _cQrySD4    := ChangeQuery(_cQrySD4)
             MemoWrite("\2.MemoWrite\" + _cRotina + "_QRY_002.TXT",_cQrySD4)
@@ -625,7 +608,7 @@ while !(_cAlias)->(EOF())
                             ImpEmp()
                     ElseIf AllTrim((_cAlsSD4)->TIPO_SD4) == "EM"
                             _nX := 2
-                        If Alltrim(_cTipEmb) == AllTrim((_cAlsSD4)->B5_XEMBPRI)
+                        /*If Alltrim(_cTipEmb) == AllTrim((_cAlsSD4)->B5_XEMBPRI)
                             _nLin 		+= 0015
                             ImpEmp()
                         Else
@@ -636,7 +619,19 @@ while !(_cAlias)->(EOF())
                             EndIF
                             _nLin 		+= 0015
                             ImpEmp()
+                        endif*/
+                        while Alltrim(_cTipEmb) == AllTrim((_cAlsSD4)->B5_XEMBPRI)
+                            _nLin 		+= 0015
+                            ImpEmp()
+                            (_cAlsSD4)->(dbSkip())
+                        enddo    
+                        if !_limpCabSec
+                            _nLin 		+= 0030
+                            ImpCabSec()
+                            _limpCabSec := .T.
                         endif
+                        _nLin 		+= 0015
+                        ImpEmp()
                     endif
                     (_cAlsSD4)->(dbSkip())
                 enddo
@@ -930,12 +925,14 @@ if a630SeekSG2(1,SC2->C2_PRODUTO,FWFilial("SG2") + SC2->C2_PRODUTO + _cRoteiro +
 				_cFim		:= iif(!Empty(AllTrim(DtoC(SH8->H8_DTFIM)) + " " + AllTrim(SH8->H8_HRFIM)),AllTrim(DtoC(SH8->H8_DTFIM) + " " + AllTrim(SH8->H8_HRFIM)),"____/____/______ ___:___")
 				oPrn:Say(_nLin+0010	,_aItOpe[3,1],_cFim													,oFont10:oFont)
 				_nLin += 0025
+                /*
                 oPrn:Say(_nLin		,0040,"Inicio Real"											        ,oFont06N:oFont)
                 oPrn:Say(_nLin+0015	,0040,"_____/_____/________ ____:____"  					        ,oFont10:oFont)
                 oPrn:Say(_nLin		,0220,"Término Real"										        ,oFont06N:oFont)
                 oPrn:Say(_nLin+0015	,0220,"_____/_____/________ ____:____"						        ,oFont10:oFont)
                 oPrn:Say(_nLin		,0400,"Lote"										                ,oFont06N:oFont)
                 oPrn:Say(_nLin+0015	,0400,AllTrim((_cAlias)->C2_NUM)							        ,oFont14:oFont)
+                */
                 _nLin += 0025
                 oPrn:Say(_nLin		,0040,"Quantidade"				        							,oFont06N:oFont)
                 oPrn:Say(_nLin+0010	,0040,AllTrim(Transform(iif(_lSH8,SH8->H8_QUANT,aSC2Sld(cAliasTop)),"@E 9,999,999.9999")),oFont10:oFont)
@@ -976,13 +973,14 @@ if a630SeekSG2(1,SC2->C2_PRODUTO,FWFilial("SG2") + SC2->C2_PRODUTO + _cRoteiro +
             _cDescOper  := iif(Empty(SubStr(AllTrim(SG2->G2_DESCRI),1,50)),Replicate("-",50),SubStr(AllTrim(SG2->G2_DESCRI),1,50))
             oPrn:Say(_nLin+0010	,_aItOpe[4,1],_cDescOper                        					,oFont08N:oFont)
 			oPrn:QrCode(_nLin+0045,_aItOpe[6,1],AllTrim(SG2->G2_OPERAC),0050)
-			_nLin += 0025
+			/*_nLin += 0025
 			oPrn:Say(_nLin		,0040,"Inicio Real"											        ,oFont06N:oFont)
 			oPrn:Say(_nLin+0015	,0040,"_____/_____/________ ____:____"							    ,oFont10:oFont)
 			oPrn:Say(_nLin		,0220,"Término Real"										        ,oFont06N:oFont)
 			oPrn:Say(_nLin+0015	,0220,"_____/_____/________ ____:____"	    				        ,oFont10:oFont)
             oPrn:Say(_nLin		,0400,"Lote"										                ,oFont06N:oFont)
             oPrn:Say(_nLin+0015	,0400,AllTrim((_cAlias)->C2_NUM)							        ,oFont14:oFont)
+            */
 			_nLin += 0025
 			oPrn:Say(_nLin		,0040,"Quantidade"				        							,oFont06N:oFont)
 			oPrn:Say(_nLin+0010	,0040,AllTrim(Transform(aSC2Sld("SC2"),"@E 9,999,999.999999"))      ,oFont10:oFont)

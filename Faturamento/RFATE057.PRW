@@ -10,9 +10,10 @@
 @see https://allss.com.br
 /*/
 user function RFATE057()
-//	local _cRotina   := "RFATE057"
+	//local _cRotina   := "RFATE057"
 	local cPerg      := Padr("LIBAT2",len(SX1->X1_GRUPO))
 	local _cAliasSX1 := "SX1"
+	Private _cRotina   := "RFATE057"
 	//Perguntas da liberação automática de estoque (reavaliação)
 	AjustaPv()	//11/09/2020 - Sub-rotina utilizada para acertar o campo C6_QTDEMP conforme os pedidos de vendas liberados, para evitar os problemas gerados pelo sistema quanto ao processo de perda de liberação dos itens dos pedidos de vendas.
 	TcRefresh("SC6")
@@ -87,6 +88,9 @@ user function RFATE057()
 		ExecBlock("RFATE068")
 	endif
 	*/
+	if ExistBlock("MTA455SLD")
+		ExecBlock("MTA455SLD") 
+	endif
 	if ExistBlock("MTA455NL")
 		ExecBlock("MTA455NL") 
 	endif

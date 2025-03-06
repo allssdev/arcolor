@@ -52,13 +52,13 @@ If !(SubStr(cAcesso,160,1) == "S" .AND. SubStr(cAcesso,168,1) == "S" .AND. SubSt
    Return(Nil)
 EndIf
 
-/*// - VERIFICA SE HÁ O EXCEL INSTALADO NA MÁQUINA EM USO
+// - VERIFICA SE HÁ O EXCEL INSTALADO NA MÁQUINA EM USO
 If __cUserID <> '000000'
 	If !ApOleClient('MsExcel')
 		Msgbox('Excel não instalado.',_cRotina +"03",'ALERT')
 	   Return(Nil)
 	EndIf
-EndIf*/
+EndIf
                                                                                                                              
 _cTitulo  := ("Relação de devolução de " + (IIf (MV_PAR03 == 1,'Faturamento','Compras')) + " de " +(DTOC(mv_par01)) + " até " + (DTOC(mv_par02)) + " sem os documentos originais. - " + _cRotina)
 _cTitulo2 := ("PARÂMETROS")

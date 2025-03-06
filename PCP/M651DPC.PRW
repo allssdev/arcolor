@@ -15,22 +15,28 @@ Local lRet := .T.
 Local _cUsrID := Alltrim(__cUserId)
 Local _cUsrProd := SuperGetMV("MV_XUSRPROD",,"000000")
 
-If !__cUserId$_cUsrProd
-  BeginSql Alias "OPERCOMP"
-        SELECT
-            ZZB_CODUSR, ZZB_USRNOM, ZZB_OPERAC, ZZB_PRODUT,ZZB_CCUSTO, B1_OPERPAD
-        FROM ZZB010 ZZB (NOLOCK) 
-        INNER JOIN SB1010 SB1 (NOLOCK) ON SB1.D_E_L_E_T_ = '' AND B1_COD = ZZB_PRODUT
-        WHERE ZZB.D_E_L_E_T_ = ''
-        AND ZZB.ZZB_ATIVO = '1'
-        AND ZZB_CODUSR = %Exp:_cUsrID%
-        AND ZZB_PRODUT = %Exp:SC2->C2_PRODUTO%
-    EndSql
-  
-    if OPERCOMP->(EOF()) 
-            MsgStop("Usuario sem permissão para Firmar OP!  Produto não pertence a este usuário.", "Atenção")      
-            lRet   := .F.
-    Endif
-    OPERCOMP->(dbCloseArea())
+dbSelectArea("SB1")
+SB1->(dbSetOrder(1))
+If SB1->(MsSeek(xFilial("SB1")+SC2->C2_PRODUTO,.T.,.F.))
+    If !Empty(SB1->B1_OPERPAD)
+        If !__cUserId$_cUsrProd
+        BeginSql Alias "OPERCOMP"
+                SELECT
+                    ZZB_CODUSR, ZZB_USRNOM, ZZB_OPERAC, ZZB_PRODUT,ZZB_CCUSTO, B1_OPERPAD
+                FROM ZZB010 ZZB (NOLOCK) 
+                INNER JOIN SB1010 SB1 (NOLOCK) ON SB1.D_E_L_E_T_ = '' AND B1_COD = ZZB_PRODUT
+                WHERE ZZB.D_E_L_E_T_ = ''
+                AND ZZB.ZZB_ATIVO = '1'
+                AND ZZB_CODUSR = %Exp:_cUsrID%
+                AND ZZB_PRODUT = %Exp:SC2->C2_PRODUTO%
+            EndSql
+        
+            if OPERCOMP->(EOF()) 
+                    MsgStop("Usuario sem permissão para Firmar OP!  Produto não pertence a este usuário.", "Atenção")      
+                    lRet   := .F.
+            Endif
+            OPERCOMP->(dbCloseArea())
+        EndIf
+    EndIf
 EndIf
 Return(lRet)

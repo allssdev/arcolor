@@ -528,8 +528,8 @@ while !SUA->(EOF()) .AND. SUA->UA_FILIAL == xFilial("SUA") .AND. SUA->UA_VEND >=
 			@ nLi,PCol()+2	PSay SUB->UB_DESCTV3		PICTURE PESQPICT("SUB","UB_DESCTV3"	)
 			@ nLi,PCol()+2	PSay SUB->UB_DESCTV4		PICTURE PESQPICT("SUB","UB_DESCTV4"	)
  	        @ nLi,131 PSay "|" 
-			nPrcTot 	:= SUB->UB_QUANT  * SUB->UB_VRUNIT * _nPDiv
-			nPrcUni 	:= SUB->UB_VRUNIT * _nPDiv
+			nPrcTot 	:= ROUND(SUB->UB_QUANT  * SUB->UB_VRUNIT,2) * _nPDiv
+			nPrcUni 	:= ROUND(SUB->UB_VRUNIT,2) * _nPDiv
 			//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 			//³INICIO																							³
 			//³ARCOLOR - Demonstração de valores do SUFRAMA														³
@@ -559,7 +559,7 @@ while !SUA->(EOF()) .AND. SUA->UA_FILIAL == xFilial("SUA") .AND. SUA->UA_VEND >=
 			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ						
 			nTotQtd   	+= SUB->UB_QUANT
 			_nQtItF  	+= SUB->UB_QUANT * _nPDiv
-			nTotGeral 	+= SUB->UB_VLRITEM
+			nTotGeral 	+= ROUND(SUB->UB_VLRITEM,2)
 			nTotBase 	+= Round((SUB->UB_VLRITEM * _nPDiv),4)
 			nIteLin++
 			dbSelectArea("SUB")

@@ -34,10 +34,10 @@ If !Pergunte(_cRotina,.T.)
 	Return()
 EndIf
 
-/*If !ApOleClient('MsExcel')
+If !ApOleClient('MsExcel')
 	MsgStop('Excel não instalado!',_cRotina +"002")
 	Return(Nil)
-EndIf*/
+EndIf
 Processa( {|lEnd| SelDados(@lEnd) }, "Relatório de 	Ultimas Compras", "Processando informações...",.T.)
         
 RestArea(_aSavArea)

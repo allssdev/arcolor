@@ -701,7 +701,7 @@ Method enviarEmail(_cDestinatario,_cEmailDestinatario) class RPCPC003
 	Local _lExcAnex    := .F.
 	Local _lHtmlOk     := .F.
 	Local _lRetMail    := .F.
-	Local _cMail       := "diego.rodrigues@allss.com.br; fernando.bombardi@allss.com.br" //_cEmailDestinatario
+	Local _cMail       := "diego.rodrigues@allss.com.br" //_cEmailDestinatario
 	Local cDrive       := ""
 	Local cDir         := ""
 	Local cNome        := ""

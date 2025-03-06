@@ -10,6 +10,7 @@ Responsável por verificar os itens que podem ser devolvidos do documento selecio
 User Function MT103LDV()
 Local aLinha    := ParamIXB[1] 
 //Local cAliasSD2 := ParamIXB[2]
+Local _nPosIto  := aScan(aLinha,{|x|AllTrim(x[01])=="D1_ITEMORI"})
 Local _nPosDoc  := aScan(aLinha,{|x|AllTrim(x[01])=="D1_NFORI"  })
 Local _nPosCod  := aScan(aLinha,{|x|AllTrim(x[01])=="D1_COD"    })
 Local _nPosQtd  := aScan(aLinha,{|x|AllTrim(x[01])=="D1_QUANT"  })
@@ -23,13 +24,13 @@ Local _nPosArmz := aScan(aLinha,{|x|AllTrim(x[01])=="D1_LOCAL"  })
         AND D2_DOC =%Exp:alinha[_nPosDoc][2]%
         AND D2_COD = %Exp:alinha[_nPosCod][2]%
         AND D2_QUANT = %Exp:alinha[_nPosQtd][2]%
+        AND D2_ITEM = %Exp:alinha[_nPosIto][2]%
     EndSql
 
     if NFDEV->(!EOF()) 
         If NFDEV->D2_TIPOPER == '06'
             alinha[_nPosArmz][2] := 'VC'
         EndIf
-        aAdd(aLinha, {"D1_LOCAL"  , NFDEV->ARMZ             , NIL })
         aAdd(aLinha, {"D1_LOTECTL", NFDEV->D2_LOTECTL       , NIL })
         aAdd(aLinha, {"D1_DTVALID", STOD(NFDEV->D2_DTVALID) , NIL })
     Endif

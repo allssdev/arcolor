@@ -43,11 +43,11 @@ If !(SubStr(cAcesso,160,1) == "S" .AND. SubStr(cAcesso,168,1) == "S" .AND. SubSt
    Return(Nil)
 EndIf
 
-/*//Verifica se o Excel está instalado
+//Verifica se o Excel está instalado
 If !ApOleClient('MsExcel')
 	Msgbox('Excel não instalado.',_cRotina +"04",'ALERT')
    Return(Nil)
-EndIf*/
+EndIf
 
 _cTitulo  := ("Pedidos de Venda - Operação x Financeiro - " + (DTOC(mv_par02)) + " até " + (DTOC(mv_par03)) + " - " + _cRotina)
 _cTitulo2 := ("Parâmetros")

@@ -12,13 +12,14 @@
 /*/
 
 User Function MT681AIN()
-	Local	_cAliasSD4	:= GetNextAlias()
+	
 	local   _aSavArea := GetArea()
 	local   _aSavSD4  := SD4->(GetArea())
 	local   _aSavSB1  := SB1->(GetArea())
 	local   _aSavSD3  := SD3->(GetArea())
     local   _aSavSH6  := SH6->(GetArea())
 	local   _aSavSC2  := SC2->(GetArea())
+	Local	_cAliasSD4	:= GetNextAlias()
 	//local   _cTipo	:= ""
 	local   _cRotina  := "MT681AIN"
 	//Local   _aUsrPcp	:= SuperGetMv("MV_XUSRPCP" ,,"000000" )

@@ -476,11 +476,12 @@ while !(_cAlias)->(EOF()) .AND. (_cAlias)->TIPO_SC2 == 'PA'
             _cQrySD4    += "        AND NNR.NNR_CODIGO = SD4.D4_LOCAL                                                   " + ENT
             _cQrySD4    += "        AND NNR.D_E_L_E_T_ = ''                                                             " + ENT
 
-            _cQrySD4    += "    LEFT OUTER JOIN                                                                         " + ENT
+            _cQrySD4    += "    INNER JOIN                                                                              " + ENT
             _cQrySD4    +=          RetSqlName("SB5") + " AS SB5  (NOLOCK)                                              " + ENT
             _cQrySD4    += "    ON                                                                                      " + ENT
             _cQrySD4    += "        SB5.B5_FILIAL = SD4.D4_FILIAL                                                       " + ENT
             _cQrySD4    += "        AND SB5.B5_COD = SD4.D4_COD                                                         " + ENT
+            //_cQrySD4    += "        AND SB5.B5_XROTULO = '1'                                                            " + ENT
             _cQrySD4    += "        AND SB5.D_E_L_E_T_ = ''                                                             " + ENT
 
             _cQrySD4    += "WHERE                                                                                       " + ENT

@@ -441,7 +441,7 @@ Method emailCliente(_cProd, _cLOTECTL, _dDFABRIC, _dDTVALID, _nQUANT, _cDESEMB, 
 	_cBodyMail += '        </tbody>'
 	_cBodyMail += '    </table>'
 
-	_cMail := "diego.rodrigues@allss.com.br; fernando.bombardi@allss.com.br" //_cMAILCLI
+	_cMail := "diego.rodrigues@allss.com.br" //_cMAILCLI
 
 	if !Empty(_ctargetDir)
 		_cAnexo := _cImgAlert + ";" + _ctargetDir

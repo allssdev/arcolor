@@ -98,6 +98,7 @@ If empty(cProduto) .and. empty(cLote)
 				, SB1.B1_DESC 	 AS PRD_DESC
 				, SB1.B1_COD	 AS PRD
 				, QEK.QEK_LOTE   as LOTE
+				, SB8.B8_LOTEFOR as LOTEFOR
 				, QEK.QEK_PEDIDO AS PEDIDO
 				, QEK.QEK_SITENT as STATUS
 				, SD7.D7_TIPO AS LIBREJ
@@ -118,7 +119,7 @@ If empty(cProduto) .and. empty(cLote)
 				//AND QEK.QEK_PRODUT   = %exp:cProduto%
 				//AND QEK.QEK_LOTE     = %exp:cLote%	
 		GROUP BY QEL.QEL_DTLAUD	 , QEL.QEL_QTDAPR, QEL.QEL_DTVAL, SB1.B1_UM,QEK.QEK_FORNEC,QEK.QEK_LOJFOR, SA2.A2_NOME
-		, SB1.B1_DESC, SB1.B1_COD, QEK.QEK_LOTE, QEK.QEK_PEDIDO, QEK.QEK_SITENT, SD7.D7_QTDE, SD7.D7_TIPO, QEK.QEK_TAMLOT,B8_DTVALID
+		, SB1.B1_DESC, SB1.B1_COD, QEK.QEK_LOTE, QEK.QEK_PEDIDO, QEK.QEK_SITENT, SD7.D7_QTDE, SD7.D7_TIPO, QEK.QEK_TAMLOT,B8_DTVALID,B8_LOTEFOR
 		//removido do group by: QEL.QEL_QTDAPR,
 
 	ENDSQL
@@ -137,6 +138,7 @@ else
 				, SB1.B1_DESC 	 AS PRD_DESC
 				, SB1.B1_COD	 AS PRD
 				, QEK.QEK_LOTE   as LOTE
+				, SB8.B8_LOTEFOR as LOTEFOR
 				, QEK.QEK_PEDIDO AS PEDIDO
 				, QEK.QEK_SITENT as STATUS
 				, SD7.D7_TIPO AS LIBREJ
@@ -158,7 +160,7 @@ else
 				AND QEK.QEK_PRODUT   = %exp:cProduto%
 				AND QEK.QEK_LOTE     = %exp:cLote%	
 		GROUP BY QEL.QEL_DTLAUD,  QEL.QEL_DTVAL, SB1.B1_UM,QEK.QEK_FORNEC,QEK.QEK_LOJFOR, SA2.A2_NOME
-		, SB1.B1_DESC, SB1.B1_COD, QEK.QEK_LOTE, QEK.QEK_PEDIDO, QEK.QEK_SITENT, SD7.D7_QTDE, SD7.D7_TIPO, QEK.QEK_TAMLOT,B8_DTVALID
+		, SB1.B1_DESC, SB1.B1_COD, QEK.QEK_LOTE, QEK.QEK_PEDIDO, QEK.QEK_SITENT, SD7.D7_QTDE, SD7.D7_TIPO, QEK.QEK_TAMLOT,B8_DTVALID,B8_LOTEFOR
 		//removido do group by: QEL.QEL_QTDAPR,
 	ENDSQL
 EndIf	
@@ -178,6 +180,7 @@ EndIf
 			cPrdDesc   := (cAliasPro)->PRD_DESC
 			cProduto   := (cAliasPro)->PRD
 			cLote      := (cAliasPro)->LOTE
+			cLotFor    := (cAliasPro)->LOTEFOR
 			cPedido    := (cAliasPro)->PEDIDO
 			cCodFor	   := (cAliasPro)->CODFOR
 			cLojFor	   := (cAliasPro)->LOJFOR
@@ -212,7 +215,7 @@ EndIf
 				cQtdApro := _nQtdEti
 			EndIf
 			for nY:=1 to nCopias	
-				U_ImpEtQA(cProduto,cPrdDesc,cLote,cNota,cSerie, cFornece,cLoja,cNome,dDtApro,cHrAPro,cQtdApro,cUnidMed,cPedido,cDtVAlid,cStatus) 
+				U_ImpEtQA(cProduto,cPrdDesc,cLote,cLotFor,cNota,cSerie, cFornece,cLoja,cNome,dDtApro,cHrAPro,cQtdApro,cUnidMed,cPedido,cDtVAlid,cStatus) 
 			next nY
 		Endif
    	(cAliasPro)->(DBSKIP())
@@ -223,7 +226,7 @@ restarea(aArea)
 Return()
 
 
-User Function ImpEtQA(cProduto,cPrdDesc,cLote,cNota,cSerie, cFornece,cLoja,cNome,dDtApro,cHrAPro,cQtdApro,cUnidMed,cPedido,cDtVAlid,cStatus)
+User Function ImpEtQA(cProduto,cPrdDesc,cLote,cLotFor,cNota,cSerie, cFornece,cLoja,cNome,dDtApro,cHrAPro,cQtdApro,cUnidMed,cPedido,cDtVAlid,cStatus)
 
 	Private _cPorta   := "LPT1:"
 	
@@ -244,6 +247,8 @@ validade*/
 	MSCBCHKStatus(.F.)
 	MSCBBEGIN(1,4)
 	MSCBSAY(010,005,"FORNECEDOR","N","C","25,0",.T.) 
+	MSCBSAY(045,005,"LOTE FOR:","N","C","25,0",.T.) 
+	MSCBSAY(060,005,Alltrim(cLotFor),"N","C","25,0",.T.)
 	MSCBSAY(010,008,Alltrim(cFornece)+'-'+Alltrim(cLoja)+'-'+Alltrim(cNome),"N","C","25,0",.T.) 
     MSCBLineH(005,012,90)
 	MSCBSAY(010,016,'CODPROD', "N","C","25,0")

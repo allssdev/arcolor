@@ -28,7 +28,8 @@ user function M410STTS()
 			if SC6->C6_EMISSAO <> SC5->C5_EMISSAO .OR. SC6->C6_PRCVEN <> ROUND(SC6->C6_PRCVEN,2)
 				while !RecLock("SC6",.F.) ; enddo
 					SC6->C6_EMISSAO := SC5->C5_EMISSAO
-					SC6->C6_PRCVEN := ROUND(SC6->C6_PRCVEN,2)
+					SC6->C6_PRCVEN  := ROUND(SC6->C6_PRCVEN,2)
+					SC6->C6_VALOR   := ROUND(ROUND(SC6->C6_PRCVEN,2) * SC6->C6_QTDVEN,2)
 				SC6->(MSUNLOCK())
 			endif
 			dbSelectArea("SC6")

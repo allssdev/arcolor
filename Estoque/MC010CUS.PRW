@@ -3,9 +3,9 @@
 
 User Function MC010CUS()
 
-Local nRet := SB1->B1_CUSTD
 Local cProd:= PARAMIXB[1]
 Local nCusPad := PARAMIXB[2]
+Local nRet := IIf(cArqMemo = "STANDARD",SB1->B1_CUSTD,SB1->B1_UPRC)
 
 If cArqMemo = "PRECO_FUTURO"
     nRet := SB1->B1_FATLUC

@@ -103,6 +103,7 @@ BeginSql Alias _cAliasSC2
         SC2.C2_FILIAL = %xFilial:SC2%  
         AND SC2.C2_TPOP = 'P'
         AND SUBSTRING(SC2.C2_NUM,1,1) <> 'Z' 
+        AND SC2.C2_XLOTE = ''
         AND SC2.%notDel%
     ORDER BY
         C2_NUM, C2_ITEM, C2_SEQUEN
@@ -125,7 +126,7 @@ _cQry 	  += "WHERE                                                              
 _cQry 	  += "      SC2.C2_FILIAL  = '" + FWFilial("SC2") + "'                                          "
 _cQry 	  += "      AND SC2.C2_EMISSAO > '20210601'                                                     "
 _cQry 	  += "      AND SUBSTRING(SC2.C2_NUM,1,1) = 'Z'                                                 "
-_cQry 	  += "      AND D_E_L_E_T_ = ''                                                                 "
+//_cQry 	  += "      AND D_E_L_E_T_ = ''                                                                 "
 if Select(_cDadosAux) > 0
 	(_cDadosAux)->(dbCloseArea())
 endif

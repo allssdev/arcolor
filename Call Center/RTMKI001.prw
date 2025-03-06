@@ -82,9 +82,9 @@ user function RTMKI001(_lExt,_cEmpr,_cFil)
 
 	Private _cEmpr       := IIF(type("__cUserId")=="U",GetPvProfString("PEDIDOS_TMK","EMPRESA"   ,"",GetAdv97()),SubStr(cNumEmp,1,2))
 	Private _cFil        := IIF(type("__cUserId")=="U",GetPvProfString("PEDIDOS_TMK","FILIAL"    ,"",GetAdv97()),SubStr(cNumEmp,3,2))
-	default _lExt        := IsBlind()
+	Private _lExt        := IsBlind()
 
-	_lExt        := .T.
+	//_lExt        := .F.
 
 	if _lExt
 		_cPswUsr         := _cRotina
@@ -167,6 +167,7 @@ user function RTMKI001(_lExt,_cEmpr,_cFil)
 		ProcRotIni(_lExt)
 		_cLogTempo += "Término: " + DTOC(Date()) + " - " + Time() + " - Arquivo: " + (_cArqOri) + _CRLF
 	endif
+	//GravaArred() //Função para correção dos calculos de valores arrendondando para 2 casas decimais.
 	if !empty(_cLogTempo)
 		if !_lExt
 			MsgInfo("Processamento concluído!" + _CRLF + "LOG de Tempo de Processamento: " + _CRLF + _cLogTempo,_cRotina+"_016")
@@ -314,7 +315,7 @@ static function ProcArq(lEnd,_cArqCsv,_lExt)
 							{"REPRESENTANTE"          , 02, 03, "", {"UA_REPRES"           }, "A", {                                                                                                                                                           }, "0501", .F.},;
 							{"DATA"                   , 08, 10, "", {"UA_EMPLAN"           }, "P", {'DTOC(CTOD(_aCbPl[_x][04]))'                                                                                                                               }, "0601", .F.},;
 							{"PED. CLIENTE"           , 08, 10, "", {"UA_PEDCLI2"          }, "A", {                                                                                                                                                           }, "0701", .F.},;
-							{"OBSERVA€ÇO"             , 02, 03, "", {"UA_OBSPLAN"          }, "A", {                                                                                                                                                           }, "0801", .F.} }
+							{"OBSERVAÃ‡ÃƒO"           , 02, 03, "", {"UA_OBSPLAN"          }, "A", {                                                                                                                                                           }, "0801", .F.} }
 	//Estrutura do Array _aItPl (utilizado para a configuração dos campos dos itens da planilha importada):
 		//01 - Nome da coluna na planilha
 		//02 - Campo relacionado ao sistema
@@ -362,9 +363,12 @@ static function ProcArq(lEnd,_cArqCsv,_lExt)
 				endif
 				_aLin  := Separa(_cLin,";",.T.)		//Estrutura do array gerado: _aLin[_x]
 				for _x := 1 to len(_aCbPl)
+					If _x = 12 //Tratamento para ajustar a estrutura da planilha devido a conversão automatica através do script Python.
+						_x := 11
+					EndIf
 					if aScan(_aLin, _aCbPl[_x][01]) > 0
 						_aCbPl[_x][04] := _aLin[ _aCbPl[_x][03] ]
-							if "OBSERVAÇÃO"$AllTrim(_aCbPl[_x][01])
+						if "OBSERVAÃ‡ÃƒO"$AllTrim(_aCbPl[_x][01])//"OBSERVA€ÇO" 
 							while !FT_FEOF() .AND. !_cCposIt$UPPER(_cLin)
 								FT_FSKIP()
 								if _cCposIt$UPPER(_cLin)
@@ -586,3 +590,20 @@ static function ProcArq(lEnd,_cArqCsv,_lExt)
 	INCLUI := _lIncBk
 	ALTERA := _lAltBk
 return _lProc
+
+
+Static Function GravaArred()
+		cQry := " UPDATE "+RetSQLName("SUB")
+		cQry += " SET UB_VRUNIT = ROUND(UB_VRUNIT,2) "
+		cQry += " , UB_VLRITEM = ROUND(UB_QUANT * ROUND(UB_VRUNIT,2),2) "
+		cQry += " , UB_VALDESC = ROUND(UB_QUANT * ROUND(UB_PRCTAB,2),2) - ROUND(UB_QUANT * ROUND(UB_VRUNIT,2),2) "
+		cQry += " FROM SUB010 SUB (NOLOCK) "
+		cQry += " INNER JOIN SUA010 SUA (NOLOCK) ON SUA.D_E_L_E_T_ = '' AND UA_NUM = UB_NUM AND UA_NUMSC5 = '' "
+		cQry += " WHERE SUB.D_E_L_E_T_ = '' "
+		cQry += " AND UB_FILIAL = '"+xFilial("SUB")+"' "
+		cQry += " AND UA_EMISSAO >= '20250201' "
+		cQry += " AND ROUND((UB_QUANT * ROUND(UB_VRUNIT,2)),2) <> UB_VLRITEM "
+	
+		TcSQLExec(cQry)
+return
+

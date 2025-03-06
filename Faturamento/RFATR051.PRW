@@ -409,33 +409,18 @@ while !(cAliasMeta)->(EOF()) .AND. !lEnd
         _cCC 	    := iif(!Empty(_cCCs),";" + _cCCs,"")
     endif
     _cBCC           := SuperGetMV("MV_XBCC051"  ,.F.,'rodrigo.telecio@allss.com.br')
-	_cAssunto       := "[ARCOLOR] Acompanhamento de vendas - Posição em " + DtoC(dDataBase) + " - Referente ao mês " + DtoC(_dDeData) + " a " + DtoC(_dAtData) + " - Representante - " + AllTrim((cAliasMeta)->A3_NOME)
-    _cHtml          := "<H2>Acompanhamento de vendas - Posição em " + DtoC(dDataBase) + " - Referente ao mês " + DtoC(_dDeData) + " a " + DtoC(_dAtData) + " - Representante - " + AllTrim((cAliasMeta)->A3_NOME) + CLRF
+	_cAssunto       := "[ARCOLOR] Acompanhamento de vendas - Posição em " + DtoC(dDataBase-1) + " - Referente ao mês " + DtoC(_dDeData) + " a " + DtoC(_dAtData) + " - Representante - " + AllTrim((cAliasMeta)->A3_NOME)
+    _cHtml          := "<H2>Acompanhamento de vendas - Posição em " + DtoC(dDataBase-1) + " - Referente ao mês " + DtoC(_dDeData) + " a " + DtoC(_dAtData) + " - Representante - " + AllTrim((cAliasMeta)->A3_NOME) + CLRF
 	_cHtml          += "<BR><BR>"                                                                       + CLRF
 	_cHtml          += "<table border='1' bgcolor='#FFFFFF'> "                                          + CLRF
 	_cHtml          += " 	<thead bgcolor='#808080'> "                                                 + CLRF
 	_cHtml          += " 		<tr border='1'> "                                                       + CLRF
-<<<<<<< .mine
-	_cHtml          += " 			<th border='1' align='center' width='150'>                </th> "   + CLRF
-    _cHtml          += " 			<td border='1' align='center' width='150'>TOTAL DE PEDIDOS</td> "   + CLRF
-    _cHtml          += " 			<td border='1' align='center' width='150'>META            </td> "   + CLRF
-	_cHtml          += " 			<td border='1' align='center' width='150'>REALIZADO       </td> "   + CLRF
-	_cHtml          += " 			<td border='1' align='center' width='150'>SALDO           </td> "   + CLRF
-	_cHtml          += " 		</tr> "                                                                 + CLRF
-||||||| .r1194
-	_cHtml          += " 			<th border='1' align='center' width='150'>         </th> "          + CLRF
-    _cHtml          += " 			<td border='1' align='center' width='150'>META     </td> "          + CLRF
-	_cHtml          += " 			<td border='1' align='center' width='150'>REALIZADO</td> "          + CLRF
-	_cHtml          += " 			<td border='1' align='center' width='150'>SALDO </td> "          + CLRF
-	_cHtml          += " 		</tr> "                                                                 + CLRF
-=======
     //_cHtml          += " 			<th border='1' align='center' width='150'>         </th> "          + CLRF
     _cHtml          += " 			<td border='1' align='center' width='150'>META            </td> "   + CLRF
     _cHtml          += " 			<td border='1' align='center' width='150'>REALIZADO       </td> "   + CLRF
 	_cHtml          += " 			<td border='1' align='center' width='150'>SALDO           </td> "   + CLRF
     _cHtml          += " 			<td border='1' align='center' width='150'>QTD DE PEDIDOS</td> "     + CLRF
    	_cHtml          += " 		</tr> "                                                                 + CLRF
->>>>>>> .r1265
 	_cHtml          += " 	</thead> "                                                                  + CLRF
 	_cHtml          += " 	<tbody> "                                                                   + CLRF
     _nPrevRepr      := 0
@@ -457,7 +442,6 @@ while !(cAliasMeta)->(EOF()) .AND. !lEnd
 
         _cHtml   	    += " 		<tr> "                                                              + CLRF
         //_cHtml   	    += " 			<th valign='top' align='center' border='1' width='150'>"    + AllTrim((cAliasMeta)->UO_DESC)              + "</th> " + CLRF
-        _cHtml   	    += " 			<td valign='top' align='right'  border='1' width='150'>"    + Transform(_nTotalPedidos , "@E 999,999,999,999") + "</td> " + CLRF                
         _cHtml   	    += " 			<td valign='top' align='right'  border='1' width='150'>R$ " + Transform(_nMeta , "@E 999,999,999,999.99") + "</td> " + CLRF                
         _cHtml   	    += " 			<td valign='top' align='right'  border='1' width='150'>R$ " + Transform(_nReal , "@E 999,999,999,999.99") + "</td> " + CLRF
         _cHtml   	    += " 			<td valign='top' align='right'  border='1' width='150'>R$ " + Transform(_nSaldo, "@E 999,999,999,999.99") + "</td> " + CLRF

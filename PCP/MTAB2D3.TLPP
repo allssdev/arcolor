@@ -11,7 +11,7 @@ User Function MTAB2D3()
 Local _aArea := GetArea()
 Local _cProd := ParamIXB[1]
 
-If ( SD3->D3_TM == "999" .AND. SD3->D3_CF == "RE1" .AND. SD3->D3_QTMAIOR > 0 )
+If ( SD3->D3_TM == "999" .AND. SD3->D3_CF == "RE1" .AND. SD3->D3_QTMAIOR > 0 ) 
 
     oMTAB2D3 := MTAB2D3():NEW()
     dbSelectArea("SB1")

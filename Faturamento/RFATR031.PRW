@@ -100,13 +100,13 @@ If !(SubStr(cAcesso,160,1) == "S" .AND. SubStr(cAcesso,168,1) == "S" .AND. SubSt
    Return(Nil)
 EndIf
 
-/*// - VERIFICA SE HÁ O EXCEL INSTALADO NA MÁQUINA EM USO, PERMITE QUE USUÁRIO 'ADMINISTRADOR' REALIZE TESTES
+// - VERIFICA SE HÁ O EXCEL INSTALADO NA MÁQUINA EM USO, PERMITE QUE USUÁRIO 'ADMINISTRADOR' REALIZE TESTES
 If !(__cUserID) $ '000000|000154|000155|000156'
 	If !ApOleClient('MsExcel')
 		Msgbox('Para emitir o relatório é necessário ter o aplicativo [Excel] instalado.',_cRotina+"_003",'ALERT')
 	   Return(Nil)
 	EndIf
-EndIf*/
+EndIf
 
 _cTitulo  := ("Relação de Faturamento de " + (DTOC(mv_par01)) + " até " + (DTOC(mv_par02)) + " - " + _cRotina)
 _cTitulo2 := ("PARÂMETROS")

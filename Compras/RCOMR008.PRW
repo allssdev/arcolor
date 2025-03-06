@@ -210,15 +210,7 @@ User Function fQuery(_aProd)
 				return(_lF)
 			endif
 
-<<<<<<< .mine
-			Processa({|| u_ImpEtqEnt(cProduto,cDescricao,IIf(cQuant<cInfFat.and. cProduto<> "2295",cQuant,cInfFat),cCodCli,cNomeCli,cEntrada,cValidade,cLote,cUnid) },"Imprimindo Item: "+cvaltochar(nItem)+" de " +cvaltochar(cTot))
-			nItem++
-||||||| .r1194
-			Processa({|| u_ImpEtqEnt(cProduto,cDescricao,IIf(cQuant<cInfFat,cQuant,cInfFat),cCodCli,cNomeCli,cEntrada,cValidade,cLote,cUnid) },"Imprimindo Item: "+cvaltochar(nItem)+" de " +cvaltochar(cTot))
-			nItem++
-=======
 			_nItem++
->>>>>>> .r1265
 
 			DbSELECTArea(_tAlias)
 			(_tAlias)->(DbSkip())
@@ -325,34 +317,34 @@ User Function ImpEtqEnt(_cProduto,_cDescricao,_cQuant,_cCodCli,_cNomeCli,_cEntra
 	oPrinter:Say(0131,170, ALLTRIM(_cProduto), oFont180) 
 	oPrinter:Line(160,010,160,600) 
 
-	oPrinter:Code128(060/*nRow*/ ,010 /*nCol*/,Alltrim(_cCodBar)/*cCode*/,1/*nWidth*/,35/*nHeigth*/,.F./*lSay*/,,)
+	oPrinter:Code128(060/*nRow*/ ,030 /*nCol*/,Alltrim(_cCodBar)/*cCode*/,1/*nWidth*/,35/*nHeigth*/,.F./*lSay*/,,)
 		
 	oPrinter:Say(160,035, ALLTRIM(_cDescricao), oFont20) 
-	oPrinter:Line(188,0010,188,600) 
+	oPrinter:Line(188,010,188,600) 
 
 	oPrinter:Say(183,300, "QTDE", oFont20) 
 	oPrinter:Line(205,010,205,600) 
-	oPrinter:Say(290,010, Alltrim(Transform( _cQuant,"@E 999,999,999.99")), oFont140)
+	oPrinter:Say(290,030, Alltrim(Transform( _cQuant,"@E 999,999,999.99")), oFont140)
 	//oPrinter:Say(290,015, cvaltochar(_cQuant), oFont140)
 	oPrinter:Line(0320,010,320,600) 
 
 	if empty(_cValidade)
 		_cValidade:= '(Não informado na entrada)'
-		oPrinter:Say(369,35, _cValidade, oFont52) 
+		oPrinter:Say(369,60, _cValidade, oFont52) 
 	Else
-		oPrinter:Say(369,60, _cValidade, oFont110) 
+		oPrinter:Say(369,85, _cValidade, oFont110) 
 	endIf	
 	oPrinter:Line(400,010,400,600) 
-	oPrinter:Say(340,010, "DATA DE ", oFont12)
-	oPrinter:Say(355,010, "VALIDADE", oFont12) 
+	oPrinter:Say(340,035, "DATA DE ", oFont12)
+	oPrinter:Say(355,035, "VALIDADE", oFont12) 
 	
-	oPrinter:Say(435,35, _cEntrada, oFont52) 
-	oPrinter:Say(465,35, "DATA DE ENTRADA", oFont20)
-	oPrinter:Line(495,10,495,350) 
+	oPrinter:Say(435,035, _cEntrada, oFont52) 
+	oPrinter:Say(465,035, "DATA DE ENTRADA", oFont20)
+	oPrinter:Line(495,010,495,350) 
 
 	//oPrinter:Say(350,035, _cCodCli, oFont52) 
-	oPrinter:Say(515,35, _cNota+" /"+_cSerie, oFont52) 
-	oPrinter:Say(542,35, "NOTA FISCAL", oFont20)
+	oPrinter:Say(515,035, _cNota+" /"+_cSerie, oFont52) 
+	oPrinter:Say(542,035, "NOTA FISCAL", oFont20)
 	oPrinter:Line(575,10,575,350) 
 	//oPrinter:Say(365,420, _cUnid, oFont80) 
 	oPrinter:Line(585,010,585,350) 
@@ -360,11 +352,11 @@ User Function ImpEtqEnt(_cProduto,_cDescricao,_cQuant,_cCodCli,_cNomeCli,_cEntra
 	oPrinter:Line(610,010,610,350) 
 
 	oPrinter:Say(617,035, _cLoteFor, oFont30) 
-	oPrinter:Say(645,35, "LOTE FORNECEDOR", oFont20)
+	oPrinter:Say(645,035, "LOTE FORNECEDOR", oFont20)
 	oPrinter:Line(670,010,670,350) 
 	
 
-	oPrinter:Say(755,30, ALLTRIM(_cLote), oFont170) 
+	oPrinter:Say(755,030, ALLTRIM(_cLote), oFont170) 
 	oPrinter:Line(780,010,780,600) 
 	oPrinter:Say(775,55, "LOTE INTERNO", oFont20) 
 	//oPrinter:Line(790,010,790,600) 

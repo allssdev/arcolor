@@ -35,7 +35,7 @@
 User Function RFATE003(_cAlias,_cCNPJ,_cIniCpo)
 
 Local _aSavArea  := GetArea()
-Local _cRotina   := "RFATE003"
+//Local _cRotina   := "RFATE003"
 Local _cQry      := ""
 Local _cCod      := ""
 Local _cLoja     := ""
@@ -99,8 +99,8 @@ If INCLUI
 	__ReadVar := "M->"+_cIniCpo+"_COD"
 	If !Empty(_cCod)
 		&(__ReadVar) := _cCod
-	Else	//If Empty(&(__ReadVar))
-		&(__ReadVar) := GETSXENUM(_cAlias,_cIniCpo+"_COD")
+	//Else	//If Empty(&(__ReadVar))
+	//	&(__ReadVar) := GETSX8NUM(_cAlias,_cIniCpo+"_COD")
 	EndIf
 	__ReadVar := "M->"+_cIniCpo+"_LOJA"
 	If !Empty(_cCod) .AND. !Empty(_cLoja)

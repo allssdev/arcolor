@@ -28,7 +28,7 @@ user function A010TOK()
 	Local _cCodBarU  := M->B1_CODBAR
 	Local _lRet		:= .T.
 
-	If M->B1_TIPO == 'PA' .and. M->B1_UM <> 'BB' .and. (Empty(M->B5_XDESCET) .or. Empty(M->B5_XCORETQ) .or. Empty(M->B5_XMODETQ))
+	If M->B1_TIPO == 'PA' .and. M->B1_UM <> 'BB' .and. Empty(M->B5_XCORETQ)
 			MsgInfo("As informações referente as etiquetas na aba ACD do complemento do produto estão em branco. Favor preencher os campos 'Desc Etiqueta', 'Cor Etiqueta', 'Mod Etiqueta'","ATENÇÃO")
 			_lRet		:= .F.
 	EndIf

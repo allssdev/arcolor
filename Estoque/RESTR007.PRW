@@ -10,6 +10,7 @@
 @type function
 @version 1.00
 @see https://allss.com.br
+@history 10/02/2025, Diego Rodrigues (diego.rodrigues@allss.com.br), Adequação para a impressão a partir da rotina MATA681(roteiro de operações)
 /*/
 
 User Function RESTR007()
@@ -20,19 +21,6 @@ User Function RESTR007()
 	
 	If AllTrim(FunName())=="MATA250"  
 		
-		/*
-		MV_PAR01 := SC2->C2_PRODUTO
-		MV_PAR02 := SC2->C2_PRODUTO
-		MV_PAR03 := SD3->D3_OP
-		MV_PAR04 := SD3->D3_OP
-		MV_PAR05 := SC2->C2_EMISSAO
-		MV_PAR06 := SD3->D3_EMISSAO
-		MV_PAR07 := ""
-		MV_PAR08 := "ZZ"
-		MV_PAR09 := SD3->D3_DOC
-		MV_PAR10 := SD3->D3_DOC
-		*/
-
 		MV_PAR01 := M->D3_COD
 		MV_PAR02 := M->D3_COD
 		MV_PAR03 := M->D3_OP
@@ -48,7 +36,22 @@ User Function RESTR007()
 		ChrFicha()
 		//Imprime a ficha de controle produto intermediario
 		PrtFicha()
+	ElseIf AllTrim(FunName())=="MATA681" 
 		
+		MV_PAR01 := SC2->C2_PRODUTO
+		MV_PAR02 := SC2->C2_PRODUTO
+		MV_PAR03 := SD3->D3_OP
+		MV_PAR04 := SD3->D3_OP
+		MV_PAR05 := SC2->C2_EMISSAO
+		MV_PAR06 := SD3->D3_EMISSAO
+		MV_PAR08 := ""
+		MV_PAR09 := "ZZ"
+		MV_PAR10 := SD3->D3_DOC
+		MV_PAR11 := SD3->D3_DOC
+		//Carrega os dados para fins de impressão
+		ChrFicha()
+		//Imprime a ficha pallet
+		PrtFicha()	
 	Else
 		ValidPerg()
 		if Pergunte(_cPerg)

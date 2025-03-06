@@ -37,6 +37,8 @@ If !AllTrim(SUA->UA_STATUS) $ 'LIB/NF./CAN' .OR. SUA->UA_DOC $ 'XXX'/*.AND. !(Al
 		If SUA->(MsSeek(xFilial("SUA")+_cPreped,.T.,.F.))
 			nReg   := SUA->(Recno())
 			_cPed  := SUA->UA_NUMSC5
+			//GravaArred() //Função para correção dos calculos de valores arrendondando para 2 casas decimais.
+			ALTERA 	   := .T. //Adequação da variavel ALTERA para .T. quando utilizado a conferencia de pedido, ajuste necessário devido a nova release 12.1.2410
             // - Abre a tela de conferência do atendimento
 			TK271CallCenter("SUA",nReg,4)
 			If MSGBOX('Deseja confirmar a conferência do pedido ' + _cPreped + ' ?',_cRotina+'_002','YESNO')
@@ -137,3 +139,18 @@ RestArea(_aSavSUA)
 RestArea(_aSavArea)
 
 Return()
+
+Static Function GravaArred()
+		cQry := " UPDATE "+RetSQLName("SUB")
+		cQry += " SET UB_VRUNIT = ROUND(UB_VRUNIT,2) "
+		cQry += " , UB_VLRITEM = ROUND(UB_QUANT * ROUND(UB_VRUNIT,2),2) "
+		cQry += " , UB_VALDESC = ROUND(UB_QUANT * ROUND(UB_PRCTAB,2),2) - ROUND(UB_QUANT * ROUND(UB_VRUNIT,2),2) "
+		cQry += " FROM SUB010 SUB (NOLOCK) "
+		cQry += " INNER JOIN SUA010 SUA (NOLOCK) ON SUA.D_E_L_E_T_ = '' AND UA_NUM = UB_NUM AND UA_NUMSC5 = '' "
+		cQry += " WHERE SUB.D_E_L_E_T_ = '' "
+		cQry += " AND UB_FILIAL = '"+xFilial("SUB")+"' "
+		cQry += " AND UA_EMISSAO >= '20250201' "
+		cQry += " AND ROUND((UB_QUANT * ROUND(UB_VRUNIT,2)),2) <> UB_VLRITEM "
+	
+		TcSQLExec(cQry)
+return

@@ -75,6 +75,9 @@ If (_cAliasSX3)->(MsSeek("UB_DESC",.T.,.F.))
 	EndIf
 EndIf
 
+If ExistBlock("RTMKE037")
+	ExecBlock("RTMKE037")
+EndIf
 //Restauro o __ReadVar
 __ReadVar    := _cRVarBk
 &(__ReadVar) := _cContCpo

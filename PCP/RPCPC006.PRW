@@ -16,11 +16,15 @@ User Function RPCPC006()
 
 Local cVldAlt := ".T." // Validacao para permitir a alteracao. Pode-se utilizar ExecBlock.
 Local cVldExc := ".T." // Validacao para permitir a exclusao. Pode-se utilizar ExecBlock.
-
+Local aRotAdic 	:= {}
 Private cString := "ZZB"
 
 dbSelectArea("ZZB")
 dbSetOrder(1)
-AxCadastro(cString,"Cadastro Operadores x Operações",cVldExc,cVldAlt)
+
+aAdd(aRotAdic,{ "Bloqueio Usuário","U_RPCPE017", 0 , 1 }) //Chamada da tela para bloqueio do usuário
+aAdd(aRotAdic,{ "Copiar Usuário"  ,"U_RPCPE018", 0 , 1 }) //Chamada da tela para copia dos usuário informado replicando suas operações.
+
+AxCadastro(cString,"Cadastro Operadores x Operações",cVldExc,cVldAlt, aRotAdic)
 
 Return()

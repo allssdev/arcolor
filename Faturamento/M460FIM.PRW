@@ -24,6 +24,7 @@ user function M460FIM()
 	if !empty(SF2->F2_DUPL)	//Para somente registros que gerem o contas a receber, gero os valores futuros aos funcionários
 		oM460FIM:GerarValoresFuturos()
 	endif
+
 	DbSelectArea("SD2")
 	DbSetOrder(3)
 	If DbSeek(xFilial("SD2") + SF2->F2_DOC+SF2->F2_SERIE)
@@ -31,6 +32,11 @@ user function M460FIM()
 			oM460FIM:GravaFabricao()
 		EndiF
 	EndIf
+	if !SF2->F2_TIPO$"B/D" //Apenas notas de devolução devem ter mais de 2 casas decimais no d2_prcven - *regra arcolor*
+		oM460FIM:GravaArred()
+	endif
+
+
 	oM460FIM            := nil
 	RestArea(_aSvSF2)
 	RestArea(_aSvSD2)
@@ -59,6 +65,7 @@ class M460FIM
     Method New() CONSTRUCTOR
     Method GerarValoresFuturos()
 	Method GravaFabricao()
+	Method GravaArred()	
 endclass
 /*/{Protheus.doc} New
     @description Metodo construtor 
@@ -206,7 +213,7 @@ Method GravaFabricao() class M460FIM
 		
 
 		cQry := " UPDATE "+RetSQLName("SD2")
-		cQry += " SET D2_DFABRIC = B8_DFABRIC"
+		cQry += " SET D2_DFABRIC = B8_DFABRIC , D2_PRCVEN= round(D2_PRCVEN,2)"
 		cQry += " FROM SD2010 D2"
 		cQry += " INNER JOIN F0A010 F0 ON F0.D_E_L_E_T_ = '' "
 		cQry += " AND F0A_DOC = D2_DOC AND F0A_SERIE = D2_SERIE AND F0A_COD = D2_COD AND F0A_ITEM = D2_ITEM"
@@ -234,6 +241,40 @@ Method GravaFabricao() class M460FIM
 		cQry += " AND D2_CLIENTE = '"+cClien+"'"
 		cQry += " AND D2_LOTECTL <> ''"
 		
+		
+		TcSQLExec(cQry)
+
+	
+return
+
+/*/{Protheus.doc} GravaLote
+    Metodo para gravação do lote na tabela SD2
+    @author Diego Rodrigues (ALLSS Soluções em Sistemas)
+    @since 07/04/2023
+    @version 1.0
+    @type Method
+    @see https://allss.com.br
+/*/
+Method GravaArred() class M460FIM
+	Local cNunNf  	:= SF2->F2_DOC
+	Local cSerNf  	:= SF2->F2_SERIE
+	Local cClien  	:= SF2->F2_CLIENTE
+	Local cLoja   	:= SF2->F2_LOJA
+	Local cQry 		:= ""
+		
+
+		cQry := " UPDATE "+RetSQLName("SD2")
+		cQry += " SET D2_PRCVEN= round(D2_PRCVEN,2)"
+		cQry += " FROM SD2010 D2"
+		cQry += " WHERE D2.D_E_L_E_T_ = ''"
+		cQry += " AND D2_FILIAL = '"+xFilial("SD2")+"'"
+		cQry += " AND D2_DOC = '"+cNunNf+"'"
+		cQry += " AND D2_SERIE = '"+cSerNf+"'"
+		cQry += " AND D2_LOJA = '"+cLoja+"'"
+		cQry += " AND D2_CLIENTE = '"+cClien+"' ;"
+		//cQry += " AND D2_LOTECTL <> ''"
+		//cQry += " AND D2_DFABRIC = '';"
+
 		
 		TcSQLExec(cQry)
 

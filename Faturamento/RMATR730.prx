@@ -558,15 +558,20 @@ While !oReport:Cancel() .And. !((cAliasSC5)->(Eof())) .and. xFilial("SC5")==(cAl
 		//³Calcula o preco de lista                     ³
 		//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 		//nValMerc  := (cAliasSC6)->C6_VALOR
-		nValMerc  := A410Arred(((cAliasSC6)->C6_QTDVEN-(cAliasSC6)->C6_QTDENT) * (cAliasSC6)->C6_PRCVEN,"D2_TOTAL")
-		nPrcLista := (cAliasSC6)->C6_PRUNIT
+		//nValMerc  := A410Arred(((cAliasSC6)->C6_QTDVEN-(cAliasSC6)->C6_QTDENT) * (cAliasSC6)->C6_PRCVEN,"D2_TOTAL")
+		nValMerc  := ((cAliasSC6)->C6_QTDVEN-(cAliasSC6)->C6_QTDENT) * ROUND((cAliasSC6)->C6_PRCVEN,2)
+		nPrcLista := ROUND((cAliasSC6)->C6_PRUNIT,2)
 		If ( nPrcLista == 0 )
-			nPrcLista := NoRound(nValMerc/(cAliasSC6)->C6_QTDVEN,TamSX3("C6_PRCVEN")[2])
+			//nPrcLista := NoRound(nValMerc/(cAliasSC6)->C6_QTDVEN,TamSX3("C6_PRCVEN")[2])
+			nPrcLista := NoRound(nValMerc/(cAliasSC6)->C6_QTDVEN,2)
 		EndIf
-		nAcresFin := A410Arred((cAliasSC6)->C6_PRCVEN*(cAliasSC5)->C5_ACRSFIN/100,"D2_PRCVEN")
+		//nAcresFin := A410Arred((cAliasSC6)->C6_PRCVEN*(cAliasSC5)->C5_ACRSFIN/100,"D2_PRCVEN")
+		nAcresFin := ROUND((cAliasSC6)->C6_PRCVEN,2)*(cAliasSC5)->C5_ACRSFIN/100
 		//nValMerc  += A410Arred((cAliasSC6)->C6_QTDVEN*nAcresFin,"D2_TOTAL")
-		nValMerc  += A410Arred(((cAliasSC6)->C6_QTDVEN-(cAliasSC6)->C6_QTDENT)*nAcresFin,"D2_TOTAL")		
-		nDesconto := a410Arred(nPrcLista*((cAliasSC6)->C6_QTDVEN-(cAliasSC6)->C6_QTDENT),"D2_DESCON")-nValMerc
+		//nValMerc  += A410Arred(((cAliasSC6)->C6_QTDVEN-(cAliasSC6)->C6_QTDENT)*nAcresFin,"D2_TOTAL")		
+		nValMerc  += ((cAliasSC6)->C6_QTDVEN-(cAliasSC6)->C6_QTDENT)*nAcresFin		
+		//nDesconto := a410Arred(nPrcLista*((cAliasSC6)->C6_QTDVEN-(cAliasSC6)->C6_QTDENT),"D2_DESCON")-nValMerc
+		nDesconto := nPrcLista*((cAliasSC6)->C6_QTDVEN-(cAliasSC6)->C6_QTDENT)-nValMerc
 		nDesconto := IIf(nDesconto==0,(cAliasSC6)->C6_VALDESC,nDesconto)
 		nDesconto := Max(0,nDesconto)
 		nPrcLista += nAcresFin
@@ -1514,14 +1519,16 @@ While !((cAliasSC5)->(Eof())) .and. xFilial("SC5")==(cAliasSC5)->C5_FILIAL
 			//³Calcula o preco de lista                     ³
 			//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 	//		nValMerc  := (cAliasSC6)->C6_VALOR
-			nValMerc  := A410Arred(((cAliasSC6)->C6_QTDVEN-(cAliasSC6)->C6_QTDENT) * (cAliasSC6)->C6_PRCVEN,"D2_TOTAL")
-			nPrcLista := (cAliasSC6)->C6_PRUNIT
+			//nValMerc  := A410Arred(((cAliasSC6)->C6_QTDVEN-(cAliasSC6)->C6_QTDENT) * (cAliasSC6)->C6_PRCVEN,"D2_TOTAL")
+			nValMerc  := ((cAliasSC6)->C6_QTDVEN-(cAliasSC6)->C6_QTDENT) * ROUND((cAliasSC6)->C6_PRCVEN,2)
+			nPrcLista := ROUND((cAliasSC6)->C6_PRUNIT,2)
 			If ( nPrcLista == 0 )
-				nPrcLista := NoRound(nValMerc/(cAliasSC6)->C6_QTDVEN,TamSX3("C6_PRCVEN")[2])
+				nPrcLista := NoRound(nValMerc/(cAliasSC6)->C6_QTDVEN,2)
 			EndIf
-			nAcresFin := A410Arred((cAliasSC6)->C6_PRCVEN*(cAliasSC5)->C5_ACRSFIN/100,"D2_PRCVEN")
-			nValMerc  += A410Arred(((cAliasSC6)->C6_QTDVEN-(cAliasSC6)->C6_QTDENT)*nAcresFin,"D2_TOTAL")		
-			nDesconto := a410Arred(nPrcLista*((cAliasSC6)->C6_QTDVEN-(cAliasSC6)->C6_QTDENT),"D2_DESCON")-nValMerc
+			//nAcresFin := A410Arred((cAliasSC6)->C6_PRCVEN*(cAliasSC5)->C5_ACRSFIN/100,"D2_PRCVEN")
+			nAcresFin := ROUND((cAliasSC6)->C6_PRCVEN,2)*(cAliasSC5)->C5_ACRSFIN/100
+			nValMerc  += ((cAliasSC6)->C6_QTDVEN-(cAliasSC6)->C6_QTDENT)*nAcresFin	
+			nDesconto := nPrcLista*((cAliasSC6)->C6_QTDVEN-(cAliasSC6)->C6_QTDENT)-nValMerc
 			nDesconto := IIf(nDesconto==0,(cAliasSC6)->C6_VALDESC,nDesconto)
 			nDesconto := Max(0,nDesconto)
 			nPrcLista += nAcresFin

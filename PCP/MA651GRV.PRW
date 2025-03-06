@@ -60,7 +60,7 @@ Else
 			WHERE SC2.D_E_L_E_T_ = ''
 				AND C2_NUMPAGS = 0
 				AND C2_OK = %Exp:cMarca% 
-				AND C2_DATPRF >= '20240729'
+				AND C2_DATPRF >= '20250201'
 			GROUP BY C2_NUMPAGS, B1_OPERPAD
         	EndSql
 

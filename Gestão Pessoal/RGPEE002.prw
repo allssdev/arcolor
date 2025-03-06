@@ -101,8 +101,22 @@ While SRA->(!EOF())
 		SRA->(dbSkip())
 		Loop
 	EndIf
-	If Empty(SRA->RA_CLIENTE)
-		_cCodCli := GETSXENUM("SA1","A1_COD")
+	If Empty(SRA->RA_CLIENTE) .and. Dtos(SRA->RA_ADMISSA) >= '20250106'
+
+		BeginSql Alias "SA1NUM"
+			SELECT 
+				MAX(A1_COD) A1_COD
+			FROM SA1010 SA1 (NOLOCK)
+			WHERE SA1.D_E_L_E_T_ = ''
+					AND A1_COD NOT IN ('999999')
+			ORDER BY A1_COD
+		EndSql
+
+		If SA1NUM->(!EOF())
+			_cCodCli := cValToChar(Strzero(Val(SA1NUM->A1_COD)+1,6))
+		EndIf
+		SA1NUM->(DbCloseArea())
+		//_cCodCli := GETSXENUM("SA1","A1_COD")
 		_cLojCli := "01" //No caso de funcionário será sempre loja 01
 		RecLock("SA1",.T.)
 			SA1->A1_FILIAL	:= xFilial("SA1")
@@ -143,7 +157,7 @@ While SRA->(!EOF())
 			SA1->A1_INSTRU1	:= _cFUNINS1     	//Instrução 1
 			SA1->A1_INSTRU2 := _cFUNINS2		//Instrução 2
 			//SA1->A1_PZPROT	:= SuperGetMV("MV_FUNPROT",,"00") 		//Prazo para protesto
-			SA1->A1_PRZPROT	:= _cFUNPROT 		//Prazo para protesto
+			//SA1->A1_PRZPROT	:= _cFUNPROT 		//Prazo para protesto
 			SA1->A1_DATACAD	:= dDataBase 	//Data do cadastro
 			SA1->A1_VEND	:= _cFUNVEND 	//Vendedor (Venda Interna)
 			SA1->A1_GRPVEN	:= _cFUNGRUP	//Grupo de venda (Venda Interna)

@@ -100,7 +100,7 @@ Method ExcluirValoresFuturos() class MS520DEL
 		while !(_cSRK)->(EOF())
 			_aLinha := {}
 			if ALLTRIM(_cVERBA) == ALLTRIM((_cSRK)->RK_PD)
-				//aadd(_aLinha,{"LINPOS","RK_PD", (_cSRK)->RK_PD })
+				aadd(_aLinha,{"LINPOS","RK_PD+RK_DOCUMEN", (_cSRK)->RK_PD,(_cSRK)->RK_DOCUMEN })
 				aadd(_aLinha,{"AUTDELETA","S",Nil})
 			endif 
 		//	Aadd(_aLinha,{ "RK_PD"     , (_cSRK)->RK_PD            , NIL})
@@ -112,7 +112,7 @@ Method ExcluirValoresFuturos() class MS520DEL
 			Aadd(_aItens,_aLinha)
 			(_cSRK)->(dbSkip())
 		enddo
-		MSExecAuto({|a, b, c| GPEA110(a, b, c) }, 4, _aCab, _aItens)
+		MSExecAuto({|a, b, c| GPEA110(a, b, c) }, 5, _aCab, _aItens)
 		if !lMsErroAuto
 			FwLogMsg(	"INFO",;
 						nil,;					//cTransactionId

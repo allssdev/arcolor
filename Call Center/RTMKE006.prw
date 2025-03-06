@@ -8,6 +8,7 @@ EXECBLOCK  para disparar os gatilhos a partir do campo código do produto no call
 @see https://allss.com.br
 @history 11/03/2014, Adriano Leonardo, Nesta rotina foi inclusa a sugestão do desconto no atendimento, com base nas regras de negócios seguindo prioridades específicas da empresa.
 @history 12/01/2024, Rodrigo Telecio (rodrigo.telecio@allss.com.br), #7110 - Adequações no processo de faturamento de consignado.
+@history 05/02/2025, Diego Rodrigues (diego.rodrigues@allss.com.br), Ajustes nas informações de valores para arrendondamento em 2 casas decimais.
 /*/
 user function RTMKE006()
 	//No Início da rotina, salvar o ReadVar:
@@ -36,6 +37,10 @@ user function RTMKE006()
 	Local nPLocal  		:= aScan(aHeader,{|x|AllTrim(x[02])==(_cCpoIte + "LOCAL"                   )})
 	Local _nPTES   		:= aScan(aHeader,{|x|AllTrim(x[02])==(_cCpoIte+"TES"                       )})
 	Local _nQuant  		:= aScan(aHeader,{|x|AllTrim(x[02])==(_cCpoIte+"QUANT"                     )})
+	Local _nVlrUnit		:= aScan(aHeader,{|x|AllTrim(x[02])==(_cCpoIte+"VRUNIT"                    )})
+	Local _nVlrTota		:= aScan(aHeader,{|x|AllTrim(x[02])==(_cCpoIte+"VLRITEM"                   )})
+	Local _nVlrTab		:= aScan(aHeader,{|x|AllTrim(x[02])==(_cCpoIte+"PRCTAB"   	               )})
+	Local _nVlrDesc		:= aScan(aHeader,{|x|AllTrim(x[02])==(_cCpoIte+"VALDESC"                   )})
 	Local _nCodfat		:= aScan(aHeader,{|x|AllTrim(x[02])==(_cCpoIte+"CODFATR"                   )})
 	Local _nPDesc1 		:= aScan(aHeader,{|x|AllTrim(x[02])==(_cCpoIte+"DESCTV1"                   )})
 	Local _nPDesc2 		:= aScan(aHeader,{|x|AllTrim(x[02])==(_cCpoIte+"DESCTV2"                   )})
@@ -156,6 +161,9 @@ user function RTMKE006()
 			endif
 	        //Restauro o posicionamento inicial da tabela
 			RestArea(_aSavSU7)
+			//Conforme alinhado com o Marco Antonio em 13/02/2025, iremos parar a sugestão da regra de negocio no atendimento do call center.
+			// Esse processo se enquadra nas melhorias e automatizações para atualização da regra de negocio do cliente e inteligencia do sistema para controle de pedidos.
+			 
 			//Consulta utilizada para selecionar a regra a ser sugerida no atendimento
 			//IMPORTANTE: Ao alterar essa query, atentar para que as mesmas alterações sejam feitas na query do ponto de entrada FT100RNI
 			_cQuery := " SELECT NIVEL,ACN_CODREG,ACN_CODFAT,ACN_DESCV1,ACN_DESCV2,ACN_DESCV3,ACN_DESCV4,ACN_PROMOC,ACN_DESCON " + CRLF
@@ -219,6 +227,7 @@ user function RTMKE006()
 			_cQuery += "	                               AND AUX.D_E_L_E_T_  = '' " + CRLF
 			_cQuery += "								) " + CRLF
 			_cQuery += "		  AND ACN.D_E_L_E_T_  = '' " + CRLF
+			
 			if !_lSEspecif
 				_cQuery += "UNION ALL " + CRLF
 				//AVALIO SE HÁ REGRA PROMOCIONAL - NIVEL 3
@@ -266,7 +275,26 @@ user function RTMKE006()
 				_nDesc1	  := (_cAliQry)->ACN_DESCV1
 				_nDesc2	  := (_cAliQry)->ACN_DESCV2
 				_nDesc3	  := (_cAliQry)->ACN_DESCV3
-				_nDesc4	  := (_cAliQry)->ACN_DESCV4			
+				_nDesc4	  := (_cAliQry)->ACN_DESCV4	
+
+				if _nCodFat > 0
+					aCols[n][_nCodFat] := _cCodFat
+				endif
+				if _nPDesc1 > 0
+					aCols[n][_nPDesc1] := _nDesc1
+				endif
+				if _nPDesc2 > 0
+					aCols[n][_nPDesc2] := _nDesc2
+				endif
+				if _nPDesc3 > 0
+					aCols[n][_nPDesc3] := _nDesc3
+				endif
+				if _nPDesc4 > 0
+					aCols[n][_nPDesc4] := _nDesc4
+				endif
+				if _nPDesc > 0
+					aCols[n][_nPDesc ] := _nDescAux
+				endif
 			endif
 			while (_cAliQry)->(!EOF())
 				if Round((_cAliQry)->ACN_DESCON,_nPDescon) > _nDescAux .OR. AllTrim((_cAliQry)->ACN_PROMOC)=='1'
@@ -277,6 +305,25 @@ user function RTMKE006()
 					_nDesc2	 	:= (_cAliQry)->ACN_DESCV2
 					_nDesc3	 	:= (_cAliQry)->ACN_DESCV3
 					_nDesc4	 	:= (_cAliQry)->ACN_DESCV4
+
+					if _nCodFat > 0
+						aCols[n][_nCodFat] := _cCodFat
+					endif
+					if _nPDesc1 > 0
+						aCols[n][_nPDesc1] := _nDesc1
+					endif
+					if _nPDesc2 > 0
+						aCols[n][_nPDesc2] := _nDesc2
+					endif
+					if _nPDesc3 > 0
+						aCols[n][_nPDesc3] := _nDesc3
+					endif
+					if _nPDesc4 > 0
+						aCols[n][_nPDesc4] := _nDesc4
+					endif
+					if _nPDesc > 0
+						aCols[n][_nPDesc ] := _nDescAux
+					endif
 					//Verifico se a regra em questão foi definida como prioritária, se sim, não avalio as demais
 					if (_cAliQry)->ACN_PROMOC=='1'
 						Exit
@@ -287,24 +334,8 @@ user function RTMKE006()
 			enddo
 			dbSelectArea(_cAliQry)
 			(_cAliQry)->(dbCloseArea())
-			if _nCodFat > 0
-				aCols[n][_nCodFat] := _cCodFat
-			endif
-			if _nPDesc1 > 0
-				aCols[n][_nPDesc1] := _nDesc1
-			endif
-			if _nPDesc2 > 0
-				aCols[n][_nPDesc2] := _nDesc2
-			endif
-			if _nPDesc3 > 0
-				aCols[n][_nPDesc3] := _nDesc3
-			endif
-			if _nPDesc4 > 0
-				aCols[n][_nPDesc4] := _nDesc4
-			endif
-			if _nPDesc > 0
-				aCols[n][_nPDesc ] := _nDescAux
-			endif
+			
+			//Fim do Processo de regra de negocio comentado em 13/02/2025
 			//Se a tela for do atendimento do Call Center, gravo o percentual de desconto em campo auxiliar para tratamento em outras rotinas, não remover
 			if _nPDescA > 0
 				aCols[n][_nPDescA] := _nDescAux
@@ -324,6 +355,13 @@ user function RTMKE006()
 					RunTrigger(2,n)
 				endif
 			endif
+			//Início - Trecho adicionado por Diego Rodrigues em 05/02/2025 para forçar o arredondamento em 2 casas decimais na atualização de valores
+			//aCols[n][_nVlrUnit] := Ceiling(aCols[n][_nVlrUnit] * 100 ) / 100 //Arredondamento para cima
+			aCols[n][_nVlrUnit] := Round(aCols[n][_nVlrUnit],2)
+			aCols[n][_nVlrTota] := Round(aCols[n][_nVlrUnit],2) * aCols[n][_nQuant]
+			aCols[n][_nVlrDesc] := Round(Round(aCols[n][_nVlrTab],2) * aCols[n][_nQuant],2) - Round(aCols[n][_nVlrTota],2)
+			//FIm - Trecho adicionado por Diego Rodrigues em 05/02/2025 para forçar o arredondamento em 2 casas decimais na atualização de valores
+
 		elseif !empty(aCols[n][_nPProd]) .AND. _nSugDes==2
 			//Início - Trecho adicionado por Adriano Leonardo em 13/05/2014 Sugestão de desconto com base na amarração Cliente x Produto
 			dbSelectArea("SA7")
@@ -383,6 +421,12 @@ user function RTMKE006()
 				endif
 			endif
 			//Final  - Trecho adicionado por Adriano Leonardo em 13/05/2014 Sugestão de desconto com base na amarração Cliente x Produto
+			//Início - Trecho adicionado por Diego Rodrigues em 05/02/2025 para forçar o arredondamento em 2 casas decimais na atualização de valores
+			//aCols[n][_nVlrUnit] := Ceiling(aCols[n][_nVlrUnit] * 100 ) / 100 //Arredondamento para cima
+			aCols[n][_nVlrUnit] := Round(aCols[n][_nVlrUnit],2)
+			aCols[n][_nVlrTota] := Round(aCols[n][_nVlrUnit],2) * aCols[n][_nQuant]
+			aCols[n][_nVlrDesc] := Round(Round(aCols[n][_nVlrTab],2) * aCols[n][_nQuant],2) - Round(aCols[n][_nVlrTota],2)
+			//FIm - Trecho adicionado por Diego Rodrigues em 05/02/2025 para forçar o arredondamento em 2 casas decimais na atualização de valores
 		/*
 		//Início - Trecho adicionado por Adriano Leonardo em 17/10/2014 para inclusão de novo critério de sugestão de desconto
 		elseif !empty(aCols[n][_nPProd]) .AND. _nSugDes==3 //Sugestão com base no último pedido do cliente (em construção)

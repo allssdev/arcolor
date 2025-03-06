@@ -11,6 +11,7 @@ TODO Este ponto de entrada é executado após o fechamento da transação de liberaç
 @history 11/07/2014, Adriano Leonardo, Inserido tratamento para atualizar automaticamente o campo de log de status para quando o pedido for liberado e esse não ficar bloqueado por crédito, insere também no log que o mesmo foi liberado automaticamente. Foi também alterado a validação do fonte quanto a condição de pagamento para que essa validação seja realizada primeiramente.
 @history 17/06/2015, Júlio Soares, Realizado o tratamento do fonte para implementações de melhoria.
 @history 22/10/2019, Anderson C. P. Coelho (ALL System Solutions), Retirado o lock customizado do registro que minimizava os riscos na liberação dos pedidos de vendas pois, conforme relatado pela consultora Lívia, o risco foi praticamente eliminado pós migração do release P12.1.17 para o P12.1.25.
+@history 08/10/2024, Diego Rodrigues (ALL System Solutions), Inclusão da validação e ajuste quando houver quantidade duplicada na liberação do pedido de venda
 @type function
 @see https://allss.com.br
 /*/
@@ -29,13 +30,14 @@ user function M440STTS()
 	local _aSavSC9     := SC9->(GetArea())
 	local _x           := 0
 	local _cLogx       := ""
+	Local _aQtdDivg	   := {}
+	
 	private _cRotina   := 'M440STTS'
 	private _aSendMail := {}
 	private _cPadTxt   := 'O pedido descrito acima se encontra no setor de análise de crédito da empresa ARCÓLOR.'
 	private _cText3    := SuperGetMV("MV_MAILC01",,_cPadTxt)  // - TESTE DE TEXTO PARA MENSAGENS.
 	private _cText4    := SuperGetMV("MV_MAILC02",,"")
 	private _cLockR      := "PEDIDO_"+SC5->C5_NUM
-	
 	public  _mailCli   := ''
 	public  _mailVend  := ''
 	public  _DestMsg   := ''
@@ -51,6 +53,63 @@ user function M440STTS()
 	public  _cAssunt   := ''
 	public  _cCorp     := ''
 	public  _cPrior    := ''
+
+	//Inicio do Bloco de validação das quantidades duplicadas
+	BeginSql Alias "SC9QTD"
+	SELECT
+		C6_NUM, C6_PRODUTO, C6_QTDVEN, C9_QUANT
+	FROM
+		(SELECT
+		C6_NUM, C6_PRODUTO, SUM(C6_QTDVEN) C6_QTDVEN, SUM(C6_QTDENT) C6_QTDENT
+		FROM SC6010 SC6 (NOLOCK)
+		WHERE SC6.D_E_L_E_T_ = ''
+		AND C6_NUM = %Exp:SC5->C5_NUM%
+		GROUP BY C6_NUM, C6_PRODUTO) SC6X
+		,
+		(SELECT
+		C9_PEDIDO, C9_PRODUTO, SUM(C9_QTDLIB) C9_QUANT
+		FROM SC9010 SC9 (NOLOCK)
+		WHERE SC9.D_E_L_E_T_ = ''
+			AND C9_PEDIDO = %Exp:SC5->C5_NUM%
+		GROUP BY C9_PEDIDO, C9_PRODUTO)SC9X     
+	WHERE
+		SC6X.C6_NUM = SC9X.C9_PEDIDO
+		AND SC6X.C6_PRODUTO = SC9X.C9_PRODUTO
+		AND (SC9X.C9_QUANT > SC6X.C6_QTDVEN  OR SC6X.C6_QTDENT > SC6X.C6_QTDVEN)
+	EndSql	 
+
+	SC9QTD->(dbGoTop())
+	While !SC9QTD->(EOF())	.and. SC9QTD->C9_QUANT > SC9QTD->C6_QTDVEN  //Se retornar .T., significa que algum item do processo que está com saldo maior
+		AADD(_aQtdDivg,{SC9QTD->C6_PRODUTO,SC9QTD->C6_QTDVEN,SC9QTD->C9_QUANT})
+		SC9QTD->(dbSkip())
+	EndDo
+	SC9QTD->(dbCloseArea())
+
+	If Len(_aQtdDivg) > 0
+		IIF(ExistBlock("RESTE014"),U_RESTE014(SC5->C5_NUM,6),.T.)
+	EndIf
+	//Fim do Bloco de validação das quantidades duplicadas	
+
+	//26/11/2024 - Diego Rodrigues - Melhoria para validar pedidos que não foram atualizados e possuem produtos da linha industrial
+		BeginSql Alias "LINDSC5"
+			SELECT
+				B5_XLINPRO
+			FROM SC6010 SC6 (NOLOCK)
+			INNER JOIN SB5010 SB5 (NOLOCK) ON SB5.D_E_L_E_T_ = '' AND B5_COD = C6_PRODUTO 
+											AND B5_FILIAL = C6_FILIAL AND B5_XLINPRO = '1'
+			INNER JOIN SC5010 SC5 (NOLOCK) ON SC5.D_E_L_E_T_ = '' AND C5_NUM = C6_NUM AND C5_XLININD = '2'
+			WHERE SC6.D_E_L_E_T_ = ''
+				AND C6_NUM = %Exp:SC5->C5_NUM%
+			GROUP BY B5_XLINPRO, C6_NUM
+		EndSql
+
+		if LINDSC5->(!EOF())
+			while !RecLock("SC5",.F.) ; enddo
+				SC5->C5_XLININD := LINDSC5->B5_XLINPRO
+			SC5->(MsUnLock()) 
+		endif
+		LINDSC5->(dbCloseArea())
+	//26/11/2024 - Diego Rodrigues - Melhoria para validar pedidos que não foram atualizados e possuem produtos da linha industrial
 
 	dbSelectArea("SE4")
 	SE4->(dbSetOrder(1))
@@ -72,6 +131,12 @@ user function M440STTS()
 				if !empty(SE4->E4_DESCRI)
 					SC9->C9_DESCPAG := SubStr(AllTrim(SE4->E4_DESCRI),1,Len(SC9->C9_DESCPAG))
 				endif
+				//Inicio do Bloco de validação das quantidades duplicadas
+				If Len(_aQtdDivg) > 0
+					SC9->C9_QTDLIB 	:= SC9->C9_QTDLIB/2
+					SC9->C9_QTDLIB2 := SC9->C9_QTDLIB2/2
+				EndIf
+				//Fim do Bloco de validação das quantidades duplicadas
 			SC9->(MSUNLOCK())
 			dbSelectArea("SC9")
 			SC9->(dbSetOrder(1))

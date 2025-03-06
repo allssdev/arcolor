@@ -45,6 +45,15 @@ Local _lRet := .T.
         endif
     endif
 
-    
+    // Verificação na tabela de inventário (SB2 ou tabela específica)
+    dbSelectArea("SB2")
+    SB2->(dbSetOrder(1))
+    If SB2->(MsSeek(FWFilial("SB2")+M->D3_COD+M->D3_LOCAL,.T.,.F.))
+        If !Empty(SB2->B2_DINVFIM) .and. SB2->B2_LOCAL = '01'
+            cLocCqOrig  := '09'
+            M->D3_LOCAL := '09'
+        EndIf
+    EndIf
+
 RestArea(_aArea)
 Return(_lRet)

@@ -234,23 +234,23 @@ BeginSql Alias cAliasTotal
         GROUP BY
             SCT.CT_DOC, SCT.CT_VEND, SA3.A3_NOME, SA3.A3_EMAIL, SA3.A3_GEREN, SA3.A3_SUPER, SCT.CT_DATA
         ) META
+    LEFT OUTER JOIN
+        %Exp:_cView% AS VDAS
+    ON 
+        VDAS.C5_EMISSAO						    BETWEEN %Exp:DTOS(_dDeData)% AND %Exp:DTOS(_dAtData)%
+        AND SUBSTRING(VDAS.C5_EMISSAO,1,6)      = META.CT_DOC
+        AND VDAS.C5_VEND1					    = META.CT_VEND
         LEFT OUTER JOIN
-            %Exp:_cView% AS VDAS
+            %table:SA3% AS SA31 (NOLOCK)
+        ON
+            SA31.A3_FILIAL						= %xFilial:SA3%
+            AND SA31.A3_COD						= META.A3_SUPER 
+            AND SA31.%notdel%
+        LEFT OUTER JOIN 
+            %table:SA3% AS SA32 (NOLOCK)                        
         ON 
-            VDAS.C5_EMISSAO						    BETWEEN %Exp:DTOS(_dDeData)% AND %Exp:DTOS(_dAtData)%
-            AND SUBSTRING(VDAS.C5_EMISSAO,1,6)      = META.CT_DOC
-            AND VDAS.C5_VEND1					    = META.CT_VEND
-            LEFT OUTER JOIN
-                %table:SA3% AS SA31 (NOLOCK)
-            ON
-                SA31.A3_FILIAL						= %xFilial:SA3%
-                AND SA31.A3_COD						= META.A3_SUPER 
-                AND SA31.%notdel%
-            LEFT OUTER JOIN 
-                %table:SA3% AS SA32 (NOLOCK)                        
-            ON 
-                SA32.A3_FILIAL						= %xFilial:SA3%
-                AND SA32.A3_COD						= META.A3_GEREN 
+            SA32.A3_FILIAL						= %xFilial:SA3%
+            AND SA32.A3_COD						= META.A3_GEREN 
                 AND SA32.%notdel%
 EndSql
 MemoWrite("\2.MemoWrite\" + cRotina + "_QRY_002.TXT",GetLastQuery()[02])
@@ -396,6 +396,15 @@ while !(cAliasMeta)->(EOF()) .AND. !lEnd
         (cAliasMeta)->(dbSkip())
         loop
     endif
+
+  /*  _cSupervisor    := (cAliasMeta)->A3_SUPER
+    _cMails         := "lividellacorte@gmail.com;diego.rodrigues@allss.com.br; elodie.fernandez@arcolor.com.br;mayara.avanci@arcolor.com.br;" 
+    _cMail          :=  _cMails //AllTrim((cAliasMeta)->SUP_EMAIL) + iif(!Empty(_cMails),";" + _cMails,"")
+    _cCC 	        := "livia.dcorte@allss.com.br" //SuperGetMV("MV_XCC052"   ,.F.,'rodrigo.telecio@allss.com.br')
+    _cBCC           := "livia.dcorte@allss.com.br" //SuperGetMV("MV_XBCC052"  ,.F.,'rodrigo.telecio@allss.com.br')*/
+
+
+
     _cSupervisor    := (cAliasMeta)->A3_SUPER
     _cMails         := AllTrim(SuperGetMV("MV_XFRO052"  ,.F.,'rodrigo.telecio@allss.com.br'))
     _cMail          := AllTrim((cAliasMeta)->SUP_EMAIL) + iif(!Empty(_cMails),";" + _cMails,"")
@@ -406,6 +415,8 @@ while !(cAliasMeta)->(EOF()) .AND. !lEnd
     //_cAssunto       := "[ARCOLOR] Acompanhamento de vendas - Posição em " + DtoC(dDataBase) +  " - Período de " + DtoC(_dDeData) + " a " + DtoC(_dAtData) + " - Resumo do Supervisor(a) - " + AllTrim((cAliasMeta)->A3_SUPNOME)
     //_cHtml          := "<H2>Acompanhamento de vendas - Posição em " + DtoC(dDataBase) + " - Período de " + DtoC(_dDeData) + " a " + DtoC(_dAtData) + " - Resumo do Supervisor(a) - " + AllTrim((cAliasMeta)->A3_SUPNOME) + CLRF
     _cAssunto       := "[Arcolor] Acompanhamento de vendas - Posição em " + AllTrim((cAliasMeta)->UO_DESC)  +  " - Referente ao mês " + DtoC(_dDeData) + " a " + DtoC(_dAtData) + " - Resumo do Supervisor(a) - " + AllTrim((cAliasMeta)->A3_SUPNOME)
+   //_cAssunto       := "[TESTE][Arcolor] Acompanhamento de vendas - Posição em " + AllTrim((cAliasMeta)->UO_DESC)  +  " - Referente ao mês " + DtoC(_dDeData) + " a " + DtoC(_dAtData) + " - Resumo do Supervisor(a) - " + AllTrim((cAliasMeta)->A3_SUPNOME)
+    //
     //<img width='500' height='200' src='cid:ID_" + _cLogo + "'>
     _cHtml          := "<H2>Acompanhamento de vendas - Posição em " + AllTrim((cAliasMeta)->UO_DESC)  + " - Referente ao mês " + DtoC(_dDeData) + " a " + DtoC(_dAtData) + " - Resumo do Supervisor(a) - " + AllTrim((cAliasMeta)->A3_SUPNOME) + CLRF
     while !(cAliasMeta)->(EOF()) .AND. !lEnd .AND. _cSupervisor == (cAliasMeta)->A3_SUPER
@@ -422,24 +433,11 @@ while !(cAliasMeta)->(EOF()) .AND. !lEnd
  	    _cHtml          += "    </thead> "                                                              + CLRF
         _cHtml          += " 	<thead bgcolor='#808080'> "                                             + CLRF
         _cHtml          += " 		<tr border='1'> "                                                   + CLRF
-<<<<<<< .mine
-        _cHtml          += " 			<th border='1' align='center' width='150'>                </th> " + CLRF
-        _cHtml          += " 			<td border='1' align='center' width='150'>TOTAL DE PEDIDOS</td> " + CLRF
-        _cHtml          += " 			<td border='1' align='center' width='150'>META            </td> " + CLRF
-        _cHtml          += " 			<td border='1' align='center' width='150'>REALIZADO       </td> " + CLRF
-        _cHtml          += " 			<td border='1' align='center' width='150'>SALDO           </td> "      + CLRF
-||||||| .r1194
-        _cHtml          += " 			<th border='1' align='center' width='150'>         </th> "      + CLRF
-        _cHtml          += " 			<td border='1' align='center' width='150'>META     </td> "      + CLRF
-        _cHtml          += " 			<td border='1' align='center' width='150'>REALIZADO</td> "      + CLRF
-        _cHtml          += " 			<td border='1' align='center' width='150'>SALDO </td> "      + CLRF
-=======
         _cHtml          += " 			<th border='1' align='center' width='150'>                </th> " + CLRF
         _cHtml          += " 			<td border='1' align='center' width='150'>META            </td> " + CLRF
         _cHtml          += " 			<td border='1' align='center' width='150'>REALIZADO       </td> " + CLRF
         _cHtml          += " 			<td border='1' align='center' width='150'>SALDO           </td> " + CLRF
         _cHtml          += " 			<td border='1' align='center' width='150'>QTD DE PEDIDOS</td> " + CLRF
->>>>>>> .r1265
         _cHtml          += " 		</tr> "                                                             + CLRF
         _cHtml          += " 	</thead> "                                                              + CLRF
         _cHtml          += " 	<tbody> "                                                               + CLRF
@@ -463,7 +461,6 @@ while !(cAliasMeta)->(EOF()) .AND. !lEnd
 
             _cHtml   	    += " 		<tr> "                                                                                                                      + CLRF
             _cHtml   	    += " 			<th valign='top' align='center' border='1' width='150'>"    + AllTrim((cAliasMeta)->UO_DESC)              + "</th> "    + CLRF
-            _cHtml   	    += " 			<td valign='top' align='right'  border='1' width='150'>"    + Transform(_nTotalPedidos , "@E 999,999,999,999") + "</td> "    + CLRF                
             _cHtml   	    += " 			<td valign='top' align='right'  border='1' width='150'>R$ " + Transform(_nMeta , "@E 999,999,999,999.99") + "</td> "    + CLRF                
             _cHtml   	    += " 			<td valign='top' align='right'  border='1' width='150'>R$ " + Transform(_nReal , "@E 999,999,999,999.99") + "</td> "    + CLRF
             _cHtml   	    += " 			<td valign='top' align='right'  border='1' width='150'>R$ " + Transform(_nSaldo, "@E 999,999,999,999.99") + "</td> "    + CLRF
@@ -602,7 +599,7 @@ BeginSql Alias 'SC5TMP'
     FROM
         %table:SC5% AS SC5 (NOLOCK) INNER JOIN %table:SA3% AS SA3 (NOLOCK)
         ON SC5.C5_VEND1 = SA3.A3_COD 
-        AND SA3.A3_SUPER = %Exp:_cSuper% 
+        AND (SA3.A3_SUPER = %Exp:_cSuper%  OR  SC5.C5_VEND1 = %Exp:_cVend%)
         AND SA3.%notdel%
     WHERE
         SC5.C5_FILIAL						= %xFilial:SC5%
@@ -621,4 +618,3 @@ endif
 SC5TMP->(dbCloseARea())
 
 Return _nQtdPv
-

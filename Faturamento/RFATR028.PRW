@@ -52,13 +52,13 @@ If !(SubStr(cAcesso,160,1) == "S" .AND. SubStr(cAcesso,168,1) == "S" .AND. SubSt
    Return(Nil)
 EndIf
 
-/*// - VERIFICA SE HÁ O EXCEL INSTALADO NA MÁQUINA EM USO
+// - VERIFICA SE HÁ O EXCEL INSTALADO NA MÁQUINA EM USO
 If __cUserID <> '000000'
 	If !ApOleClient('MsExcel')
 		Msgbox('Excel não instalado.',_cRotina +"03",'ALERT')
 	   Return(Nil)
 	EndIf
-EndIf*/
+EndIf
 _cTitulo  := (" Relatório comparativo de regras de negócio. Comparando regra " + MV_PAR01 + " e regra " + MV_PAR02 + " - " + _cRotina)
 
 _cTitulo2 := ("PARÂMETROS")

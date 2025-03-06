@@ -817,7 +817,7 @@ user function RFATA26I(_cTpLib)
 	Enddo
 	//C9_STATUS: 01=Bl.Crédito;02=Bl.Estoque;05=Bl.WMS;06=Bl.TMS;10=Faturado;99=Liberado
 	dbSelectArea(_cTbTmp1)
-	if _cTpLib == "E" .AND. __cUserId$_cUsrExp
+	if _cTpLib == "E" .AND. (__cUserId$_cUsrExp .or. __cUserId$_cUsrAdm)
 		if Empty((_cTbTmp1)->C9_ORDSEP)
 			if ((_cTbTmp1)->C9_STATUS=="02" .OR. (_cTbTmp1)->C9_STATUS=="99")
 				dbSelectArea("SC5")
@@ -938,6 +938,8 @@ user function RFATA26I(_cTpLib)
 															AND B5_FILIAL = C9_FILIAL AND B5_XLINPRO = '1'
 							WHERE SC9.D_E_L_E_T_ = ''
 								AND C9_PEDIDO = %Exp:(_cTbTmp1)->C9_PEDIDO%
+								AND C9_BLCRED = ''
+								AND C9_NFISCAL = ''
 							GROUP BY B5_COD,B5_CEME,B5_XLINPRO,C9_QTDLIB
 							EndSql
 							While SC9IND->(!EOF())
@@ -945,7 +947,7 @@ user function RFATA26I(_cTpLib)
 								SC9IND->(dbSkip())
 							EndDo
 							SC9IND->(dbCloseArea())
-							If ExistBlock("RFATE072") .AND. SC5->C5_XLININD == '1' .AND. SC5->C5_TPOPER == '01'
+							If ExistBlock("RFATE072") .AND. SC5->C5_XLININD == '1' .AND. SC5->C5_TPOPER == '01' .and. !Empty(_aProd)
 								U_RFATE072(	(_cTbTmp1)->C9_PEDIDO,2,_aProd)
 							EndIf	
 						//24/07/2024 - Diego Rodrigues - Envio de e-mail para pedidos da linha Industrial				
@@ -972,6 +974,8 @@ user function RFATA26I(_cTpLib)
 															AND B5_FILIAL = C9_FILIAL AND B5_XLINPRO = '1'
 							WHERE SC9.D_E_L_E_T_ = ''
 								AND C9_PEDIDO = %Exp:(_cTbTmp1)->C9_PEDIDO%
+								AND C9_BLCRED = ''
+								AND C9_NFISCAL = ''
 							GROUP BY B5_COD,B5_CEME,B5_XLINPRO,C9_QTDLIB
 						EndSql
 							While SC9IND->(!EOF())
@@ -979,7 +983,7 @@ user function RFATA26I(_cTpLib)
 								SC9IND->(dbSkip())
 							EndDo
 							SC9IND->(dbCloseArea())
-							If ExistBlock("RFATE072") .AND. SC5->C5_XLININD == '1'
+							If ExistBlock("RFATE072") .AND. SC5->C5_XLININD == '1' .AND. SC5->C5_TPOPER == '01' .and. !Empty(_aProd)
 								U_RFATE072(	(_cTbTmp1)->C9_PEDIDO,2,_aProd)
 							EndIf	
 						//24/07/2024 - Diego Rodrigues - Envio de e-mail para pedidos da linha Industrial								

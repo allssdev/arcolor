@@ -69,8 +69,8 @@ If INCLUI
 	__ReadVar := "M->"+_cIniCpo+"_COD"
 	If !Empty(_cCod)
 		&(__ReadVar) := _cCod
-	Else	//If Empty(&(__ReadVar))
-		&(__ReadVar) := GETSXENUM(_cAlias,_cIniCpo+"_COD")
+	//Else	//If Empty(&(__ReadVar))
+	//	&(__ReadVar) := GETSXENUM(_cAlias,_cIniCpo+"_COD")
 	EndIf
 	__ReadVar := "M->"+_cIniCpo+"_LOJA"
 	If !Empty(_cCod) .AND. !Empty(_cLoja)

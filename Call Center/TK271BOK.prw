@@ -46,7 +46,9 @@ Local _aSavACS   := ACS->(GetArea())
 Local _aSavACN   := ACN->(GetArea())
 Local _aSavSZA   := SZA->(GetArea())
 Local _cLogx     := ""
- 
+Local _nPProd  	 := aScan(aHeader,{|x|AllTrim(x[02])=="UB_PRODUTO"})
+//Local n		 := 0
+
 Private _lRet    := .T.
 Private _cRotina := "TK271BOK"
 Private _cInd := "2"
@@ -56,7 +58,7 @@ SU7->(dbOrderNickName("U7_CODUSU"))		//dbSetOrder(4)// - U7_FILIAL+U7_CODUSU
 If SU7->(dbSeek(xFilial("SU7") + __cUserID,.F.,.F.))		// - Valida o perfil do usuário conforme cadastro dos operadores
 	If SU7->U7_TIPOATE $ '2|5' // - Televendas|Tmk e Tlv
 		If !Upper(AllTrim(FunName())) == "TMKA350" // - LINHA INCLUIDA PARA VALIDAR A ROTINA QUE ESTÁ SENDO CHAMADA.
-			Private _cRotina   := "TK271BOK"
+			//Private _cRotina   := "TK271BOK"
 			Private _cBloq     := Alltrim(SA1->A1_MSBLQL)
 			Private _cAtend    := M->UA_NUM
 			Private _cCli      := M->UA_CLIENTE
@@ -152,7 +154,6 @@ If SU7->(dbSeek(xFilial("SU7") + __cUserID,.F.,.F.))		// - Valida o perfil do us
 		 _lRet := .T.
 	EndIf
 EndIf
-
 	//Início  - Trecho adicionado por Diego Rodrigues em 15/08/2024 para validação de produto da linha industrial
 	If (IIF(EXISTBLOCK("RTMKE035"),U_RTMKE035(),.F.))
 			M->UA_XLININD := _cInd

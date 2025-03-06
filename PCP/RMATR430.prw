@@ -347,6 +347,8 @@ DEFAULT lFirstCb := .T.
 cCusto := If(cCusto=Nil,'',AllTrim(Upper(cCusto)))
 If cCusto == 'ULT PRECO'
 	nDecimal := TamSX3('B1_UPRC')[2]
+ElseIf cCusto == 'PRECO_FUTURO'
+	nDecimal := TamSX3('B1_FATLUC')[2]
 ElseIf 'MEDIO' $ cCusto
 	nDecimal := TamSX3('B2_CM1')[2]
 Else
@@ -357,7 +359,8 @@ EndIf
 //³ De acordo com o custo da planilha lida monta a cotacao de    ³
 //³ conversao e a variavel cMoeda1 usada no cabecalho.           ³
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-If Str(nQualCusto,1) $ "3/4/5/6"
+//If Str(nQualCusto,1) $ "3/4/5/6"
+If Str(nQualCusto,1) $ "3/4/5" //07/10/2024 - Diego Rodrigues - Adequação para atender ao processo de preço futuro dos custos
 	nCotacao:=ConvMoeda(dDataBase,,1,Str(nQualCusto-1,1))
 	cMoeda1	:=GetMV("MV_SIMB"+Str(nQualCusto-1,1,0))
 	If Empty(cMoeda1)
@@ -770,6 +773,7 @@ EndIf
 cBuffer := Space(1)
 Fread(nHdl1,@cBuffer,1)
 nQualCusto := Val(cBuffer)
+nQualCusto := IIf(cArqMemo = "PRECO_FUTURO",6,nQualCusto) //07/10/2024 - Diego Rodrigues - Adequação para atender ao processo de preço futuro dos custos
 If nQualCusto < 1 .Or. nQualCusto > 8
 	nQualCusto := 1
 EndIf
@@ -796,7 +800,8 @@ ElseIf nQualCusto == 4
 ElseIf nQualCusto == 5
 	cCusto := "MEDIO "+MV_MOEDA4
 ElseIf nQualCusto == 6
-	cCusto := "MEDIO "+MV_MOEDA5
+	//cCusto := "MEDIO "+MV_MOEDA5
+	cCusto := "PRECO_FUTURO"	//07/10/2024 - Diego Rodrigues - Adequação para atender ao processo de preço futuro dos custos
 ElseIf nQualCusto == 7
 	cCusto := "ULT PRECO"
 ElseIf nQualCusto == 8
@@ -922,7 +927,8 @@ If nQualCusto < 8
 	ElseIf nQualCusto == 5
 		cPictVal := x3Picture('B2_CM4')
 	ElseIf nQualCusto == 6
-		cPictVal := x3Picture('B2_CM5')
+		//cPictVal := x3Picture('B2_CM5')
+		cPictVal := x3Picture('B1_FATLUC') //07/10/2024 - Diego Rodrigues - Adequação para atender ao processo de preço futuro dos custos
 	ElseIf nQualCusto == 7
 		cPictVal := x3Picture('B1_UPRC')
 	Else
@@ -1150,7 +1156,8 @@ Else
 	ElseIf nQualCusto == 5
 		cPictVal := x3Picture('B2_CM4')
 	ElseIf nQualCusto == 6
-		cPictVal := x3Picture('B2_CM5')
+		//cPictVal := x3Picture('B2_CM5')
+		cPictVal := x3Picture('B1_FATLUC')  //07/10/2024 - Diego Rodrigues - Adequação para atender ao processo de preço futuro dos custos
 	ElseIf nQualCusto == 7
 		cPictVal := x3Picture('B1_UPRC')
 	Else

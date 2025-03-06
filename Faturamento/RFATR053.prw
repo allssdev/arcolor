@@ -412,7 +412,6 @@ while !(cAliasMeta)->(EOF()) .AND. !lEnd
     _cHtml          += " 	<thead bgcolor='#808080'> "                                             + CLRF
     _cHtml          += " 		<tr border='1'> "                                                   + CLRF
     _cHtml          += " 			<th border='1' align='center' width='150'>         </th> "      + CLRF
-    _cHtml          += " 			<td border='1' align='center' width='150'>TOTAL DE PEDIDOS</td> "      + CLRF
     _cHtml          += " 			<td border='1' align='center' width='150'>META     </td> "      + CLRF
     _cHtml          += " 			<td border='1' align='center' width='150'>REALIZADO</td> "      + CLRF
     _cHtml          += " 			<td border='1' align='center' width='150'>SALDO </td> "         + CLRF
@@ -438,7 +437,6 @@ while !(cAliasMeta)->(EOF()) .AND. !lEnd
         _nTotalPedidos := RFATR51PV(DtoS(_dDeData), DtoS(_dAtData), (cAliasMeta)->A3_SUPER)
         _cHtml   	    += " 		<tr> "                                                                                                                      + CLRF
         _cHtml   	    += " 			<th valign='top' align='center' border='1' width='150'>"    + AllTrim((cAliasMeta)->UO_DESC)              + "</th> "    + CLRF
-        _cHtml   	    += " 			<td valign='top' align='right'  border='1' width='150'>" + Transform(_nTotalPedidos , "@E 999,999,999,999") + "</td> "    + CLRF                
         _cHtml   	    += " 			<td valign='top' align='right'  border='1' width='150'>R$ " + Transform(_nMeta , "@E 999,999,999,999.99") + "</td> "    + CLRF                
         _cHtml   	    += " 			<td valign='top' align='right'  border='1' width='150'>R$ " + Transform(_nReal , "@E 999,999,999,999.99") + "</td> "    + CLRF
         _cHtml   	    += " 			<td valign='top' align='right'  border='1' width='150'>R$ " + Transform(_nSaldo, "@E 999,999,999,999.99") + "</td> "    + CLRF

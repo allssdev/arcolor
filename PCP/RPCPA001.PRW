@@ -915,5 +915,8 @@ elseif  _dDatEnt < _dDatIni
 elseif empty(_cCboQtd)
 	Aviso(_cRotina + "_099",'A quantidade de OPs previstas não foi definida. Verifique para continuar...',{"Ok"},3)
 	_lRet := .F.
+elseif !U_RPCPE019(_cCodProd)
+	Aviso(_cRotina + "_100",'Problema no roteiro. Verifique para continuar...',{"Ok"},3)
+	_lRet := .F.
 endif
 return(_lRet)

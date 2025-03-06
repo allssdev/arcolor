@@ -74,10 +74,10 @@ user function RFATR042()
 			MSGBOX("Usuário sem permissão para gerar relatórios em Excel. Informe o Administrador.",_cRotina +"_003","ALERT")
 			return nil
 		EndIf
-		/*If !ApOleClient('MsExcel')
+		If !ApOleClient('MsExcel')
 			MSGBOX("Excel não está instalado nessa estação.",_cRotina +"_004","ALERT")
 			return nil
-		EndIf*/
+		EndIf
 		_cTitulo   := ("Lead Time - Ciclo de Atendimento")
 		_cTitulo2  := ("Parâmetros")	
 		_cMV_PAR01 := MV_PAR01

@@ -23,10 +23,10 @@ user function RCOMR005()
 	 //  MsgStop('Usuário sem permissão para exportar dados para Excel, informe o Administrador!',_cRotina +"001")
 	 // Return(Nil)
 	//endif
-	if !ApOleClient('MsExcel')
+	/*if !ApOleClient('MsExcel')
 	   MsgStop('Excel não instalado!',_cRotina +"002")
 	   //return nil
-	endif
+	endif*/
 	if Select(_cAliasSX1)
 		(_cAliasSX1)->(dbCloseArea())
 	endif
@@ -812,17 +812,17 @@ static function ProcRel()
 				Break
 			endif
 			//Caso não tenha sido definido um local, o arquivo será gerado na pasta TEMP
-			if empty(_cFileTMP)
+			/*if empty(_cFileTMP)
 				_cFileTMP := GetTempPath() + GetNextAlias()+".xml"
 			endif
 			if file(_cFileTMP)
-				if _lUsrDef
+				if _cFile
 					MsgAlert("O arquivo '"+_cFileTMP+"' já existia no destino. Portanto, o nome e caminho do arquivo será alterado!",_cRotina+"_006")
 				endif
 				while file(_cFileTMP)
 					_cFileTMP := GetTempPath() + GetNextAlias()+".xml"
 				enddo
-			endif
+			endif*/
 	/*		//26/08/2016 - ANDERSON C. P. COELHO - TRECHO TEMPORÁRIO UTILIZADO PARA AUDITAR OS ARQUIVOS GERADOS PELO USUÁRIO (ENVIO POR E-MAIL PARA anderson.coelho@allss.com.br;arthur.silva@allss.com.br;renan.santos@allss.com.br)
 			//RCFGM001(Titulo,_cMsg,_cMail,_cAnexo,_cFromOri,_cBCC,_cAssunto,_lExcAnex,_lAlert)
 				If ExistBlock("RCFGM001") .AND. DTOS(Date()) <= "20161231"
@@ -864,12 +864,12 @@ static function ProcRel()
 			if !File(_cFile)
 				_cFile := ""
 				Break
-			endif
+			endif/*
 			oMsExcel := MsExcel():New()
 			oMsExcel:WorkBooks:Open(_cFile)
-			oMsExcel:SetVisible(.T.)
+			oMsExcel:SetVisible(.T.)*/
 			MsgInfo("Arquivo '"+_cFile+"' salvo no local definido!",_cRotina+"_003")
-			oMsExcel := oMsExcel:Destroy()
+			//oMsExcel := oMsExcel:Destroy()
 		else
 			MsgInfo("Atenção! Sem dados a serem apresentados!",_cRotina+"_004")
 		endif

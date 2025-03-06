@@ -41,10 +41,10 @@ If !(SubStr(cAcesso,160,1) == "S" .AND. SubStr(cAcesso,168,1) == "S" .AND. SubSt
 	MsgStop('Usuário sem permissão para exportar dados para Excel, informe o Administrador!',_cRotina +"001")
 	Return(Nil)
 EndIf
-/*If !ApOleClient('MsExcel')
+If !ApOleClient('MsExcel')
 	MsgStop('Excel não instalado!',_cRotina +"002")
 	Return(Nil)
-EndIf*/
+EndIf
 Processa( {|lEnd| SelDados(@lEnd)},"Posição dos pedidos","Gerando dados em Excel. AGUARDE . .. ...",.F.)
 
 RestArea(_aSavArea)

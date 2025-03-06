@@ -245,13 +245,15 @@ user function FT100RNI()
 				EndIf
 				dbSelectArea("SC5")
 				SC5->(dbSetOrder(1))
-				If _lC5_LOGSTAT
-					_cLog := Alltrim(SC5->C5_LOGSTAT)
-					while !RecLock("SC5",.F.) ; enddo
-						SC5->C5_LOGSTAT := _cLog + _lEnt + Replicate("-",60) + _lEnt + DTOC(Date()) + " - " + Time() + " - " +;
-											UsrRetName(__cUserId) + _lEnt + _cLogx
-						SC5->C5_BLQ := aProdDesc[1][7]
-					SC5->(MsUnLock())
+				If SC5->(MsSeek(xFilial("SC5") + M->C5_NUM,.T.,.F.))
+					If _lC5_LOGSTAT
+						_cLog := Alltrim(SC5->C5_LOGSTAT)
+						while !RecLock("SC5",.F.) ; enddo
+							SC5->C5_LOGSTAT := _cLog + _lEnt + Replicate("-",60) + _lEnt + DTOC(Date()) + " - " + Time() + " - " +;
+												UsrRetName(__cUserId) + _lEnt + _cLogx
+							SC5->C5_BLQ := aProdDesc[1][7]
+						SC5->(MsUnLock())
+					EndIf
 				EndIf
 				//16/11/2016 - Anderson Coelho - Novo Log para os Pedidos Inserido
 	           	If ExistBlock("RFATL001")
@@ -529,6 +531,7 @@ static function AvDesIte(_cItem,_cProd)
 	Local _cQRYTMP    := GetNextAlias()
 	Local _nLinha     := 0
 	Local _nTamDesc   := TamSx3("ACN_DESCON")[02]
+	Local _nPercVar	  := SuperGetMV("MV_XPERCVAR",,0.22)
 
 	Private _cLog	  := ""
 	Private _nQuant   := 0
@@ -587,7 +590,7 @@ static function AvDesIte(_cItem,_cProd)
 			                            AND AUX.%NotDel% 
 			                         ) 
 			  AND ACN.%NotDel% 
-		UNION ALL 
+		UNION ALL /*
 		//AVALIO SE HÁ REGRA POR GRUPO - NIVEL 2
 			SELECT 2 AS [NIVEL], ACN_CODREG, ACN_CODPRO, ACN_DESCON, ACN_QUANTI, ACN_PROMOC 
 			FROM %table:ACN% ACN (NOLOCK)
@@ -622,7 +625,7 @@ static function AvDesIte(_cItem,_cProd)
 			                            AND AUX.%NotDel% 
 			                         )
 			  AND ACN.%NotDel% 
-		UNION ALL 
+		UNION ALL */
 		//AVALIO SE HÁ REGRA PROMOCIONAL POR QUANTIDADE - NIVEL 3
 			SELECT 3 AS [NIVEL], ACN_CODREG, ACN_CODPRO, ACN_DESCON, ACN_QUANTI, ACN_PROMOC 
 			FROM %table:ACN% ACN (NOLOCK)
@@ -687,7 +690,7 @@ static function AvDesIte(_cItem,_cProd)
 			                         ) 
 			  AND ACN.%NotDel%
 		) REGRAS 
-		ORDER BY REGRAS.ACN_PROMOC, REGRAS.NIVEL
+		ORDER BY REGRAS.NIVEL,REGRAS.ACN_PROMOC
 	EndSql
 
 	//Gerando o arquivo de log
@@ -699,6 +702,7 @@ static function AvDesIte(_cItem,_cProd)
 		aProdDesc[01][07]	:= "02"
 	Else
 		If (_cQRYTMP)->NIVEL <> 4
+		//cCodReg		:= (_cQRYTMP)->ACN_CODREG
 		_nDescAux := Round((_cQRYTMP)->ACN_DESCON,_nTamDesc) //Desconto permitido selecionado
 		EndiF
 	EndIf
@@ -758,13 +762,15 @@ static function AvDesIte(_cItem,_cProd)
 		aProdDesc[01][06] := 0
 	EndIf
 	//Verifico se o desconto do pedido (item) é maior que o permitido
-	If (NoRound(aProdDesc[01][05],0) > NoRound(aProdDesc[01][06],0)) .Or. Empty(cCodReg)
+	If ((NoRound(aProdDesc[01][05],0) > NoRound(aProdDesc[01][06]+_nPercVar,0)) .and. (NoRound(aProdDesc[01][05],0) > NoRound(aProdDesc[01][06]-_nPercVar,0))) .Or. Empty(cCodReg)
 		_lRet := .F.
 		If !Empty(cCodReg)
 			aProdDesc[01][07] := "01" //Código do bloqueio
 		Else
 			aProdDesc[01][07] := "02" //Código do bloqueio
 		EndIf
+	//ElseIf ((NoRound(aProdDesc[01][05],0) < NoRound(aProdDesc[01][06],0)) .and. (NoRound(aProdDesc[01][05],0) < NoRound(aProdDesc[01][06],0)))
+	//	aProdDesc[01][07] := "03" //Código do bloqueio
 	Else
 		aProdDesc[01][07] := ""   //Código do bloqueio
 	EndIf

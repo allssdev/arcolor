@@ -89,6 +89,7 @@ Local cCodOpe
 Local aRecSC9	:= {}
 Local aOrdSep	:= {}
 Local _aTesEst	:= {}
+Local _aSepEst	:= {}
 
 Local cArm		:= Space(Tamsx3("B1_LOCPAD")[1])
 Local cPedido	:= Space(Tamsx3("C9_PEDIDO")[1])
@@ -163,9 +164,9 @@ EndIf
 		BeginSql Alias _cSC6TMP
 			SELECT
 				C6_NUM, C6_TES, F4_TEXTO, F4_ESTOQUE
-			FROM SC6010 SC6 (NOLOCK)
-			INNER JOIN SC5010 SC5 (NOLOCK) ON SC5.C5_NUM = SC6.C6_NUM AND C5_TPOPER NOT IN %Exp:_cTpOper% 
-			INNER JOIN SF4010 SF4 (NOLOCK) ON SF4.%NotDel% AND SF4.F4_CODIGO = SC6.C6_TES 
+			FROM %table:SC6% SC6 (NOLOCK)
+			INNER JOIN %table:SC5% SC5 (NOLOCK) ON SC5.C5_NUM = SC6.C6_NUM AND C5_TPOPER NOT IN %Exp:_cTpOper% 
+			INNER JOIN %table:SF4% SF4 (NOLOCK) ON SF4.%NotDel% AND SF4.F4_CODIGO = SC6.C6_TES 
 										   AND SF4.F4_ESTOQUE = 'N'
 			WHERE SC6.%NotDel%
 			AND SC6.C6_NUM = %Exp:SC9->C9_PEDIDO%
@@ -428,6 +429,48 @@ Next
 If !Empty(aLogOS)
 	LogACDA100()
 Endif
+
+//AllSystem - 11/12/2024 - Diego Rodrigues - Melhoria para valida็ใo se algum item ativo na SC9 nใo foi gerado na ordem de separa็ใo
+		if Select(_cSC6TMP) > 0
+			(_cSC6TMP)->(dbCloseArea())
+		endif	
+
+		BeginSql Alias _cSC6TMP
+			SELECT
+				C9_PEDIDO,C9_ITEM,C9_PRODUTO, C9_QTDLIB
+			FROM %table:SC9% SC9 (NOLOCK)
+			WHERE   SC9.D_E_L_E_T_ = ''
+					AND C9_PEDIDO = %Exp:SC9->C9_PEDIDO%
+					AND C9_BLEST = ''
+					AND C9_BLCRED = ''
+					AND NOT EXISTS ( SELECT	
+										TOP 1 1
+										FROM %table:CB8% CB8 (NOLOCK)
+										WHERE CB8.D_E_L_E_T_ = ''
+										AND C9_PEDIDO = CB8_PEDIDO
+										AND C9_ITEM = CB8_ITEM
+										AND C9_SEQUEN = CB8_SEQUEN
+										AND C9_PRODUTO = CB8_PROD
+										)
+			ORDER BY C9_PEDIDO, C9_ITEM
+		EndSql	
+
+		dbSelectArea(_cSC6TMP)
+		(_cSC6TMP)->(dbGoTop())
+		While !(_cSC6TMP)->(EOF())	//Se retornar .T., significa que algum item do processo deixarแ o estoque negativo
+			AADD(_aSepEst,{(_cSC6TMP)->C9_PRODUTO,(_cSC6TMP)->C9_QTDLIB,0})
+			(_cSC6TMP)->(dbSkip())
+		EndDo
+		if Select(_cSC6TMP) > 0
+			(_cSC6TMP)->(dbCloseArea())
+		endif	
+
+		If Len(_aSepEst) > 0
+			TELAERRO2(_aSepEst)
+			return NIL	
+		EndIf
+//Fim da Melhoria
+
 Return
 
 STATIC Function GeraOSepNota( cMarca, lInverte, cNotaSerie)
@@ -1322,6 +1365,49 @@ Activate MsDialog oDlgError Centered
 
 MsgInfo("Devido a problemas relacionados com a TES a Ordem de separa็ใo nใo serแ gerada. Avise o departamento contabil. IMPORTANTE: Estonar as libera็๕es de estoque ap๓s os devidos ajustes.","[RFATA007_090] - Aviso ")
 
+Return()
+
+
+/*
+ÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜÜ
+ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+ฑฑษออออออออออัออออออออออหอออออออัออออออออออออออออออออออหออออออัอออออออออออปฑฑ
+ฑฑบPrograma  ณTELAERRO    บAutor  ณDiego Rodrigues บ Data ณ  11/08/2023   บฑฑ
+ฑฑฬออออออออออุออออออออออสอออออออฯออออออออออออออออออออออสออออออฯอออออออออออนฑฑ
+ฑฑบDesc.     ณ Sub-Rotina para demonstrar os lotes sem saldo na tela      บฑฑ
+ฑฑฬออออออออออุออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออนฑฑ
+ฑฑบUso       ณ Programa Principal                                         บฑฑ
+ฑฑศออออออออออฯออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผฑฑ
+ฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑฑ
+฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿฿
+*/
+
+Static Function TELAERRO2(_aSepEst)
+Private oDlgError
+Private oBrowse
+
+//Monta o array de campos
+aCpoCom := {"Produto", "Qtd Pedido", "Qtd. Liberada"}
+
+Define MsDialog oDlgError From 000,000 To 500,750 Title "[MTA455SLD] - Produtos que nใo constam na ordem de separa็ใo" Pixel
+
+//Monta a barra de bot๕es
+Define ButtonBar oBar size 20,20 3D TOP of oDlgError
+Define Button Resource "CANCEL" Of oBar Action (::End()) //Prompt "Fechar" ToolTip "Fecha a Tela" 
+oBar:bRClicked:={ || AllwaysTrue() }
+
+@ 025,005 Say "Os produtos abaixo cortados na libera็ใo de estoque : " Pixel Of oDlgError
+
+oBrowse := TWBrowse():New(3.0, 0.5, 370, 190,, aCpoCom, {50,50,150,50}, oDlgError,,,,,,,,,,,, .T.)
+ oBrowse:SetArray(_aSepEst)
+oBrowse:bLine := {||{ _aSepEst[oBrowse:nAt,01],;
+_aSepEst[oBrowse:nAt,02],;
+_aSepEst[oBrowse:nAt,03]} }
+oBrowse:Refresh()
+
+Activate MsDialog oDlgError Centered
+
+MsgInfo("Devido a problemas com os itens na ordem de separa็ใo. Avise o administrador do Sistema.","[RFATA007_091] - Aviso ")
 Return()
 
 

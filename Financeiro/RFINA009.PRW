@@ -44,6 +44,7 @@ Static Function GERAPA(lEnd)
     Local _cBanco     := "341"
     Local _cAgencia   := "6748"
     Local _cConta     := "08277"
+    Local _cPrefixo   := "CON"
 
     // Executa a query no banco de dados e armazena os resultados em _aDados
     BeginSql Alias "GERPA"

@@ -59,6 +59,10 @@ If _lRet .AND. ExistTrigger(AllTrim(SubStr(__ReadVar,AT(">",__ReadVar)+1)))
 	EvalTrigger()
 EndIf
 
+If ExistBlock("RTMKE037")
+	ExecBlock("RTMKE037")
+EndIf
+
 __ReadVar    := __RVarBkp
 &(__ReadVar) := _cRVarBkp
 

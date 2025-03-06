@@ -68,7 +68,9 @@ user function MT010INC()
 		endif
 	endif
 	//14/08/2024 - Diego Rodrigues - Envio de mensagens para os responsaveis informando que houve um cadastro de novo produto
-	U_RESTE013(Alltrim(SB1->B1_COD),Alltrim(SB1->B1_DESC))
+	If SB1->B1_TIPO $ 'MP/EM'
+		U_RESTE013(Alltrim(SB1->B1_COD),Alltrim(SB1->B1_DESC))
+	EndIf
 
 //	RestArea(_aSavAIF) removido tambem restarea por errolog na inclusao de produto
 	RestArea(_aSavSB1)

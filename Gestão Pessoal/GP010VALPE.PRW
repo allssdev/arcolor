@@ -63,7 +63,20 @@ user function GP010VALPE()
 					_nOpcAuto := 4
 					//Fim FB
 				else
-					_cCodCli := Padr(GETSXENUM("SA1","A1_COD"), TamSx3("A1_COD")[01])
+					BeginSql Alias "SA1NUM"
+						SELECT 
+							MAX(A1_COD) A1_COD
+						FROM SA1010 SA1 (NOLOCK)
+						WHERE SA1.D_E_L_E_T_ = ''
+							  AND A1_COD NOT IN ('999999')
+						ORDER BY A1_COD
+					EndSql
+
+					If SA1NUM->(!EOF())
+						_cCodCli := cValToChar(Strzero(Val(SA1NUM->A1_COD)+1,6))
+					EndIf
+					SA1NUM->(DbCloseArea())
+					//_cCodCli := Padr(GETSXENUM("SA1","A1_COD"), TamSx3("A1_COD")[01])
 					_cLojCli := Padr("01", TamSx3("A1_LOJA")[01])
 					SA1->(ConfirmSx8())
 						/* Alterado por Fernando Bombardi - ALLSS - 22/01/202 - Implementacao cadastro de cliente por Execauto

@@ -233,10 +233,12 @@ static function PrtReport(oReport)
 	if MV_PAR06 == 1
 		_cFlOper := "% AND SC5.C5_TPOPER IN " + FormatIn(SuperGetMv("MV_FATOPER",,"01|ZZ|9"),"|") + "%"
 	elseif MV_PAR06 == 2
-		_cFlOper := "%	AND SC5.C5_TPOPER  NOT IN " + FormatIn(SuperGetMv("MV_FATOPER",,"01|ZZ|9"),"|") + "%"
+		_cFlOper := "%	AND SC5.C5_TPOPER  NOT IN " + FormatIn(SuperGetMv("MV_XOPENVE",,"01|ZZ|9|VC"),"|") + "%"
+	elseif MV_PAR06 == 3
+		_cFlOper := "%	AND SC5.C5_TPOPER  NOT IN " + FormatIn(SuperGetMv("MV_XOPEVCO",,"VC"),"|") + "%"
 	elseif MV_PAR06 == 4
 		_cFlOper := "%	AND SC5.C5_TPOPER  IN " + FormatIn(SuperGetMv("MV_XOPECON",,"06"),"|") + "%"
-	ElseIf MV_PAR06 == 4 
+	ElseIf MV_PAR06 == 5 
 		_cFlOper := "%	AND SC5.C5_TPOPER  IN " + FormatIn(SuperGetMv("MV_XOPEVCO",,"VC"),"|") + "%"
 	endif
 	if !Empty(_cFilSC5)
@@ -551,8 +553,15 @@ static function AjPergALL()
 	_cHelp    += "  2) Não Vendas (consideram-se aqui     " 
 	_cHelp    += "     somente as trocas e os registros   " 
 	_cHelp    += "     que não geraram financeiro).       " 
-	_cHelp    += "  2) Ambos (consideram-se aqui todas os " 
-	_cHelp    += "     documentos de saída).              " 
+	_cHelp    += "  3) Ambos (consideram-se aqui todas os " 
+	_cHelp    += "     documentos de saída com exeção 	  "
+	_cHelp    += "     da Operação VC).                   " 
+	_cHelp    += "  4) Consignado (consideram-se aqui	  "
+	_cHelp    += "     somente as vendas de consignação   " 
+	_cHelp    += "     da operação 06) 					  " 
+	_cHelp    += "  5) Venda consignada (consideram-se    " 
+	_cHelp    += "     somente o faturamento de  	  	  "
+	_cHelp    += "     consignação da Operação VC).       " 
 	_cHelp    += "*É importante observar que as devoluções" 
 	_cHelp    += "não são aqui consideradas.              " 
 	U_RGENA001(_cPerg, "06" ,"Operação?" , "MV_PAR06", "MV_CH6", _aTam[03], _aTam[01], _aTam[02], "C", _cValid ,_cF3, _cPicture, _cDef01, _cDef02, _cDef03, _cDef04, _cDef05, _cHelp)

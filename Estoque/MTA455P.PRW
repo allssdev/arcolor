@@ -33,7 +33,15 @@ Local _cLogx    := ""
 Local _cLog     := ""
 Local _lEnt     := CHR(13)+CHR(10)
 Local _lRet     := .T.
-Local _nQtdNew 	:= IIF(ValType(nQtdNew)="N",nQtdNew,0)
+
+//Private aSaldos :={}
+Private nOpcx := 0
+
+IF ValType(nQtdNew)="N"
+	_nQtdNew:=	nQtdNew
+else
+	Private nQtdNew := 0
+Endif
 
 dbSelectArea("SC5")
 SC5->(dbSetOrder(1))

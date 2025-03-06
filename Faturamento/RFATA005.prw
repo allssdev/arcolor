@@ -168,6 +168,7 @@ user function RFATA005(_cOrigem)
 			(_cAliasSX1)->(MSUNLOCK())
 		endif
 	endif
+
 	if ExistBlock("RCFGASX1")
 		U_RCFGASX1(cPerg,"02",MV_PAR02)
 		U_RCFGASX1(cPerg,"03",MV_PAR03)

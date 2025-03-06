@@ -44,6 +44,10 @@ If _lValid .AND. ExistTrigger(SubStr(__ReadVar,4))
 	EvalTrigger()
 EndIf
 (_cAliasSX3)->(dbCloseArea())
+
+If ExistBlock("RTMKE037")
+	ExecBlock("RTMKE037")
+EndIf
 __ReadVar    := __RVarBkp
 &(__ReadVar) := _cRVarBkp
 

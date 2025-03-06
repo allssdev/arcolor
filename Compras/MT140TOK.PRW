@@ -25,11 +25,7 @@ Local _nPosCod     := aScan(aHeader,{|x|AllTrim(x[02])=="D1_COD"   })
 // Inclusão - Fernando Bombardi - 20/01/24 - Parametro para definir se é realizada a validação das MP/EM na NF.
 Local _lValIt      := SuperGetMv("MV_XVALIT" ,,.T.)
 // Fim Inclusão
-
-// Inclusão - Fernando Bombardi - 20/01/24 - Parametro para definir se é realizada a validação das MP/EM na NF.
-Local _lValIt      := SuperGetMv("MV_XVALIT" ,,.T.)
-// Fim Inclusão
-
+    
      //Envia e-mail de notificação de Movimento Interno Nota Fiscal de Devolução
     if lRet .and. Posicione("SB1",1,XFILIAL("SB1")+Alltrim(aCols[1][_nPosCod]),"B1_TIPO")$_cTipo
         MT140MAIL(_cNota,_cSerie,_cCodFor,_cLoja)
@@ -38,9 +34,9 @@ Local _lValIt      := SuperGetMv("MV_XVALIT" ,,.T.)
         lRet := .F.
     */
     endif
-
+    
     // Inclusão - Fernando Bombardi - 20/01/24 - Realiza validação dos intens da Nf.
-    if _lValIt
+    if _lValIt 
         lRet := MT140VAL(lRet)
     endif
     // Fim Inclusão
@@ -114,7 +110,6 @@ Local _nPosDtl     := aScan(aHeader,{|x|AllTrim(x[02])=="D1_DTVALID"   })
     endif
 
 Return
-<<<<<<< .mine
 
 /*/{Protheus.doc} MT140VAL
     Função para validar se os intens do tipo MP/EM da Pré Nota estão com o Pedido de Compra informados.
@@ -130,59 +125,12 @@ Local _nPosCod  := aScan(aHeader,{|x|AllTrim(x[02])=="D1_COD"    })
 Local _nPosDes  := aScan(aHeader,{|x|AllTrim(x[02])=="D1_DESCR"  })
 Local _cMsgRet  := ""
 Local _nItPreNf := 0
-
-    for _nItPreNf := 1 to Len(aCols)
-
-        If !GdDeleted(_nItPreNf)
-
-            _cTipPrd := Posicione("SB1",1,XFILIAL("SB1")+Alltrim(acols[_nItPreNf][_nPosCod]),"B1_TIPO")
-            if Alltrim(_cTipPrd) $ "MP/EM"
-
-                if Empty(acols[_nItPreNf][_nPosPed]) 
-
-                    _cMsgRet += acols[_nItPreNf][_nPosItNf] + " | " + acols[_nItPreNf][_nPosCod] + " | " + Alltrim(acols[_nItPreNf][_nPosDes]) + CLRF
-                    lRet := .F.
-
-                endif
-
-            endif
-
-        endif
-
-    next
-
-    if !lRet
-        
-        MsgAlert("Os seguintes itens da Nota Fiscal, não possuem múmero do Pedido de Compra informado:" + CLRF + CLRF +;
-        "Item | Código          | Descricao" + CLRF + ;
-        _cMsgRet + CLRF +;
-        "Verifique os itens e informe o número do Pedido de Compra.","[MT140TOK_001] - Atenção")
-
-    endif
-
-Return(lRet)
-||||||| .r1142
-=======
-
-/*/{Protheus.doc} MT140VAL
-    Função para validar se os intens do tipo MP/EM da Pré Nota estão com o Pedido de Compra informados.
-    @type  Static Function
-    @author Fernando Bombardi
-    @since 20/01/2024
-    @version 1.0
-/*/
-Static Function MT140VAL(lRet)
-Local _nPosPed  := aScan(aHeader,{|x|AllTrim(x[02])=="D1_PEDIDO" })
-Local _nPosItNf := aScan(aHeader,{|x|AllTrim(x[02])=="D1_ITEM"   })
-Local _nPosCod  := aScan(aHeader,{|x|AllTrim(x[02])=="D1_COD"    })
-Local _nPosDes  := aScan(aHeader,{|x|AllTrim(x[02])=="D1_DESCR"  })
-Local _cMsgRet  := ""
-Local _nItPreNf := 0
+Local _cPrdExc := SUPERGETMV( "MV_XPRDEXS",.F.,"2295")
 
     for _nItPreNf := 1 to Len(aCols)
         If !GdDeleted(_nItPreNf)
             _cTipPrd := Posicione("SB1",1,XFILIAL("SB1")+Alltrim(acols[_nItPreNf][_nPosCod]),"B1_TIPO")
-            if Alltrim(_cTipPrd) $ "MP/EM"
+            if Alltrim(_cTipPrd) $ "MP/EM" .and. !Alltrim(Alltrim(acols[_nItPreNf][_nPosCod]))$_cPrdExc
                 if Empty(acols[_nItPreNf][_nPosPed]) 
                     _cMsgRet += acols[_nItPreNf][_nPosItNf] + " | " + acols[_nItPreNf][_nPosCod] + " | " + Alltrim(acols[_nItPreNf][_nPosDes]) + CLRF
                     lRet := .F.
@@ -198,4 +146,3 @@ Local _nItPreNf := 0
         "Verifique os itens e informe o número do Pedido de Compra.","[MT140TOK_001] - Atenção")
     endif
 Return(lRet)
->>>>>>> .r1183

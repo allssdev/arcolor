@@ -39,6 +39,7 @@ _cQry += "   AND SC7.C7_FILIAL  = '" + xFilial("SC7") + "' "
 _cQry += "   AND SC7.C7_PRODUTO = '" + _cProd         + "' "
 _cQry += "   AND SC7.C7_LOCAL = '" + _cLocal        + "' "
 _cQry += "   AND (CASE WHEN SC7.C7_RESIDUO = 'S' THEN 1 ELSE 0 END) = 0 "
+_cQry += "   AND C7_QUANT > C7_QUJE "
 _cQry += " GROUP BY C7_LOCAL
 dbUseArea(.T.,"TOPCONN",TcGenQry(,,_cQry),_cAlias,.T.,.F.)
 dbSelectArea(_cAlias)
@@ -51,6 +52,8 @@ dbSelectArea(_cAlias)
 
 _cQry := " SELECT D4_LOCAL, SUM(D4_QUANT) AS [QTD_EMP] "
 _cQry += " FROM " + RetSqlName("SD4") + " SD4 (NOLOCK)"
+_cQry += " INNER JOIN " + RetSqlName("SC2") + " SC2 (NOLOCK)"
+_cQry += " ON SC2.D_E_L_E_T_ = '' AND C2_NUM+C2_ITEM+C2_SEQUEN = D4_OP AND C2_TPOP = 'F'"
 _cQry += " WHERE SD4.D_E_L_E_T_ = '' "
 _cQry += "   AND SD4.D4_FILIAL  = '" + xFilial("SD4") + "' "
 _cQry += "   AND SD4.D4_COD = '" + _cProd         + "' "
@@ -86,6 +89,30 @@ If _nQtdEnt > 0 .and.  Alltrim((_cAlias)->C2_LOCAL) == Alltrim(_cLocal) .and. (_
 EndIf
 dbSelectArea(_cAlias)
 (_cAlias)->(dbCloseArea())
+
+_cQry := " SELECT D4_LOCAL, SUM(D4_QUANT) AS [QTD_PREVISTO] "
+_cQry += " FROM " + RetSqlName("SD4") + " SD4 (NOLOCK)"
+_cQry += " INNER JOIN " + RetSqlName("SC2") + " SC2 (NOLOCK)"
+_cQry += " ON SC2.D_E_L_E_T_ = '' AND C2_NUM+C2_ITEM+C2_SEQUEN = D4_OP AND C2_TPOP = 'P'"
+_cQry += " WHERE SD4.D_E_L_E_T_ = '' "
+_cQry += "   AND SD4.D4_FILIAL  = '" + xFilial("SD4") + "' "
+_cQry += "   AND SD4.D4_COD = '" + _cProd         + "' "
+_cQry += "   AND SD4.D4_LOCAL = '" + _cLocal        + "' "
+_cQry += "   AND SD4.D4_QUANT > 0 "
+_cQry += "   AND (CASE WHEN SUBSTRING(SD4.D4_OP,1,1) = 'Z' THEN 1 ELSE 0 END) = 0 "
+_cQry += " GROUP BY D4_LOCAL
+dbUseArea(.T.,"TOPCONN",TcGenQry(,,_cQry),_cAlias,.T.,.F.)
+dbSelectArea(_cAlias)
+_nQtEPrev := (_cAlias)->QTD_PREVISTO //Quantidade em empenho previsto dos lotes de produção reservados
+If _nQtEPrev > 0 .and.  Alltrim((_cAlias)->D4_LOCAL) == Alltrim(_cLocal)
+	_aSaldo[1,14] := _nQtEPrev
+Else
+	_aSaldo[1,14] := 0
+EndIf
+dbSelectArea(_cAlias)
+(_cAlias)->(dbCloseArea())
+
+
+
 RestArea(_aSavArea)
-	
 Return(_aSaldo)

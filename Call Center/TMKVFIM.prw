@@ -1039,6 +1039,8 @@ user function TMKVFIM(_cAtend, _cPed)
 		SetKey( K_CTRL_9, { || U_RFATL001(SUA->UA_NUMSC5,POSICIONE('SUA',1,xFilial('SUA')+SUA->UA_NUM,'UA_NUM'),'',_cRotina,)})
 		//AAdd(aRotina,{"Logs do Pedido","U_RFATL001(SUA->UA_NUMSC5,POSICIONE('SUA',1,xFilial('SUA')+SUA->UA_NUM,'UA_NUM'),'','"+_cRotina+"',)" ,0,6,0 ,NIL})
 	EndIf
+	//GravaArred() //Função para correção dos calculos de valores arrendondando para 2 casas decimais.
+	//GrvArrSC6() //Função para correção dos calculos de valores arrendondando para 2 casas decimais baseado na SC6
 	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 	//³Restauro as áreas salvas inicialmente.³
 	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
@@ -1056,3 +1058,40 @@ user function TMKVFIM(_cAtend, _cPed)
 	RestArea(_aSavSZ6 )
 	RestArea(_aSavArea)
 return _lRet
+
+Static Function GrvArrSC6()
+	Local cQry := ""
+		cQry := " UPDATE "+RetSQLName("SUB")
+		cQry += " SET UB_VRUNIT = C6_PRCVEN "
+		cQry += " , UB_VLRITEM = C6_VALOR "
+		cQry += " , UB_VALDESC = C6_VALDESC "
+		cQry += " FROM SC6010 SC6 (NOLOCK) "
+		cQry += " INNER JOIN SC5010 SC5 (NOLOCK) ON SC5.D_E_L_E_T_ = '' AND C5_NUM = C6_NUM "
+		cQry += " INNER JOIN SUA010 SUA (NOLOCK) ON SUA.D_E_L_E_T_ = '' AND UA_NUMSC5 = C6_NUM "
+		cQry += " INNER JOIN SUB010 SUB (NOLOCK) ON SUB.D_E_L_E_T_ = '' AND UB_NUM = UA_NUM AND UB_PRODUTO = C6_PRODUTO "
+		cQry += " WHERE SC6.D_E_L_E_T_ = '' "
+		cQry += " AND UB_FILIAL = '"+xFilial("SUB")+"' "
+		cQry += " AND UB_FILIAL = '"+xFilial("SC5")+"' "
+		cQry += " AND UB_FILIAL = '"+xFilial("SC6")+"' "
+		cQry += " AND UA_EMISSAO >= '20250213' "
+		cQry += " AND ( UB_VLRITEM <> C6_VALOR OR UB_VRUNIT <> C6_PRCVEN) "
+	
+		TcSQLExec(cQry)
+return
+
+Static Function GravaArred()
+	Local cQry := ""
+		cQry := " UPDATE "+RetSQLName("SUB")
+		cQry += " SET UB_VRUNIT = ROUND(UB_VRUNIT,2) "
+		cQry += " , UB_VLRITEM = ROUND(UB_QUANT * ROUND(UB_VRUNIT,2),2) "
+		cQry += " , UB_VALDESC = ROUND(UB_QUANT * ROUND(UB_PRCTAB,2),2) - ROUND(UB_QUANT * ROUND(UB_VRUNIT,2),2) "
+		cQry += " FROM SUB010 SUB (NOLOCK) "
+		cQry += " INNER JOIN SUA010 SUA (NOLOCK) ON SUA.D_E_L_E_T_ = '' AND UA_NUM = UB_NUM AND UA_NUMSC5 = '' "
+		cQry += " WHERE SUB.D_E_L_E_T_ = '' "
+		cQry += " AND UB_FILIAL = '"+xFilial("SUB")+"' "
+		cQry += " AND UA_EMISSAO >= '20250201' "
+		cQry += " AND ROUND((UB_QUANT * ROUND(UB_VRUNIT,2)),2) <> UB_VLRITEM "
+	
+		TcSQLExec(cQry)
+return
+

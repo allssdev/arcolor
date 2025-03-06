@@ -429,13 +429,13 @@ static function ImpArq(_cArqTP)
 					If File(_cFile)
 	//					FOpen(GetTempPath()+_cRotina+"_Log.csv")
 	//					FErase(GetTempPath()+_cRotina+"_Log.csv")
-						//If !ApOleClient('MsExcel')
+						If !ApOleClient('MsExcel')
 							MsgStop("Excel não instalado",_cRotina+"_026")
-						//Else
+						Else
 							oExcelApp:= MsExcel():New()
 							oExcelApp:WorkBooks:Open(_cFile)
 							oExcelApp:SetVisible(.T.)
-						//EndIf
+						EndIf
 					EndIf
 				EndIf
 				MsgInfo("Processo finalizado!",_cRotina+"_014")

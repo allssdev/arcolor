@@ -208,7 +208,8 @@ static function PrintRel()
 	Local _qDevNF  := "0"
 	Local _cTpOper := FormatIn(SuperGetMv("MV_FATOPER",,"01|ZZ|9"),"|")
 	Local _cTpCons := FormatIn(SuperGetMv("MV_XOPECON",,"06"),"|")
-	Local _cTpVC 	:= FormatIn(SuperGetMv("MV_XOPEVCO",,"VC"),"|")
+	Local _cTpVC   := FormatIn(SuperGetMv("MV_XOPEVCO",,"VC"),"|")
+	Local _cTpNVen := FormatIn(SuperGetMv("MV_XOPENVE",,"01|ZZ|9|VC"),"|") //Não venda
 	Local _cFilSF2 := oSection:GetSqlExp("SF2")
 	Local _cFilSD2 := oSection:GetSqlExp("SD2")
 	Local _cFilSB1 := oSection:GetSqlExp("SB1")
@@ -329,7 +330,9 @@ static function PrintRel()
 		If MV_PAR06 == 1
 			_cFlOper := "% AND SD2.D2_TIPOPER      IN " + _cTpOper +"%"
 		ElseIf MV_PAR06 == 2
-			_cFlOper := "% AND SD2.D2_TIPOPER  NOT IN " + _cTpOper +"%"
+			_cFlOper := "% AND SD2.D2_TIPOPER  NOT IN " + _cTpNVen +"%"
+		ElseIf MV_PAR06 == 3
+			_cFlOper := "% AND SD2.D2_TIPOPER  NOT IN " + _cTpVC +"%"
 		ElseIf MV_PAR06 == 4
 			_cFlOper := "% AND SD2.D2_TIPOPER  IN " + _cTpCons +"%"
 		ElseIf MV_PAR06 == 5

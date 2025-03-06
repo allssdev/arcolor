@@ -25,8 +25,8 @@ user function SD1100I()
 			If SC7->(MsSeek(xFilial("SC7")+SD1->D1_PEDIDO+SD1->D1_ITEMPC,.T.,.F.))
 				//If SC7->C7_BKQUJE > 0 .OR. SC7->C7_QUJE == 0 //Certifico que o campo de backup esteja preenchido ou a quantidade entregue seja zero
 					while !RecLock("SC7",.F.) ; enddo
-						SC7->C7_BKQUJE := SC7->C7_BKQUJE + SD1->D1_QUANT
 						SC7->C7_QUJE := SC7->C7_BKQUJE + SD1->D1_QUANT
+						SC7->C7_BKQUJE := SC7->C7_BKQUJE + SD1->D1_QUANT
 					SC7->(MSUNLOCK())
 					If SC7->C7_QUJE >= SC7->C7_QUANT
 						while !RecLock("SC7",.F.) ; enddo

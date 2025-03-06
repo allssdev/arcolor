@@ -46,12 +46,11 @@ If !(SubStr(cAcesso,160,1) == "S" .AND. SubStr(cAcesso,168,1) == "S" .AND. SubSt
 	MSGBOX('Usuário sem permissão para gerar relatório em Excel. Informe o Administrador.',_cRotina +"03",'STOP')
    Return(Nil)
 EndIf
-/* - VERIFICA SE HÁ O EXCEL INSTALADO NA MÁQUINA EM USO
+// - VERIFICA SE HÁ O EXCEL INSTALADO NA MÁQUINA EM USO
 If !ApOleClient('MsExcel')
 	Msgbox('Excel não instalado.',_cRotina +"04",'ALERT')
    Return(Nil)
-EndIf*/
-
+EndIf
 _cTitulo  := (" Posição comercial dos pedidos de " + (DTOC(mv_par01)) + "  até  " + (DTOC(mv_par02)) + IIF(!Empty(MV_PAR13)," em "+GetMV("MV_MOEDA"+MV_PAR13+""),"") + "  -  " + _cRotina)
 _cTitulo2 := ("PARÂMETROS")
 // Verifica a moeda selecionada

@@ -68,7 +68,7 @@ cAliasA	:= GetNextAlias()
 		cQry 	+= " 		 SELECT SP8A.P8_FILIAL FILIAL , SP8A.P8_DATA DATA, SP8A.P8_MAT MATRICULA, Max(SP8A.H_MAX) - MIN(SP8A.H_MIN) TOTAL_HORAS, COUNT(*) LANCAMENTOS " +_CRFL
 		cQry 	+= " 			FROM (SELECT DISTINCT P8_FILIAL, P8_DATA, P8_MAT, Max(P8_HORA) H_MAX, MIN(P8_HORA) H_MIN" +_CRFL
 		cQry 	+= "			FROM "+RetSqlName("SP8")+" SP8 " +_CRFL	
-		cQry 	+= " 			JOIN "+RetSqlName("SRA")+" SRA  on RA_FILIAL = P8_FILIAL AND RA_MAT= P8_MAT AND (RA_DEMISSA = '' OR  RA_DEMISSA <= P8_DATA) " +_CRFL  // and RA_MAT = '"+ cMatFunc + "'" 
+		cQry 	+= " 			JOIN "+RetSqlName("SRA")+" SRA  on RA_FILIAL = P8_FILIAL AND RA_MAT= P8_MAT AND RA_REFEIC = 'S' AND (RA_DEMISSA = '' OR  RA_DEMISSA <= P8_DATA) " +_CRFL  // and RA_MAT = '"+ cMatFunc + "'" 
 		cQry 	+= " 			WHERE P8_TPMARCA IN ('"+cvaltochar(nX)+ "E','"+ cvaltochar(nX)+"S') AND SP8.D_E_L_E_T_ = '' AND SP8.P8_TPMCREP <> 'D' " +_CRFL
 		cQry 	+= " 			GROUP BY P8_FILIAL, P8_DATA,  P8_MAT ) SP8A " +_CRFL
 		cQry 	+= " 			GROUP BY SP8A.P8_FILIAL, SP8A.P8_DATA,  SP8A.P8_MAT HAVING COUNT(*) = 1 " +_CRFL
@@ -82,7 +82,7 @@ cAliasA	:= GetNextAlias()
  
 	cQry 	+= " 		GROUP BY FILIAL , DATA, MATRICULA,P9_BHNDE, PC_QUANTC " +_CRFL
 	cQry 	+= " 		) AS  REFEICAO   " +_CRFL
-	cQry 	+= " 			JOIN "+RetSqlName("SRA")+" SRA  on RA_MAT= MATRICULA " +_CRFL 	
+	cQry 	+= " 			JOIN "+RetSqlName("SRA")+" SRA  on RA_MAT= MATRICULA AND RA_REFEIC = 'S' " +_CRFL 	
 	cQry 	+= " 			LEFT jOIN "+RetSqlName("SPB")+" SPB  ON  MATRICULA = PB_MAT AND SUBSTRING(PB_DATA,1,6) =  substring(DATA,1,6)  AND PB_PD IN ( '499','490') AND SPB.D_E_L_E_T_ ='' " + _CRFL
 	cQry 	+= " 			group by  FILIAL, substring(DATA,1,6) , MATRICULA ,PB_HORAS 	, RA_CC "
 	cQry 	+= " 			order by FILIAL , MATRICULA, substring(DATA,1,6) "

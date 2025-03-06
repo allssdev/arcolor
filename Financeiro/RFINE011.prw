@@ -431,10 +431,12 @@ user function FNE11MVC(_cOrigem)
 	for nX   := 1 to len(_aStru)
 		AADD(_aColumn,FWBrwColumn():New())
 		&('_aColumn['+cValToChar(len(_aColumn))+']:SetData({|| '+_cAlias+'->'+_aStru[nX][1]+' })')
-		
-		If _aStru[nX][1]$"E1_TIPO/E1_CARTEIR/E1_PREFIXO/E1_VENDRES/E1_FILIAL/E1_PARCELA/E1_LOJA"
+		//aqui 
+		If _aStru[nX][1]$"E1_PREFIXO/E1_VENDRES/E1_FILIAL/E1_PARCELA/E1_LOJA" 
 			_aColumn[len(_aColumn)]:SetSize(_aStru[nX][3]+20)
-		Elseif _aStru[nX][1]$"E1_PEDIDO/E1_CLIENTE"
+		ElseIf _aStru[nX][1]$"E1_TIPO" 
+			_aColumn[len(_aColumn)]:SetSize(_aStru[nX][3]+45)
+		Elseif _aStru[nX][1]$"E1_CARTEIR/E1_PEDIDO/E1_CLIENTE"
 			_aColumn[len(_aColumn)]:SetSize(_aStru[nX][3]+60)	
 		Elseif _aStru[nX][1]$"E1_VALOR/E1_SALDO"
 			_aColumn[len(_aColumn)]:SetSize(_aStru[nX][3]+110)	

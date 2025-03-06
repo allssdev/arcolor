@@ -45,7 +45,7 @@ Local   _nX		   := 0
     elseIf _nTp == 2
         _cMail          := SuperGetMV("MV_XFROPRD"  ,.F.,'diego.rodrigues@allss.com.br')+IIF(Empty(_cEmailSup),"",";"+_cEmailSup)
         _cAssunto       := "[Arcolor] - Produção - Pedido de Venda  " + _cPedido + " com produtos de Linha Industrial"
-        _cHtml          := "<h2 style=color:blue> Pedido de Venda " + _cPedido +  " Liberado para a produção </h2>"   + CLRF
+        _cHtml          := "<h2 style=color:red> Pedido de Venda " + _cPedido +  " Liberado para a produção </h2>"   + CLRF
         _cHtml          += "<h3> Cliente " + _cCodCli + " - " +Alltrim(_cNomCli)+          "</h3>"      + CLRF
         _cHtml          += "<h4> Supervisora " + Alltrim(_cNomSup)+                        "</h4>"      + CLRF
         _cHtml          += "<br><br>"                                                                   + CLRF
@@ -70,7 +70,7 @@ Local   _nX		   := 0
     ElseIf _nTp == 3
         _cMail          := SuperGetMV("MV_XFROEXP"  ,.F.,'diego.rodrigues@allss.com.br')+IIF(Empty(_cEmailSup),"",";"+_cEmailSup)
         _cAssunto       := "[Arcolor] - Expedição - Pedido de Venda  " + _cPedido + " com produtos de Linha Industrial"
-        _cHtml          := "<h2 style=color:green> Pedido de Venda " + _cPedido +  " Liberado para o faturamento. Produção Finalizada.</h2>"      + CLRF
+        _cHtml          := "<h2 style=color:blue> Pedido de Venda " + _cPedido +  " Liberado para o faturamento. Produção Finalizada.</h2>"      + CLRF
         _cHtml          += "<h3> Cliente " + _cCodCli + " - " +Alltrim(_cNomCli)+          "</h3>"      + CLRF
         _cHtml          += "<h4> Supervisora " + Alltrim(_cNomSup)+                        "</h4>"      + CLRF
         _cHtml          += "<br><br>"                                                                   + CLRF
@@ -91,7 +91,32 @@ Local   _nX		   := 0
             _cHtml   	    += " <td valign='top' align='center' border='1' width='150'>" + Transform(_aProd[_nX][3]  , "@E 999,999,999,999.99") + "</td> "                 + CLRF
             _cHtml   	    += " </tr> "                                                                + CLRF
         next
-        _cHtml          += "</table><br>"                                                                                                         + CLRF
+        _cHtml          += "</table><br>"  
+    ElseIf _nTp == 4
+        _cMail          := SuperGetMV("MV_XFROEXP"  ,.F.,'diego.rodrigues@allss.com.br')+IIF(Empty(_cEmailSup),"",";"+_cEmailSup)
+        _cAssunto       := "[Arcolor] - Separação - Pedido de Venda  " + _cPedido + " com produtos de Linha Industrial"
+        _cHtml          := "<h2 style=color:green> Pedido de Venda " + _cPedido +  " em processo de separação.</h2>"      + CLRF
+        _cHtml          += "<h3> Cliente " + _cCodCli + " - " +Alltrim(_cNomCli)+          "</h3>"      + CLRF
+        _cHtml          += "<h4> Supervisora " + Alltrim(_cNomSup)+                        "</h4>"      + CLRF
+        _cHtml          += "<br><br>"                                                                   + CLRF
+        _cHtml          += "<table border='1' bgcolor='#FFFFFF'> "                                      + CLRF
+        _cHtml          += " 	<thead bgcolor='#808080'> "                                             + CLRF
+        _cHtml          += " 		<tr border='1'> "                                                   + CLRF
+        _cHtml          += " 			<th border='1' align='center' width='50'>Código     </th> "     + CLRF
+        _cHtml          += " 			<td border='1' align='center' width='450'>Descrição  </td> "    + CLRF
+        _cHtml          += " 			<td border='1' align='center' width='150'>Quantidade </td> "    + CLRF
+        _cHtml          += " 		</tr> "                                                             + CLRF
+        _cHtml          += " 	</thead> "                                                              + CLRF
+        _cHtml          += " 	<tbody> "   
+
+        for _nX := 1 to Len(_aProd)
+            _cHtml   	    += " <tr> "                                                                 + CLRF
+            _cHtml   	    += " <th valign='top' align='center' border='1' width='50'>" + _aProd[_nX][1] + "</th> "                                                        + CLRF
+            _cHtml   	    += " <td valign='top' align='center' border='1' width='450'>" + Posicione("SB1",1,XFILIAL("SB1")+Alltrim(_aProd[_nX][1]),"B1_DESC") + "</td> "  + CLRF
+            _cHtml   	    += " <td valign='top' align='center' border='1' width='150'>" + Transform(_aProd[_nX][3]  , "@E 999,999,999,999.99") + "</td> "                 + CLRF
+            _cHtml   	    += " </tr> "                                                                + CLRF
+        next
+        _cHtml          += "</table><br>"    
     EndIf
     _cHtml := StrTran(_cHtml,CLRF,"")
 
@@ -99,5 +124,4 @@ Local   _nX		   := 0
     if !lRetMail //Se ocorrer erro uma nova tentativa de envio do e-mail
         U_RCFGM001(/*cTitulo*/"",_cHtml,_cMail,_cAnexo,_cFromOri,_cBCC,_cAssunto,_lExcAnex,_lAlert,_lHtmlOk,_cCC)
     endif
-
 Return

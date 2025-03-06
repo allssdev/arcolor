@@ -87,7 +87,7 @@ Static function ExpExcel()
 
 				aDadosExc := {}
                 
-				aadd(aDadosExc,DTOC(STOD((_cQry)->EMISSAO)))
+				aadd(aDadosExc,(_cQry)->EMISSAO)
 				aadd(aDadosExc,(_cQry)->TIPO_NF)
 				aadd(aDadosExc,(_cQry)->TP_OPERACAO)
                 aadd(aDadosExc,(_cQry)->CFOP)

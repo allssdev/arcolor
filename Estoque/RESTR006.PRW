@@ -17,27 +17,21 @@ Ficha Pallet em modo Paisagem.
 @history 25/08/2022, Rodrigo Telecio (rodrigo.telecio@allss.com.br), Ajuste do lado inferior direito da impressão para que não haja cortes em impressora física.
 @history 05/10/2022, Rodrigo Telecio (rodrigo.telecio@allss.com.br), Impressão do código de barras do lote considerando apenas os 6 primeiros digitos da Ordem de Produção.
 @history 01/08/2024, Diego Rodrigues (diego.rodrigues@allss.com.br), Adequação para o controle de ficha pallet buscar o numero do apontamento campo (D3_XNRFICH)
+@history 10/02/2025, Diego Rodrigues (diego.rodrigues@allss.com.br), Adequação para a impressão a partir da rotina MATA681(roteiro de operações)
 /*/
 user function RESTR006()
+Local   _aSavArea := GetArea()
+Local   _aSavSD4  := SD4->(GetArea())
+Local   _aSavSB1  := SB1->(GetArea())
+Local   _aSavSD3  := SD3->(GetArea())
+Local   _aSavSH6  := SH6->(GetArea())
+Local   _aSavSC2  := SC2->(GetArea())
 private _cRotina := "RESTR006"
 private _cPerg   := _cRotina
 private _cAlias  := GetNextAlias()
 	
 	If AllTrim(FunName())=="MATA250"  
 		
-		/*
-		MV_PAR01 := SC2->C2_PRODUTO
-		MV_PAR02 := SC2->C2_PRODUTO
-		MV_PAR03 := SD3->D3_OP
-		MV_PAR04 := SD3->D3_OP
-		MV_PAR05 := SC2->C2_EMISSAO
-		MV_PAR06 := SD3->D3_EMISSAO
-		MV_PAR08 := ""
-		MV_PAR09 := "ZZ"
-		MV_PAR10 := SD3->D3_DOC
-		MV_PAR11 := SD3->D3_DOC
-		*/
-
 		MV_PAR01 := M->D3_COD
 		MV_PAR02 := M->D3_COD
 		MV_PAR03 := M->D3_OP
@@ -48,23 +42,48 @@ private _cAlias  := GetNextAlias()
 		MV_PAR09 := "ZZ"
 		MV_PAR10 := M->D3_DOC
 		MV_PAR11 := M->D3_DOC
+		MV_PAR12 := ""
+		MV_PAR13 := "ZZ"
 		//Carrega os dados para fins de impressão
 		ChrFicha()
 		//Imprime a ficha pallet
 		PrtFicha()
+	ElseIf AllTrim(FunName())=="MATA681" 
 		
+		MV_PAR01 := SC2->C2_PRODUTO
+		MV_PAR02 := SC2->C2_PRODUTO
+		MV_PAR03 := SD3->D3_OP
+		MV_PAR04 := SD3->D3_OP
+		MV_PAR05 := SC2->C2_EMISSAO
+		MV_PAR06 := SD3->D3_EMISSAO
+		MV_PAR08 := ""
+		MV_PAR09 := "ZZ"
+		MV_PAR10 := SD3->D3_DOC
+		MV_PAR11 := SD3->D3_DOC
+		MV_PAR12 := _cNficha
+		MV_PAR13 := _cNficha
+		//Carrega os dados para fins de impressão
+		ChrFicha()
+		//Imprime a ficha pallet
+		PrtFicha()
 	Else
 		ValidPerg()
 		if Pergunte(_cPerg)
 			if Select(_cAlias) > 0
 			(_cAlias)->(dbCloseArea())
-		endif
+		EndIf
 		//Carrega os dados para fins de impressão
 		ChrFicha()
 		//Imprime a ficha pallet
 		PrtFicha()
-		endif
+		EndIf
 	EndIf
+RestArea(_aSavSC2)
+RestArea(_aSavSD3)
+RestArea(_aSavSH6)
+RestArea(_aSavSB1)
+RestArea(_aSavSD4)
+RestArea(_aSavArea)
  return
 /*/{Protheus.doc} ChrFicha
 Carrega os dados a serem impressos.
@@ -94,6 +113,7 @@ static function ChrFicha()
 			 , RTRIM(B1_CODBAR) BARRAS
 			 , RTRIM(ISNULL(B1_CC,ISNULL(C2_CC,ISNULL(D3_CC,'')))) SETOR
 			 , RTRIM(ISNULL(B5_EAN148,0)) QUANT_EMB
+			 , RTRIM(ISNULL(B5_XLINPRO,'')) LINHA_PROD
 			 , (CASE WHEN B5_EAN148 = 0 THEN B5_EAN148 ELSE RTRIM(D3_QUANT / B5_EAN148) END) QTEMB
 			 , CONVERT(VARCHAR(10), CONVERT(VARCHAR(10),ISNULL((CASE WHEN B1_CONV = 0 THEN 0 ELSE (B5_EAN148/B1_CONV) END),(CASE WHEN B1_VOSEC = 0 THEN 0 ELSE (B5_EAN148/B1_VOSEC) END)))) + ' ' + B1_SEGUM AS EMBALAGEM
 			 , RTRIM(ISNULL(C2_NUM+C2_ITEM+C2_SEQUEN,'')) OP
@@ -149,6 +169,7 @@ static function ChrFicha()
 												AND D3_CF          = 'PR0'
 												AND D3_EMISSAO BETWEEN %Exp:DTOS(MV_PAR05)% AND %Exp:DTOS(MV_PAR06)%
 												AND (CASE WHEN D3_DOC BETWEEN %Exp:MV_PAR10% AND %Exp:MV_PAR11% THEN 1 ELSE 0 END) = 1
+												AND (CASE WHEN D3_XNRFICH BETWEEN %Exp:MV_PAR12% AND %Exp:MV_PAR13% THEN 1 ELSE 0 END) = 1
 												
 												/*AND (CASE WHEN %Exp:Alltrim(Funname())% = 'MATA250' 
 														THEN (CASE WHEN D3_NUMSEQ = %Exp:M->D3_NUMSEQ% THEN 1 ELSE 0 END)
@@ -189,19 +210,19 @@ Imprime a Ficha Pallet.
 @see https://allss.com.br
 /*/
 static function PrtFicha()
-local   nInc
-local 	nFic
-local   nNum := 0
+local   _nInc
+local 	_nFic
+local   _nNum := 0
 local   lAdjustToLegacy := .F.
 local   lDisableSetup   := .T.
-local   nRegs           := 0
-local   cName           := _cRotina
-local   nFlags   	 	:= PD_ISTOTVSPRINTER + PD_DISABLEORIENTATION
-local   cSession	 	:= GetPrinterSession()
-local   cDevice    		:= fwGetProfString(cSession,"PRINTTYPE"	,"SPOOL"	,.T.)
-local   cDestino	    := fwGetProfString(cSession,"DEFAULT"	,"c:\temp"	,.T.)
-private cSpool          := GetTempPath()
-private cPdf            := ""
+local   _nRegs          := 0
+local   _cName          := _cRotina
+local   _nFlags   	 	:= PD_ISTOTVSPRINTER + PD_DISABLEORIENTATION
+local   _cSession	 	:= GetPrinterSession()
+local   _cDevice    		:= fwGetProfString(_cSession,"PRINTTYPE"	,"SPOOL"	,.T.)
+local   _cDestino	    := fwGetProfString(_cSession,"DEFAULT"	,"c:\temp"	,.T.)
+private _cSpool         := GetTempPath()
+private _cPdf           := ""
 private oFont12         := TFont():New("Arial" ,,12,,.F.,,,,,.F.)
 private oFont10AT       := TFont():New("Arial" ,,28,,.T.,,,,,.F.)
 private oFont72AT       := TFont():New("Arial" ,,73,,.T.,,,,,.F.)
@@ -214,125 +235,132 @@ private oFont140AT      := TFont():New("Arial" ,,140,,.T.,,,,,.F.)
 private oFont300AT      := TFont():New("Arial" ,,300,,.T.,,,,,.F.)
 private oFont46         := TFont():New("Arial" ,,46,,.T.,,,,,.F.)  
 private oFont78AT       := TFont():New("Areal" ,,78,,.T.,,,,,.F.)
-private cLog 			:= ''
+private _clog 			:= ''
 private oPrintSetup as Object
 private oPrinter 	as Object
-private aDevice
-for nInc := 1 to 1000
-	cPDF := cName +StrZero(nINc,4,0)
-	if !File(cSpool+cPDF+".PDF")
+private _aDevice
+for _nInc := 1 to 1000
+	_cPdf := _cName +StrZero(_nInc,4,0)
+	if !File(_cSpool+_cPdf+".PDF")
 		exit
-	endif
+	EndIf
 next
 if AllTrim(FunName()) == "MATA250"
-	aDevice := {}
+	_aDevice := {}
 	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 	//³Define os Tipos de Impressao validos ³
 	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-	AADD(aDevice,"DISCO")
-	AADD(aDevice,"SPOOL")
-	AADD(aDevice,"EMAIL")
-	AADD(aDevice,"EXCEL")
-	AADD(aDevice,"HTML" )
-	AADD(aDevice,"PDF"  )
-	nPrintType 							:= aScan(aDevice,{|x| x == cDevice})
-	nLocal     							:= iif(fWGetProfString(cSession,"LOCAL","SERVER",.T.) == "SERVER",1,2)		
-	oSetup 								:= FWPrintSetup():New(nFlags,'Impressão da Ficha Pallet')
-	oSetup:SetPropert(PD_PRINTTYPE   , nPrintType)
+	AADD(_aDevice,"DISCO")
+	AADD(_aDevice,"SPOOL")
+	AADD(_aDevice,"EMAIL")
+	AADD(_aDevice,"EXCEL")
+	AADD(_aDevice,"HTML" )
+	AADD(_aDevice,"PDF"  )
+	_nPrintType 						:= aScan(_aDevice,{|x| x == _cDevice})
+	_nLocal     							:= iif(fWGetProfString(_cSession,"LOCAL","SERVER",.T.) == "SERVER",1,2)		
+	oSetup 								:= FWPrintSetup():New(_nFlags,'Impressão da Ficha Pallet')
+	oSetup:SetPropert(PD_PRINTTYPE   , _nPrintType)
 	oSetup:SetPropert(PD_ORIENTATION , 2) 
-	oSetup:SetPropert(PD_DESTINATION , nLocal)
+	oSetup:SetPropert(PD_DESTINATION , _nLocal)
 	oSetup:SetPropert(PD_MARGIN      , {0,0,0,0})
 	oSetup:SetPropert(PD_PAPERSIZE   , 2)
 	oSetup:SetPropert(PD_PREVIEW	 , .F.)
-	if cDevice == "PDF"
-		oSetup:aOptions[PD_VALUETYPE] 	:= cDestino
-	endif
-	oPrinter 							:= FWMSPrinter():New(cPdf,IMP_SPOOL,lAdjustToLegacy,,lDisableSetup,.T.,@oSetup,,,,.F.,)
+	if _cDevice == "PDF"
+		oSetup:aOptions[PD_VALUETYPE] 	:= _cDestino
+	EndIf
+	oPrinter 							:= FWMSPrinter():New(_cPdf,IMP_SPOOL,lAdjustToLegacy,,lDisableSetup,.T.,@oSetup,,,,.F.,)
 	if !(oSetup:Activate() == PD_OK)
 		oPrinter:Deactivate() 
 		Aviso('TOTVS','Relatório cancelado pelo usuário',{'&OK'},3)
 		return .F.
-	endif
+	EndIf
 	oPrinter:lServer 					:= oSetup:GetProperty(PD_DESTINATION) == AMB_SERVER                      
 	oPrinter:SetResolution(75)
 	if oSetup:GetProperty(PD_ORIENTATION) == 2
 		oPrinter:SetLandsCape()
 	else
 		oPrinter:SetPortRait()
-	endif
+	EndIf
 	oPrinter:SetPaperSize(oSetup:GetProperty(PD_PAPERSIZE))
-	fwWriteProfString(cSession,"LOCAL"		,iif(oSetup:GetProperty(PD_DESTINATION) == 1,"SERVER","LOCAL"),.T.)
-	fwWriteProfString(cSession,"PRINTTYPE"	,aDevice[oSetup:GetProperty(PD_PRINTTYPE)],.T.)
+	fwWriteProfString(_cSession,"LOCAL"		,iif(oSetup:GetProperty(PD_DESTINATION) == 1,"SERVER","LOCAL"),.T.)
+	fwWriteProfString(_cSession,"PRINTTYPE"	,_aDevice[oSetup:GetProperty(PD_PRINTTYPE)],.T.)
 	if oSetup:GetProperty(PD_PRINTTYPE) == IMP_SPOOL
 		oPrinter:nDevice 				:= IMP_SPOOL
-		fwWriteProfString(cSession,"DEFAULT",oSetup:aOptions[PD_VALUETYPE],.T.)
+		fwWriteProfString(_cSession,"DEFAULT",oSetup:aOptions[PD_VALUETYPE],.T.)
 		oPrinter:cPrinter 				:= oSetup:aOptions[PD_VALUETYPE]
 	elseif oSetup:GetProperty(PD_PRINTTYPE) == IMP_PDF
 		oPrinter:nDevice 				:= IMP_PDF
-		fwWriteProfString(cSession,"DEFAULT",oSetup:aOptions[PD_VALUETYPE],.T.)	
+		fwWriteProfString(_cSession,"DEFAULT",oSetup:aOptions[PD_VALUETYPE],.T.)	
 		oPrinter:cPathPDF 				:= oSetup:aOptions[PD_VALUETYPE]
-	endif	
+	EndIf	
 else
-	aDevice := {}
+	_aDevice := {}
 	//ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 	//³Define os Tipos de Impressao validos ³
 	//ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-	AADD(aDevice,"DISCO")
-	AADD(aDevice,"SPOOL")
-	AADD(aDevice,"EMAIL")
-	AADD(aDevice,"EXCEL")
-	AADD(aDevice,"HTML" )
-	AADD(aDevice,"PDF"  )
-	nPrintType 							:= aScan(aDevice,{|x| x == cDevice})
-	nLocal     							:= iif(fWGetProfString(cSession,"LOCAL","SERVER",.T.) == "SERVER",1,2)		
-	oSetup 								:= FWPrintSetup():New(nFlags,'Impressão da Ficha Pallet')
-	oSetup:SetPropert(PD_PRINTTYPE   , nPrintType)
+	AADD(_aDevice,"DISCO")
+	AADD(_aDevice,"SPOOL")
+	AADD(_aDevice,"EMAIL")
+	AADD(_aDevice,"EXCEL")
+	AADD(_aDevice,"HTML" )
+	AADD(_aDevice,"PDF"  )
+	_nPrintType 							:= aScan(_aDevice,{|x| x == _cDevice})
+	_nLocal     							:= iif(fWGetProfString(_cSession,"LOCAL","SERVER",.T.) == "SERVER",1,2)		
+	oSetup 								:= FWPrintSetup():New(_nFlags,'Impressão da Ficha Pallet')
+	oSetup:SetPropert(PD_PRINTTYPE   , _nPrintType)
 	oSetup:SetPropert(PD_ORIENTATION , 2) 
-	oSetup:SetPropert(PD_DESTINATION , nLocal)
+	oSetup:SetPropert(PD_DESTINATION , _nLocal)
 	oSetup:SetPropert(PD_MARGIN      , {0,0,0,0})
 	oSetup:SetPropert(PD_PAPERSIZE   , 2)
 	oSetup:SetPropert(PD_PREVIEW	 , .F.)
-	if cDevice == "PDF"
-		oSetup:aOptions[PD_VALUETYPE] 	:= cDestino
-	endif
-	oPrinter 							:= FWMSPrinter():New(cPdf,IMP_SPOOL,lAdjustToLegacy,,lDisableSetup,.T.,@oSetup,,,,.F.,)
+	if _cDevice == "PDF"
+		oSetup:aOptions[PD_VALUETYPE] 	:= _cDestino
+	EndIf
+	oPrinter 							:= FWMSPrinter():New(_cPdf,IMP_SPOOL,lAdjustToLegacy,,lDisableSetup,.T.,@oSetup,,,,.F.,)
 	if !(oSetup:Activate() == PD_OK)
 		oPrinter:Deactivate() 
 		Aviso('TOTVS','Relatório cancelado pelo usuário',{'&OK'},3)
 		return .F.
-	endif
+	EndIf
 	oPrinter:lServer 					:= oSetup:GetProperty(PD_DESTINATION) == AMB_SERVER                      
 	oPrinter:SetResolution(75)
 	if oSetup:GetProperty(PD_ORIENTATION) == 2
 		oPrinter:SetLandsCape()
 	else
 		oPrinter:SetPortRait()
-	endif
+	EndIf
 	oPrinter:SetPaperSize(oSetup:GetProperty(PD_PAPERSIZE))
-	fwWriteProfString(cSession,"LOCAL"		,iif(oSetup:GetProperty(PD_DESTINATION) == 1,"SERVER","LOCAL"),.T.)
-	fwWriteProfString(cSession,"PRINTTYPE"	,aDevice[oSetup:GetProperty(PD_PRINTTYPE)],.T.)
+	fwWriteProfString(_cSession,"LOCAL"		,iif(oSetup:GetProperty(PD_DESTINATION) == 1,"SERVER","LOCAL"),.T.)
+	fwWriteProfString(_cSession,"PRINTTYPE"	,_aDevice[oSetup:GetProperty(PD_PRINTTYPE)],.T.)
 	if oSetup:GetProperty(PD_PRINTTYPE) == IMP_SPOOL
 		oPrinter:nDevice 				:= IMP_SPOOL
-		fwWriteProfString(cSession,"DEFAULT",oSetup:aOptions[PD_VALUETYPE],.T.)
+		fwWriteProfString(_cSession,"DEFAULT",oSetup:aOptions[PD_VALUETYPE],.T.)
 		oPrinter:cPrinter 				:= oSetup:aOptions[PD_VALUETYPE]
 	elseif oSetup:GetProperty(PD_PRINTTYPE) == IMP_PDF
 		oPrinter:nDevice 				:= IMP_PDF
-		fwWriteProfString(cSession,"DEFAULT",oSetup:aOptions[PD_VALUETYPE],.T.)	
+		fwWriteProfString(_cSession,"DEFAULT",oSetup:aOptions[PD_VALUETYPE],.T.)	
 		oPrinter:cPathPDF 				:= oSetup:aOptions[PD_VALUETYPE]
-	endif
-endif
+	EndIf
+EndIf
 (_cAlias)->(dbGoTop())
 	while !(_cAlias)->(EOF())
-		nNum 					:= INT(((_cAlias)->QTEMB))
-		Private 	cLote  		:= ALLTRIM((_cAlias)->LOTE)
-		Private 	cValidade  	:= (_cAlias)->VALIDADE //DTOS(DDATABASE+VAL((_cAlias)->VAL_DIAS))
-		Private 	cPag		:= (_cAlias)->PAG
-		Private 	cEnd  		:= Alltrim((_cAlias)->ENDERECO)
-		For nFic := 1 to nNum
-			Private 	nPesol  := VAL((_cAlias)->PESOL) * VAL((_cAlias)->QUANT_EMB)
-			Private 	nPesob  := VAL((_cAlias)->PESOB) * VAL((_cAlias)->QUANT_EMB)
+		_nNum 				:= INT(((_cAlias)->QTEMB))
+		Private _cLinProd	:= ALLTRIM((_cAlias)->LINHA_PROD)
+		Private _cLote  	:= ALLTRIM((_cAlias)->LOTE)
+		Private _cValidade  := (_cAlias)->VALIDADE //DTOS(DDATABASE+VAL((_cAlias)->VAL_DIAS))
+		Private _cPag		:= (_cAlias)->PAG
+		Private _cEnd  		:= Alltrim((_cAlias)->ENDERECO)
+		/*If ALLTRIM((_cAlias)->LINHA_PROD) == '1'
+			_nNum 				:= 1
+		Else
+			_nNum 				:= INT(((_cAlias)->QTEMB))
+		EndIf
+		*/
+		For _nFic := 1 to _nNum
+			Private 	_nPesol  := VAL((_cAlias)->PESOL) * VAL((_cAlias)->QUANT_EMB)
+			Private 	_nPesob  := VAL((_cAlias)->PESOB) * VAL((_cAlias)->QUANT_EMB)
 			oPrinter:StartPage()
-			nRegs++
+			_nRegs++
 			//Box Margem
 			oPrinter:Box(0002,0005,0800,0840)
 
@@ -353,7 +381,7 @@ endif
 			//Box Quantidade
 			oPrinter:Box(0130,0005,0290,0420)
 			oPrinter:Say(0140,0030, "QUANTIDADE"																		,oFont22)
-			oPrinter:Say(0250,0040, ALLTRIM((_cAlias)->QUANT_EMB)														,oFont180AT)			
+			oPrinter:Say(0250,0040, IIf(ALLTRIM((_cAlias)->LINHA_PROD) == '3',ALLTRIM((_cAlias)->QUANTIDADE),ALLTRIM((_cAlias)->QUANT_EMB))	,oFont180AT)			
 
 			//Box Lastro 
 			oPrinter:Box(0290,0005,0360,0125)
@@ -368,7 +396,7 @@ endif
 			//Box Peso Bruto
 			oPrinter:Box(0290,0230,0360,0420)
 			oPrinter:Say(0295,0240, "PESO BRUTO"																		,oFont22)
-			oPrinter:Say(0325,0250, ALLTRIM(STR(nPesob))																,oFont34)			
+			oPrinter:Say(0325,0250, ALLTRIM(STR(_nPesob))																,oFont34)			
 
 			//Box Lote e Validade
 			oPrinter:Box(0360,0005,0510,0420)
@@ -384,12 +412,12 @@ endif
 			oPrinter:Box(0510,0130,0610,0295)			
 			oPrinter:Say(0510,0135, "END:"																			,oFont22)
 			oPrinter:Say(0510,0185, ALLTRIM((_cAlias)->ARMAZEM) + "-" + ALLTRIM((_cAlias)->ENDERECO)					,oFont22)
-			oPrinter:Code128(0515/*nRow*/ ,0150 /*nCol*/,(_cAlias)->ARMAZEM + cEnd/*cCode*/,1/*nWidth*/,50/*nHeigth*/,.F./*lSay*/,,)
+			oPrinter:Code128(0515/*nRow*/ ,0150 /*nCol*/,(_cAlias)->ARMAZEM + _cEnd/*cCode*/,1/*nWidth*/,50/*nHeigth*/,.F./*lSay*/,,)
 			
 			//Box Pagina
 			oPrinter:Box(0450,0420,0610,0840)
 			oPrinter:Say(0465,0520, "FICHA Nº:"																			,oFont22)
-			oPrinter:Say(0570,0650, AllTrim(cPag)																	,oFont180AT)
+			oPrinter:Say(0570,0650, AllTrim(_cPag)																	,oFont180AT)
 
 			//Box Documento OP
 			oPrinter:Box(0510,0295,0610,0450)			
@@ -405,25 +433,25 @@ endif
 		
 			//Box Data de Entrada
 			oPrinter:Box(0510,0455,0610,0650)
-			//oPrinter:FWMSBAR("CODE128" /*cTypeBar*/,46/*nRow*/, 1/*nCol*/ ,(_cAlias)->ARMAZEM + cEnd  /*cCode*/,oPrinter/*oPrint*/,.F./*lCheck*/,/*Color*/,/*lHorz*/,0.025 /*nWidth*/,1/*nHeigth*/,/*lBanner*/,/*cFont*/,/*cMode*/,.F./*lPrint*/,0.5/*nPFWidth*/,/*nPFHeigth*/,/*lCmtr2Pix*/)
+			//oPrinter:FWMSBAR("CODE128" /*cTypeBar*/,46/*nRow*/, 1/*nCol*/ ,(_cAlias)->ARMAZEM + _cEnd  /*cCode*/,oPrinter/*oPrint*/,.F./*lCheck*/,/*Color*/,/*lHorz*/,0.025 /*nWidth*/,1/*nHeigth*/,/*lBanner*/,/*cFont*/,/*cMode*/,.F./*lPrint*/,0.5/*nPFWidth*/,/*nPFHeigth*/,/*lCmtr2Pix*/)
 			oPrinter:Say(0510,0460, "ENTRADA:"																			,oFont22)
 			oPrinter:Say(0540,0460, DTOC(STOD((_cAlias)->ENTRADA))														,oFont46)
 
 			oPrinter:EndPage()
-		next nFic
+		next _nFic
 
-		Private nComp := (nNum * VAL((_cAlias)->QUANT_EMB))
-		Private nTotal := VAL((_cAlias)->QUANTIDADE)
+		Private _nComp  := (_nNum * VAL((_cAlias)->QUANT_EMB))
+		Private _nTotal := VAL((_cAlias)->QUANTIDADE)
 
-		If  nTotal > nComp
-				Private nDif := VAL((_cAlias)->QUANTIDADE) -  (nNum * VAL((_cAlias)->QUANT_EMB))
-				Private nEmb := ROUND(nDif / VAL((_cAlias)->FATOR),2)
-				Private nPesold  := VAL((_cAlias)->PESOL) * nDif
-				Private nPesobd  := VAL((_cAlias)->PESOB) * nDif
-				cPag := cPag
+		If  _nTotal > _nComp
+				Private _nDif := VAL((_cAlias)->QUANTIDADE) -  (_nNum * VAL((_cAlias)->QUANT_EMB))
+				Private _nEmb := ROUND(_nDif / VAL((_cAlias)->FATOR),2)
+				Private _nPesold  := VAL((_cAlias)->PESOL) * _nDif
+				Private _nPesobd  := VAL((_cAlias)->PESOB) * _nDif
+				_cPag := _cPag
 
 				oPrinter:StartPage()
-				nRegs++
+				_nRegs++
                 //Box Margem
                 oPrinter:Box(0002,0005,0800,0840)
             
@@ -439,12 +467,12 @@ endif
                 //Box Embalagem
 				oPrinter:Box(0070,0260,0130,0420)
 				oPrinter:Say(0075,0265, "EMBALAGEM"																			,oFont22)
-				oPrinter:Say(0100,0275, ALLTRIM(STR(nEmb)) + " " + (_cAlias)->EMB											,oFont34)				
+				oPrinter:Say(0100,0275, ALLTRIM(STR(_nEmb)) + " " + (_cAlias)->EMB											,oFont34)				
 
                 //Box Quantidade
 				oPrinter:Box(0130,0005,0290,0420)
 				oPrinter:Say(0140,0030, "QUANTIDADE"																		,oFont22)
-				oPrinter:Say(0250,0040, ALLTRIM(STR(nDif))																	,oFont180AT)
+				oPrinter:Say(0250,0040, ALLTRIM(STR(_nDif))																	,oFont180AT)
 
 				//Box Lastro 
 				oPrinter:Box(0290,0005,0360,0125)
@@ -459,7 +487,7 @@ endif
 				//Box Peso Bruto
 				oPrinter:Box(0290,0230,0360,0420)
 				oPrinter:Say(0295,0240, "PESO BRUTO"																		,oFont22)
-				oPrinter:Say(0325,0250, ALLTRIM(STR(nPesobd))																,oFont34)
+				oPrinter:Say(0325,0250, ALLTRIM(STR(_nPesobd))																,oFont34)
 
                 //Box Lote e Validade
 				oPrinter:Box(0360,0005,0510,0420)
@@ -475,12 +503,12 @@ endif
 				oPrinter:Box(0510,0130,0610,0295)			
 				oPrinter:Say(0510,0135, "END:"																			,oFont22)
 				oPrinter:Say(0510,0185, ALLTRIM((_cAlias)->ARMAZEM) + "-" + ALLTRIM((_cAlias)->ENDERECO)					,oFont22)
-				oPrinter:Code128(0515/*nRow*/ ,0150 /*nCol*/,(_cAlias)->ARMAZEM + cEnd/*cCode*/,1/*nWidth*/,50/*nHeigth*/,.F./*lSay*/,,)
+				oPrinter:Code128(0515/*nRow*/ ,0150 /*nCol*/,(_cAlias)->ARMAZEM + _cEnd/*cCode*/,1/*nWidth*/,50/*nHeigth*/,.F./*lSay*/,,)
 				
 				//Box Pagina
 				oPrinter:Box(0450,0420,0610,0840)
 				oPrinter:Say(0465,0520, "FICHA Nº:"																			,oFont22)
-				oPrinter:Say(0570,0650, AllTrim(cPag)																	,oFont180AT)
+				oPrinter:Say(0570,0650, AllTrim(_cPag)																	,oFont180AT)
 
 				//Box Documento OP
 				oPrinter:Box(0510,0295,0610,0450)			
@@ -496,19 +524,19 @@ endif
 			
 				//Box Data de Entrada
 				oPrinter:Box(0510,0455,0610,0650)
-				//oPrinter:FWMSBAR("CODE128" /*cTypeBar*/,46/*nRow*/, 1/*nCol*/ ,(_cAlias)->ARMAZEM + cEnd  /*cCode*/,oPrinter/*oPrint*/,.F./*lCheck*/,/*Color*/,/*lHorz*/,0.025 /*nWidth*/,1/*nHeigth*/,/*lBanner*/,/*cFont*/,/*cMode*/,.F./*lPrint*/,0.5/*nPFWidth*/,/*nPFHeigth*/,/*lCmtr2Pix*/)
+				//oPrinter:FWMSBAR("CODE128" /*cTypeBar*/,46/*nRow*/, 1/*nCol*/ ,(_cAlias)->ARMAZEM + _cEnd  /*cCode*/,oPrinter/*oPrint*/,.F./*lCheck*/,/*Color*/,/*lHorz*/,0.025 /*nWidth*/,1/*nHeigth*/,/*lBanner*/,/*cFont*/,/*cMode*/,.F./*lPrint*/,0.5/*nPFWidth*/,/*nPFHeigth*/,/*lCmtr2Pix*/)
 				oPrinter:Say(0510,0460, "ENTRADA:"																			,oFont22)
 				oPrinter:Say(0540,0460, DTOC(STOD((_cAlias)->ENTRADA))														,oFont46)
 
                 oPrinter:EndPage()
-			endif
+			EndIf
 				
 			If AllTrim(FunName())=="MATA250"
 
-					clog := DTOC(Date()) + " - " + Time() + " - " + __cUserId + " - " + Substr(cUsuario,7,10) + " AUT"
+					_clog := DTOC(Date()) + " - " + Time() + " - " + __cUserId + " - " + Substr(cUsuario,7,10) + " AUT"
 					cQry := ""
 					cQry += " UPDATE "+RetSQLName("SD3")
-					cQry += " SET D3_LOGIMP = '" + clog + "' "
+					cQry += " SET D3_LOGIMP = '" + _clog + "' "
 					cQry += " WHERE D_E_L_E_T_ = '' "
 					cQry +=		 " AND D3_FILIAL = '"+xFilial("SD3")+"' "
 					cQry +=		 " AND D3_CF = 'PR0' "
@@ -516,7 +544,7 @@ endif
 					cQry +=		 " AND RTrim(Ltrim(D3_DOC)) = '"+(_cAlias)->DOCUMENTO+"' "
 					if TCSQLExec(cQry) < 0
 						MsgStop("[TCSQLError] " + TCSQLError(),_cRotina+"_001")
-					endif
+					EndIf
 
 					cQry := ""
 					cQry += " UPDATE "+RetSQLName("SDA")
@@ -528,12 +556,12 @@ endif
 					cQry +=		 " AND RTrim(Ltrim(DA_DOC)) = '"+(_cAlias)->DOCUMENTO+"' "
 					if TCSQLExec(cQry) < 0
 						MsgStop("[TCSQLError] " + TCSQLError(),_cRotina+"_003")
-					endif
+					EndIf
 			Else
-					clog := DTOC(Date()) + " - " + Time() + " - " + __cUserId + " - " + Substr(cUsuario,7,10) + " MAN"
+					_clog := DTOC(Date()) + " - " + Time() + " - " + __cUserId + " - " + Substr(cUsuario,7,10) + " MAN"
 					cQry := ""
 					cQry += " UPDATE "+RetSQLName("SD3")
-					cQry += " SET D3_LOGIMP = '" + clog + "' "
+					cQry += " SET D3_LOGIMP = '" + _clog + "' "
 					cQry += " WHERE D_E_L_E_T_ = '' "
 					cQry +=		 " AND D3_FILIAL = '"+xFilial("SD3")+"' "
 					cQry +=		 " AND D3_CF = 'PR0' "
@@ -541,7 +569,7 @@ endif
 					cQry +=		 " AND RTrim(Ltrim(D3_DOC)) = '"+(_cAlias)->DOCUMENTO+"' "
 					if TCSQLExec(cQry) < 0
 						MsgStop("[TCSQLError] " + TCSQLError(),_cRotina+"_001")
-					endif
+					EndIf
 
 					cQry := ""
 					cQry += " UPDATE "+RetSQLName("SDA")
@@ -553,8 +581,8 @@ endif
 					cQry +=		 " AND RTrim(Ltrim(DA_DOC)) = '"+(_cAlias)->DOCUMENTO+"' "
 					if TCSQLExec(cQry) < 0
 						MsgStop("[TCSQLError] " + TCSQLError(),_cRotina+"_003")
-					endif
-			Endif
+					EndIf
+			EndIf
 			(_cAlias)->(dbSkip())
 	enddo
 
@@ -564,11 +592,11 @@ if AllTrim(FunName()) == "MATA250"
 else
 	//	oPrinter:Preview()
 	oPrinter:Print()
-Endif
-//MsgInfo("Foram processados " + cValToChar(nRegs) + " produtos.",_cRotina + "_001")
+EndIf
+//MsgInfo("Foram processados " + cValToChar(_nRegs) + " produtos.",_cRotina + "_001")
 if Select(_cAlias) > 0
 	(_cAlias)->(dbCloseArea())
-endif
+EndIf
 return
 /*/{Protheus.doc} ValidPerg
 Verifica as perguntas no dicionário SX1, as criando, caso não existam.
@@ -590,23 +618,25 @@ static function ValidPerg()
 	(_cAliasSX1)->(dbSetOrder(1))
 	_cPerg := PADR(_cPerg,len((_cAliasSX1)->X1_GRUPO))
 	_aTam  := TamSX3("C2_PRODUTO")
-	AADD(_aRegs,{_cPerg,"01","Do Produto?"        ,"","","mv_ch1",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G",""          ,"mv_par01",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","","SB1"   ,"",""})
-	AADD(_aRegs,{_cPerg,"02","Ao Produto?"        ,"","","mv_ch2",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G","NAOVAZIO()","mv_par02",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","","SB1"   ,"",""})
+	AADD(_aRegs,{_cPerg,"01","Do Produto?"        	,"","","mv_ch1",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G",""          ,"mv_par01",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","","SB1"   ,"",""})
+	AADD(_aRegs,{_cPerg,"02","Ao Produto?"        	,"","","mv_ch2",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G","NAOVAZIO()","mv_par02",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","","SB1"   ,"",""})
 	_aTam  := TamSX3("D3_OP"     )
-	AADD(_aRegs,{_cPerg,"03","Da Ordem de Prod. ?","","","mv_ch3",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G",""          ,"mv_par03",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","","SC2"   ,"",""})
-	AADD(_aRegs,{_cPerg,"04","Até a Ordem Prod. ?","","","mv_ch4",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G","NAOVAZIO()","mv_par04",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","","SC2"   ,"",""})
+	AADD(_aRegs,{_cPerg,"03","Da Ordem de Prod. ?"	,"","","mv_ch3",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G",""          ,"mv_par03",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","","SC2"   ,"",""})
+	AADD(_aRegs,{_cPerg,"04","Até a Ordem Prod. ?"	,"","","mv_ch4",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G","NAOVAZIO()","mv_par04",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","","SC2"   ,"",""})
 	_aTam  := TamSX3("D3_EMISSAO")
-	AADD(_aRegs,{_cPerg,"05","Da Data Produção  ?","","","mv_ch5",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G",""          ,"mv_par05",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","",""      ,"",""})
-	AADD(_aRegs,{_cPerg,"06","Até Data Produção ?","","","mv_ch6",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G","NAOVAZIO()","mv_par06",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","",""      ,"",""})
+	AADD(_aRegs,{_cPerg,"05","Da Data Produção  ?"	,"","","mv_ch5",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G",""          ,"mv_par05",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","",""      ,"",""})
+	AADD(_aRegs,{_cPerg,"06","Até Data Produção ?"	,"","","mv_ch6",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G","NAOVAZIO()","mv_par06",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","",""      ,"",""})
 	_aTam  := {01,00,"C"}
-	AADD(_aRegs,{_cPerg,"07","Cód.Barras (1 a 8)?","","","mv_ch7",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G",""          ,"mv_par07",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","",""      ,"",""})
+	AADD(_aRegs,{_cPerg,"07","Cód.Barras (1 a 8)?"	,"","","mv_ch7",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G",""          ,"mv_par07",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","",""      ,"",""})
 	_aTam  := TamSX3("B1_TIPO")
-	AADD(_aRegs,{_cPerg,"08","Do Tipo?"        ,"","","mv_ch8",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G",""          ,"mv_par08",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","",""   ,"",""})
-	AADD(_aRegs,{_cPerg,"09","Ao Tipo?"        ,"","","mv_ch9",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G","NAOVAZIO()","mv_par09",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","",""   ,"",""})
+	AADD(_aRegs,{_cPerg,"08","Do Tipo?"        		,"","","mv_ch8",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G",""          ,"mv_par08",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","",""   ,"",""})
+	AADD(_aRegs,{_cPerg,"09","Ao Tipo?"        		,"","","mv_ch9",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G","NAOVAZIO()","mv_par09",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","",""   ,"",""})
 	_aTam  := TamSX3("D3_DOC")
 	AADD(_aRegs,{_cPerg,"10","Do Documento?"        ,"","","mv_ch10",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G",""          ,"mv_par10",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","",""   ,"",""})
 	AADD(_aRegs,{_cPerg,"11","Ao Documento?"        ,"","","mv_ch11",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G","NAOVAZIO()","mv_par11",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","",""   ,"",""})
-	
+	_aTam  := TamSX3("D3_XNRFICH")
+	AADD(_aRegs,{_cPerg,"12","Da Ficha Nº?"        	,"","","mv_ch12",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G",""          ,"mv_par12",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","",""   ,"",""})
+	AADD(_aRegs,{_cPerg,"13","Até Ficha Nº?"       	,"","","mv_ch13",_aTam[03],_aTam[01]	,_aTam[02]	,0,"G","NAOVAZIO()","mv_par13",""                 ,"","","","",""				,"","","","",""					,"","","","",""        ,"","","","","","","","",""   ,"",""})
 	for i := 1 to len(_aRegs)
 		if !(_cAliasSX1)->(dbSeek(_cPerg+_aRegs[i,2]))
 			while !RecLock(_cAliasSX1,.T.) ; enddo
@@ -615,10 +645,10 @@ static function ValidPerg()
 						FieldPut(j,_aRegs[i,j])
 					else
 						Exit
-					endif
+					EndIf
 				next
 			(_cAliasSX1)->(MsUnLock())
-		endif
+		EndIf
 	next
 	RestArea(_aArea)
 return

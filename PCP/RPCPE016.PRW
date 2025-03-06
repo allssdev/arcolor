@@ -21,7 +21,7 @@ BeginSql Alias "EMPENHO"
     FROM %table:SD4% SD4 (NOLOCK) 
     INNER JOIN SB1010 SB1 (NOLOCK) ON SB1.D_E_L_E_T_ = '' AND SB1.B1_COD = SD4.D4_COD 
     WHERE SD4.D4_OP = %exp:_cOp% 
-            --AND SD4.D4_LOTECTL = ''
+            //AND SD4.D4_LOTECTL = ''
             AND SD4.%notDel%
     ORDER BY SD4.D4_OP, SD4.D4_COD, SD4.D4_LOCAL
 EndSql

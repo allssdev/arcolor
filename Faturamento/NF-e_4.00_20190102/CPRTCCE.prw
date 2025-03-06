@@ -133,7 +133,7 @@ user function CPRTCCE()
 					//Seta o TopConn atual				                               
 					tcSetConn(nHErp)   //Neste momento faço com que o sistema permaneca na base atual que o usuario logou 
 					//Seto a nova conexão que desejo utilizar
-					nHndOra := TcLink(cDBTSS,cSrvTSS,7891)
+					nHndOra := TcLink(cDBTSS,cSrvTSS,7890)
 					//Verifica o status da conexão
 					if nHndOra < 0
 						Msgstop("Falha na conexão na base SPED150, informar o Administrador do Sistema!",_cRotina+"_001")
@@ -541,14 +541,14 @@ user function CPRTCCE()
 				cQry += "FROM SPED150 (NOLOCK) "
 				cQry += "WHERE NFE_CHV = '"+cChvNfe+"' AND STATUS = 6 AND D_E_L_E_T_ = '' "
 				// Incluido por Júlio Soares em 08/07/2013 para imprimir sempre a ultima sequencia do envio da carta - verificar o mesmo tratamento na linha 138
-				cQry += "AND (SELECT MAX(SEQEVENTO) FROM SPED150 (NOLOCK) WHERE NFE_CHV = '"+cChvNfe+"') = SEQEVENTO"
+				cQry += "AND (SELECT MAX(SEQEVENTO) FROM SPED150 (NOLOCK) WHERE NFE_CHV = '"+cChvNfe+"') = SEQEVENTO "
 				cQry += "ORDER BY LOTE DESC"
 				cQry := ChangeQuery(cQry)
 				//Trecho adicionado por Adriano Leonardo em 25/09/2013 para tratamento da conexão - Tabela SPED150 em outro ODBC
 				//Seta o TopConn atual
 				tcSetConn(nHErp)   //Neste momento faço com que o sistema permaneca na base atual que o usuario logou 
 				//Seto a nova conexão que desejo utilizar
-				nHndOra := TcLink(cDBTSS,cSrvTSS,7891)
+				nHndOra := TcLink(cDBTSS,cSrvTSS,7890)
 				//Verifica o status da conexão
 				if nHndOra < 0
 					MsgStop("Falha na conexão na base SPED150, informar o Administrador do Sistema!",_cRotina+"_001")
@@ -559,7 +559,8 @@ user function CPRTCCE()
 				endif
 				dbUseArea( .T., 'TOPCONN', TCGENQRY(,,cQry), _cTMP, .T., .T.)
 				//Final do trecho adicionado por Adriano Leonardo em 25/09/2013 para tratamento da conexão - Tabela SPED150 em outro ODBC
-				TcSetField(_cTMP,"DATE_EVEN","D",08,0)
+				//TcSetField(_cTMP,"DATE_EVEN","D",08,0)
+			
 				dbSelectArea(_cTMP)
 				(_cTMP)->(dbGoTop())
 				If !(_cTMP)->(EOF())
@@ -570,7 +571,7 @@ user function CPRTCCE()
 					MTPEVENTO  := STR((_cTMP)->TPEVENTO,6)
 					MSEQEVENTO := STR((_cTMP)->SEQEVENTO,1)
 					MAMBIENTE  := STR((_cTMP)->AMBIENTE,1)+IIF((_cTMP)->AMBIENTE==1," - Producao", IIF((_cTMP)->AMBIENTE==2," - Homologacao" , ""))
-					MDATE_EVEN := DTOC((_cTMP)->DATE_EVEN)
+					MDATE_EVEN := (_cTMP)->DATE_EVEN
 					MTIME_EVEN := (_cTMP)->TIME_EVEN
 					MVERSAO    := STR((_cTMP)->VERSAO,4,2)
 					MVEREVENTO := STR((_cTMP)->VEREVENTO,4,2)

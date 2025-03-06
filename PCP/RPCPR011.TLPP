@@ -77,7 +77,7 @@ Method imprimirRelatorioDeAlteracaoDeEmpenho(cOP)  class RPCPC011
 		_nPrtType        	    := 2
 	endif
 	oPrn              			:= FWMSPrinter():New(_cArq,_nPrtType,lFormaTMSPrinter,,.F.,.F.,,"",.F.,.T.,.F.,.T.)
-	if oPrn:Canceled()
+	if oPrn:nModalResult == 2
 		return .F.
 	endif
 	oPrn:nQtdCopies             := 1
@@ -137,7 +137,7 @@ Method imprimirRelatorioDeAlteracaoDeEmpenho(cOP)  class RPCPC011
 		WHERE
 			SD4.D4_FILIAL= %xfilial:SD4% AND
 			SD4.D4_OP = %exp:cOP% AND
-			SD4.D4_XLOTANT <> '' AND
+			(SD4.D4_XLOTANT <> '' OR SD4.D4_QTDANTE <> 0) AND
 			SD4.%notDel%
 	EndSql	
 
